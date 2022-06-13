@@ -35,6 +35,10 @@ services:
       --disable-sync
       --contract-deployment-block 0
       --interop-num-validators 4
+      --rpc-host 0.0.0.0
+      --rpc-port 4000
+      --grpc-gateway-host 0.0.0.0
+      --grpc-gateway-port 3500
     ports:
       - "3500:3500"
       - "4000:4000"
@@ -51,7 +55,7 @@ services:
     command: >
       validator
       --accept-terms-of-use
-      --beacon-rpc-provider http://beacon-node:4000
+      --beacon-rpc-provider beacon-node:4000
       --interop-num-validators=4
       --interop-start-index=0
       --force-clear-db
