@@ -12,4 +12,4 @@ COPY --from=builder /build/beacon-node /usr/local/bin/
 COPY --from=builder /build/validator /usr/local/bin/
 
 WORKDIR /usr/local/bin
-EXPOSE 3600 4000
+EXPOSE 3500 4000
