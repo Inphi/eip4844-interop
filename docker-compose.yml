@@ -1,0 +1,61 @@
+version: '3.4'
+
+volumes:
+  geth_data:
+  validator_data:
+
+services:
+  execution-node:
+    build:
+      context: .
+      dockerfile: Dockerfile.geth
+    ports:
+      - "8545:8545"
+    volumes:
+      - "geth_data:/db"
+      - ${PWD}/geth-genesis.json:/genesis.json
+
+  beacon-node:
+    depends_on:
+      - execution-node
+    build:
+      context: .
+      dockerfile: ./Dockerfile.prysm
+    command: >
+      beacon-node
+      --accept-terms-of-use
+      --datadir /chaindata
+      --force-clear-db
+      --interop-eth1data-votes
+      --min-sync-peers=0
+      --http-web3provider=http://execution-node:8545
+      --deposit-contract 0x8A04d14125D0FDCDc742F4A05C051De07232EDa4
+      --bootstrap-node=
+      --chain-config-file=/config/prysm-chain-config.yml
+      --disable-sync
+      --contract-deployment-block 0
+      --interop-num-validators 4
+    ports:
+      - "3500:3500"
+      - "4000:4000"
+    volumes:
+      - "validator_data:/chaindata"
+      - ${PWD}/prysm-chain-config.yml:/config/prysm-chain-config.yml
+
+  validator-node:
+    depends_on:
+      - beacon-node
+    build:
+      context: .
+      dockerfile: ./Dockerfile.prysm
+    command: >
+      validator
+      --accept-terms-of-use
+      --beacon-rpc-provider http://beacon-node:4000
+      --interop-num-validators=4
+      --interop-start-index=0
+      --force-clear-db
+      --chain-config-file=/config/prysm-chain-config.yml
+      --suggested-fee-recipient 0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b
+    volumes:
+      - ${PWD}/prysm-chain-config.yml:/config/prysm-chain-config.yml

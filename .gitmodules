@@ -1,0 +1,8 @@
+[submodule "go-ethereum"]
+	path = go-ethereum
+	url = https://github.com/mdehoog/go-ethereum
+	branch = eip-4844
+[submodule "prysm"]
+	path = prysm
+	url = https://github.com/Inphi/prysm
+	branch = inphi/clean-slate

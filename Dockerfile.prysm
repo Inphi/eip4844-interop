@@ -1,0 +1,15 @@
+FROM golang:1.18 as builder
+
+COPY ./prysm /app/prysm
+
+WORKDIR /app/prysm
+
+RUN go build -o /build/beacon-node -buildvcs=false ./cmd/beacon-chain
+RUN go build -o /build/validator -buildvcs=false ./cmd/validator
+
+FROM ubuntu:20.04
+COPY --from=builder /build/beacon-node /usr/local/bin/
+COPY --from=builder /build/validator /usr/local/bin/
+
+WORKDIR /usr/local/bin
+EXPOSE 3600 4000
