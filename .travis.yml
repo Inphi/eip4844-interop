@@ -1,9 +1,0 @@
-language: node_js
-
-services:
-  - docker
-
-script:
-  - make devnet-up
-  - npm install
-  - node blob.js
