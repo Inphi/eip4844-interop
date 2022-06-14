@@ -18,6 +18,9 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
+    - run: docker-compose pull
+    - uses: satackey/action-docker-layer-caching@v0.0.11
+      continue-on-error: true
     - run: make devnet-up
-    - run: npm install
+    - run: docker ps -a
     - run: node blob.js
