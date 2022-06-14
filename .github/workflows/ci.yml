@@ -33,6 +33,7 @@ jobs:
       run: |
         npm install
         node blob.js this_is_some_blob_data
+    - run: docker-compose logs
     - name: Wait for slot 22
       uses: ifaxity/wait-on-action@v1
       with:
