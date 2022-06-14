@@ -4,5 +4,5 @@
 	branch = eip-4844
 [submodule "prysm"]
 	path = prysm
-	url = https://github.com/mdehoog/prysm
-	branch = michael/eip-4844-rpc
+	url = https://github.com/Inphi/prysm
+	branch = inphi/clean-slate
