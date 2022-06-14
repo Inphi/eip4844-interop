@@ -24,7 +24,8 @@ jobs:
       continue-on-error: true
     - run: make devnet-up
     - run: docker ps -a
-    - uses: ifaxity/wait-on-action@v1
+    - name: Wait for geth
+      uses: ifaxity/wait-on-action@v1
       with:
         resource: http-get://localhost:8545
     - name: Submit blob TX
@@ -32,5 +33,9 @@ jobs:
       run: |
         npm install
         node blob.js this_is_some_blob_data
+    - name: Wait for slot 22
+      uses: ifaxity/wait-on-action@v1
+      with:
+        resource: http-get://localhost:3500/eth/v2/beacon/blocks/22
     - name: Check KZGs
       run: ./check_for_blob_kzgs.sh
