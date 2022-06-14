@@ -13,18 +13,21 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: recursive
-    - name: Use Node.js ${{ matrix.node-version }}
+    - name: Use Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: ${{ matrix.node-version }}
+        node-version: 16
         cache: 'npm'
     - run: docker-compose pull
     - uses: satackey/action-docker-layer-caching@v0.0.11
       continue-on-error: true
     - run: make devnet-up
     - run: docker ps -a
-    - run: npm install
     - uses: ifaxity/wait-on-action@v1
       with:
         resource: http-get://localhost:8545
-    - run: node blob.js hello
+    - working-directory: ./blob_tx_generator
+      run: |
+        npm install
+        node blob.js this_is_some_blob_data
+    - run: check_for_blob_kzgs.sh
