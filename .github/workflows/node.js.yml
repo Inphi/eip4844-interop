@@ -24,4 +24,7 @@ jobs:
     - run: make devnet-up
     - run: docker ps -a
     - run: npm install
-    - run: node blob.js
+    - uses: ifaxity/wait-on-action@v1
+      with:
+        resource: http-get://localhost:8545
+    - run: node blob.js hello
