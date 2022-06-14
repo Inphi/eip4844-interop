@@ -64,6 +64,17 @@ function sleep(ms) {
   });
 }
 
+async function estimateGas(tx) {
+    const req = {
+        "id": "1",
+        "jsonrpc": "2.0",
+        "method": "eth_estimateGas",
+        "params": [tx]
+    }
+    const res = await axios.post("http://localhost:8545", req)
+    return res.data.result
+}
+
 async function run(data) {
     while (true) {
         const num = await provider.getBlockNumber()
@@ -75,10 +86,7 @@ async function run(data) {
     }
     let blobs = get_blobs(data)
     console.log("number of blobs is " + blobs.length)
-    //console.log(blobs)
     const bb = blobs.toString('binary')
-    //const blobshex = Buffer.from(bb, 'ascii').subarray(0, 10).toString('hex')
-    //const blobshex = ["0xFF00FF"]
     const blobshex = blobs.map((x) => { x.toString('hex') })
 
     const account = ethers.Wallet.createRandom()
@@ -88,16 +96,16 @@ async function run(data) {
         "data": "0x",
         "chainId": "0x1",
         "blobs": blobshex,
-        // TODO: need to explicitly set here because default gas (via estimategas) is less than intrinsic gas for blobs (12000 + 2100)
-        "gas": '0xf4240'
     }
+    const gas = await estimateGas(txData)
+    txData["gas"] = gas
+
     const req = {
         "id": "1",
         "jsonrpc": "2.0",
         "method": "eth_sendTransaction",
         "params": [txData]
     }
-
     console.log(`sending to ${account.address}`)
     const res = await axios.post("http://localhost:8545", req)
     console.log(res.data)
