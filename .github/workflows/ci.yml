@@ -27,8 +27,10 @@ jobs:
     - uses: ifaxity/wait-on-action@v1
       with:
         resource: http-get://localhost:8545
-    - working-directory: ./blob_tx_generator
+    - name: Submit blob TX
+      working-directory: ./blob_tx_generator
       run: |
         npm install
         node blob.js this_is_some_blob_data
-    - run: check_for_blob_kzgs.sh
+    - name: Check KZGs
+      run: ./check_for_blob_kzgs.sh
