@@ -30,4 +30,4 @@ jobs:
       working-directory: ./blob_tx_generator
       run: |
         npm install
-        node blob.js this_is_some_blob_data
+        node blob.js this_is_some_blob_data 0xabcb47323a52ac0445bc0be98bbe3b40a212ecc7ce67ae0a6bb27e818636583562c275d3a5a060c460b181bc6f3b3ae1
