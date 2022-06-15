@@ -2,9 +2,7 @@ const ethers = require("ethers")
 const axios = require('axios')
 
 const input = process.argv[2]
-const privateKey = "0x45a915e4d060149eb4365960e6a7a45f334393093061116b197e3240065ff2d8"
 const provider = new ethers.providers.JsonRpcProvider("http://localhost:8545")
-const wallet = new ethers.Wallet(privateKey, provider)
 
 const BYTES_PER_FIELD_ELEMENT = 32
 const FIELD_ELEMENTS_PER_BLOB = 1016
@@ -78,7 +76,7 @@ async function estimateGas(tx) {
 async function run(data) {
     while (true) {
         const num = await provider.getBlockNumber()
-        if (num >= 6) {
+        if (num >= 9) {
             break
         }
         console.log(`waiting for eip4844 proc.... bn=${num}`)
@@ -86,7 +84,6 @@ async function run(data) {
     }
     let blobs = get_blobs(data)
     console.log("number of blobs is " + blobs.length)
-    const bb = blobs.toString('binary')
     const blobshex = blobs.map((x) => { x.toString('hex') })
 
     const account = ethers.Wallet.createRandom()
@@ -97,8 +94,7 @@ async function run(data) {
         "chainId": "0x1",
         "blobs": blobshex,
     }
-    const gas = await estimateGas(txData)
-    txData["gas"] = gas
+    txData["gas"] = await estimateGas(txData)
 
     const req = {
         "id": "1",
@@ -109,6 +105,38 @@ async function run(data) {
     console.log(`sending to ${account.address}`)
     const res = await axios.post("http://localhost:8545", req)
     console.log(res.data)
+    if (res.data.error) {
+        process.exit(1)
+    }
+
+    let blob_kzg = null
+    try {
+        let start = (await axios.get("http://localhost:3500/eth/v1/beacon/headers")).data.data[0].header.message.slot - 1
+        for (let i = 0; i < 5; i++) {
+            const res = (await axios.get(`http://localhost:3500/eth/v2/beacon/blocks/${start + i}`)).data.data.message.body.blob_kzgs
+            if (res.length > 0) {
+                blob_kzg = res[0]
+            }
+            while (true) {
+                const current = (await axios.get("http://localhost:3500/eth/v1/beacon/headers")).data.data[0].header.message.slot - 1
+                if (current > start + i) {
+                    break
+                }
+                console.log(`waiting for next block.... bn=${current}`)
+                await sleep(1000)
+            }
+        }
+    } catch(error) {
+        console.log(`Error retrieving blocks from ${error.config.url}: ${error.response.data}`)
+        process.exit(1)
+    }
+
+    if (blob_kzg !== "0xc00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000") {
+        console.log(`Unexpected KZG value: ${blob_kzg}`)
+        process.exit(1)
+    } else {
+        console.log(`Found expected KZG value: ${blob_kzg}`)
+    }
 }
 
 (async () => { run(input) })()
