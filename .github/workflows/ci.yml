@@ -37,3 +37,4 @@ jobs:
         resource: http-get://localhost:3500/eth/v2/beacon/blocks/12
     - name: Check KZGs
       run: ./check_for_blob_kzgs.sh
+
