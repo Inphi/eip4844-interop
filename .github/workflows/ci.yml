@@ -10,33 +10,30 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+    - name: Checkout
     - uses: actions/checkout@v3
       with:
         submodules: recursive
-    - name: Use Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: 16
-        cache: 'npm'
-        cache-dependency-path: '**/package-lock.json'
-    - run: docker-compose pull
-    - uses: satackey/action-docker-layer-caching@v0.0.11
-      continue-on-error: true
     - run: make devnet-up
     - run: docker ps -a
     - name: Wait for geth
       uses: ifaxity/wait-on-action@v1
       with:
         resource: http-get://localhost:8545
+    - name: Setup node
+      uses: actions/setup-node@v3
+      with:
+        node-version: 16
+        cache: 'npm'
+        cache-dependency-path: '**/package-lock.json'
     - name: Submit blob TX
       working-directory: ./blob_tx_generator
       run: |
         npm install
         node blob.js this_is_some_blob_data
-    - run: docker-compose logs
-    - name: Wait for slot 22
+    - name: Wait for slot 12
       uses: ifaxity/wait-on-action@v1
       with:
-        resource: http-get://localhost:3500/eth/v2/beacon/blocks/22
+        resource: http-get://localhost:3500/eth/v2/beacon/blocks/12
     - name: Check KZGs
       run: ./check_for_blob_kzgs.sh
