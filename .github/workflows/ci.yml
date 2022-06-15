@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    - run: make devnet-up
+    - run: docker ps -a
+    - name: Wait for geth
+      uses: ifaxity/wait-on-action@v1
+      with:
+        resource: http-get://localhost:8545
+    - name: Setup node
+      uses: actions/setup-node@v3
+      with:
+        node-version: 16
+        cache: 'npm'
+        cache-dependency-path: '**/package-lock.json'
+    - name: Submit blob TX
+      working-directory: ./blob_tx_generator
+      run: |
+        npm install
+        node blob.js this_is_some_blob_data 0xabcb47323a52ac0445bc0be98bbe3b40a212ecc7ce67ae0a6bb27e818636583562c275d3a5a060c460b181bc6f3b3ae1
