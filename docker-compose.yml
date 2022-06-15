@@ -18,6 +18,7 @@ services:
   beacon-node:
     depends_on:
       - execution-node
+      - jaeger-tracing
     build:
       context: .
       dockerfile: ./Dockerfile.prysm
@@ -40,6 +41,10 @@ services:
       --grpc-gateway-host 0.0.0.0
       --grpc-gateway-port 3500
       --enable-debug-rpc-endpoints
+      --enable-tracing
+      --tracing-endpoint http://jaeger-tracing:14268/api/traces
+      --tracing-process-name beacon-node
+      --verbosity debug
     ports:
       - "3500:3500"
       - "4000:4000"
@@ -50,6 +55,7 @@ services:
   validator-node:
     depends_on:
       - beacon-node
+      - jaeger-tracing
     build:
       context: .
       dockerfile: ./Dockerfile.prysm
@@ -62,5 +68,21 @@ services:
       --force-clear-db
       --chain-config-file=/config/prysm-chain-config.yml
       --suggested-fee-recipient 0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b
+      --enable-tracing
+      --tracing-endpoint http://jaeger-tracing:14268/api/traces
+      --tracing-process-name validator-node
     volumes:
       - ${PWD}/prysm-chain-config.yml:/config/prysm-chain-config.yml
+
+  jaeger-tracing:
+    image: jaegertracing/all-in-one:1.6
+    environment:
+      COLLECTOR_ZIPKIN_HTTP_PORT: 9411
+    ports:
+      - "5775:5775/udp"
+      - "6831:6831/udp"
+      - "6832:6832/udp"
+      - "5778:5778"
+      - "16686:16686"
+      - "14268:14268"
+      - "9411:9411"
