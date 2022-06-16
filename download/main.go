@@ -77,7 +77,7 @@ func main() {
 
 	anyBlobs := false
 	for _, sidecar := range sidecars {
-		if sidecar.Blobs == nil {
+		if sidecar.Blobs == nil || len(sidecar.Blobs) == 0 {
 			continue
 		}
 		anyBlobs = true
