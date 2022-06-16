@@ -16,13 +16,14 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prysmaticlabs/prysm/beacon-chain/p2p"
 	"github.com/prysmaticlabs/prysm/beacon-chain/sync"
+	types "github.com/prysmaticlabs/prysm/consensus-types/primitives"
 	ethpb "github.com/prysmaticlabs/prysm/proto/prysm/v1alpha1"
 )
 
 var (
 	beaconNodeRPC = flag.String("beacon-node-rpc", "http://127.0.0.1:3500", "Beacon node RPC URL")
-	startSlot     = flag.Int("start-slot", "0", "starting slot to fetch blobs")
-	count         = flag.Int("count", "1", "number of blobs to fetch")
+	startSlot     = flag.Int("start-slot", 0, "starting slot to fetch blobs")
+	count         = flag.Int("count", 1, "number of blobs to fetch")
 )
 
 func main() {
@@ -32,8 +33,8 @@ func main() {
 	defer cancel()
 
 	req := &ethpb.BlobsSidecarsByRangeRequest{
-		StartSlot: *startSlot,
-		Count:     *count,
+		StartSlot: types.Slot(*startSlot),
+		Count:     uint64(*count),
 	}
 
 	svc, err := p2p.NewService(ctx, &p2p.Config{
