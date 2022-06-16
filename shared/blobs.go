@@ -33,7 +33,7 @@ func DecodeBlobs(sidecar *ethpb.BlobsSidecar) []byte {
 			data = append(data, b[0:31]...)
 		}
 	}
-	// XXX: remove trailing 0s
+	// XXX: the following removes trailing 0s, which could be unexpected for certain blobs
 	i := len(data) - 1
 	for ; i >= 0; i-- {
 		if data[i] != 0x00 {
