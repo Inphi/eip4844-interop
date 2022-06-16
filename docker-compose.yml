@@ -2,7 +2,8 @@ version: '3.4'
 
 volumes:
   geth_data:
-  validator_data:
+  beacon_node_data:
+  beacon_node_follower_data:
 
 services:
   execution-node:
@@ -22,34 +23,40 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile.prysm
+    environment:
+      EXECUTION_NODE_URL: http://execution-node:8545
+      TRACING_ENDPOINT: http://jaeger-tracing:14268/api/traces
+      PROCESS_NAME: beacon-node
+      VERBOSITY: debug
     command: >
-      beacon-node
-      --accept-terms-of-use
-      --datadir /chaindata
-      --force-clear-db
-      --interop-eth1data-votes
-      --min-sync-peers=0
-      --http-web3provider=http://execution-node:8545
-      --deposit-contract 0x8A04d14125D0FDCDc742F4A05C051De07232EDa4
-      --bootstrap-node=
-      --chain-config-file=/config/prysm-chain-config.yml
-      --disable-sync
-      --contract-deployment-block 0
-      --interop-num-validators 4
-      --rpc-host 0.0.0.0
-      --rpc-port 4000
-      --grpc-gateway-host 0.0.0.0
-      --grpc-gateway-port 3500
-      --enable-debug-rpc-endpoints
-      --enable-tracing
-      --tracing-endpoint http://jaeger-tracing:14268/api/traces
-      --tracing-process-name beacon-node
-      --verbosity debug
+      run_beacon_node.sh --min-sync-peers=0
     ports:
       - "3500:3500"
       - "4000:4000"
     volumes:
-      - "validator_data:/chaindata"
+      - "beacon_node_data:/chaindata"
+      - ${PWD}/prysm-chain-config.yml:/config/prysm-chain-config.yml
+
+  beacon-node-follower:
+    depends_on:
+      - execution-node
+      - beacon-node
+      - jaeger-tracing
+    build:
+      context: .
+      dockerfile: ./Dockerfile.prysm
+    environment:
+      EXECUTION_NODE_URL: http://execution-node:8545
+      TRACING_ENDPOINT: http://jaeger-tracing:14268/api/traces
+      PROCESS_NAME: beacon-node-follower
+      BEACON_NODE_RPC: http://beacon-node:3500
+      VERBOSITY: debug
+    command: run_beacon_node_peer.sh
+    ports:
+      - "3501:3500"
+      - "4001:4000"
+    volumes:
+      - "beacon_node_follower_data:/chaindata"
       - ${PWD}/prysm-chain-config.yml:/config/prysm-chain-config.yml
 
   validator-node:
