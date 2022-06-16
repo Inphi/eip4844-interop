@@ -75,10 +75,12 @@ func main() {
 		panic(err)
 	}
 
+	anyBlobs := false
 	for _, sidecar := range sidecars {
 		if sidecar.Blobs == nil {
 			continue
 		}
+		anyBlobs = true
 		data := shared.DecodeBlobs(sidecar)
 		i := len(data) - 1
 		for ; i >= 0; i-- {
@@ -91,6 +93,10 @@ func main() {
 
 		// stop after the first sidecar with blobs:
 		break
+	}
+
+	if !anyBlobs {
+		panic(fmt.Sprintf("No blobs found in requested slots, sidecar count: %d", len(sidecars)))
 	}
 }
 
