@@ -14,7 +14,9 @@ services:
       - "8545:8545"
     volumes:
       - "geth_data:/db"
-      - ${PWD}/geth-genesis.json:/genesis.json
+      - type: bind
+        source: ./geth-genesis.json
+        target: /genesis.json
 
   beacon-node:
     depends_on:
@@ -36,7 +38,9 @@ services:
       - "13000:13000"
     volumes:
       - "beacon_node_data:/chaindata"
-      - ${PWD}/prysm-chain-config.yml:/config/prysm-chain-config.yml
+      - type: bind
+        source: ./prysm-chain-config.yml
+        target: /config/prysm-chain-config.yml
 
   beacon-node-follower:
     depends_on:
@@ -58,7 +62,9 @@ services:
       - "4001:4000"
     volumes:
       - "beacon_node_follower_data:/chaindata"
-      - ${PWD}/prysm-chain-config.yml:/config/prysm-chain-config.yml
+      - type: bind
+        source: ./prysm-chain-config.yml
+        target: /config/prysm-chain-config.yml
 
   validator-node:
     depends_on:
@@ -80,7 +86,9 @@ services:
       --tracing-endpoint http://jaeger-tracing:14268/api/traces
       --tracing-process-name validator-node
     volumes:
-      - ${PWD}/prysm-chain-config.yml:/config/prysm-chain-config.yml
+      - type: bind
+        source: ./prysm-chain-config.yml
+        target: /config/prysm-chain-config.yml
 
   jaeger-tracing:
     image: jaegertracing/all-in-one:1.35
