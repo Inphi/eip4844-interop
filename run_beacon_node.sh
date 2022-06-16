@@ -25,6 +25,7 @@ beacon-node \
     --grpc-gateway-host 0.0.0.0 \
     --grpc-gateway-port 3500 \
     --enable-debug-rpc-endpoints \
+    --p2p-local-ip 0.0.0.0 \
     --enable-tracing \
     --tracing-endpoint "$TRACING_ENDPOINT" \
     --tracing-process-name "$PROCESS_NAME" $@

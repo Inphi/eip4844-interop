@@ -20,14 +20,14 @@ jobs:
       uses: ifaxity/wait-on-action@v1
       with:
         resource: http-get://localhost:8545
-    - name: Setup node
-      uses: actions/setup-node@v3
+    - uses: actions/setup-go@v3
       with:
-        node-version: 16
-        cache: 'npm'
-        cache-dependency-path: '**/package-lock.json'
-    - name: Submit blob TX
-      working-directory: ./blob_tx_generator
-      run: |
-        npm install
-        node blob.js this_is_some_blob_data 0xabcb47323a52ac0445bc0be98bbe3b40a212ecc7ce67ae0a6bb27e818636583562c275d3a5a060c460b181bc6f3b3ae1
+        go-version: '^1.18.0'
+    - name: Upload blobs
+      run: go run ./upload -before 10 -after 20 eth.png
+    - name: Download blobs
+      run: go run ./download -start 1 -count 100 -addr /ip4/0.0.0.0/tcp/13000 > output.png
+    - name: List
+      run: ls -l
+    - name: Compare files
+      run: git diff --no-index eth.png output.png
