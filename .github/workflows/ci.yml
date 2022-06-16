@@ -26,6 +26,6 @@ jobs:
     - name: Upload blobs
       run: go run ./upload -before 10 -after 15 eth.png
     - name: Download blobs
-      run: go run ./download -start 10 -count 20 -addr /ip4/127.0.0.1/tcp/13000 > output.png
+      run: go run ./download -start 10 -count 20 -addr /ip4/0.0.0.0/tcp/13000 > output.png
     - name: Compare files
       run: md5 eth.png && md5 output.png
