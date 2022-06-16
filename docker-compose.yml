@@ -33,6 +33,7 @@ services:
     ports:
       - "3500:3500"
       - "4000:4000"
+      - "13000:13000"
     volumes:
       - "beacon_node_data:/chaindata"
       - ${PWD}/prysm-chain-config.yml:/config/prysm-chain-config.yml
