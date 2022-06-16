@@ -88,6 +88,9 @@ func main() {
 		}
 		data = data[:i+1]
 		_, _ = os.Stdout.Write(data)
+
+		// stop after the first sidecar with blobs:
+		break
 	}
 }
 
