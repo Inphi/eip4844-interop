@@ -1,4 +1,4 @@
-module github.cbhq.net/nodes/peer-registry
+module github.com/Inphi/eip4844-interop
 
 go 1.18
 

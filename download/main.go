@@ -9,6 +9,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/Inphi/eip4844-interop/shared"
+
 	ma "github.com/multiformats/go-multiaddr"
 
 	"github.com/libp2p/go-libp2p"
@@ -77,7 +79,7 @@ func main() {
 		if sidecar.Blobs == nil {
 			continue
 		}
-		data := decodeBlobs(sidecar)
+		data := shared.DecodeBlobs(sidecar)
 		i := len(data) - 1
 		for ; i >= 0; i-- {
 			if data[i] != 0x00 {
@@ -171,14 +173,4 @@ func readChunkedBlobsSidecar(stream libp2pcore.Stream, encoding encoder.NetworkE
 	sidecar := new(ethpb.BlobsSidecar)
 	err = encoding.DecodeWithMaxLength(stream, sidecar)
 	return sidecar, err
-}
-
-func decodeBlobs(sidecar *ethpb.BlobsSidecar) []byte {
-	var data []byte
-	for _, blob := range sidecar.Blobs {
-		for _, b := range blob.Blob {
-			data = append(data, b[0:31]...)
-		}
-	}
-	return data
 }

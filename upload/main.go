@@ -3,10 +3,12 @@ package main
 import (
 	"context"
 	"flag"
-	"github.com/ethereum/go-ethereum/params"
 	"log"
 	"math/big"
 	"os"
+	"time"
+
+	"github.com/Inphi/eip4844-interop/shared"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -20,6 +22,8 @@ func main() {
 	prv := "45a915e4d060149eb4365960e6a7a45f334393093061116b197e3240065ff2d8"
 	addr := "http://localhost:8545"
 
+	before := flag.Uint64("before", 0, "Block to wait for before submitting transaction")
+	after := flag.Uint64("after", 0, "Block to wait for after submitting transaction")
 	flag.Parse()
 
 	file := flag.Arg(0)
@@ -45,13 +49,17 @@ func main() {
 		log.Fatalf("Failed to load private key: %v", err)
 	}
 
+	if *before > 0 {
+		waitForBlock(ctx, client, *before)
+	}
+
 	nonce, err := client.PendingNonceAt(ctx, crypto.PubkeyToAddress(key.PublicKey))
 	if err != nil {
 		log.Fatalf("Error getting nonce: %v", err)
 	}
 	log.Printf("Nonce: %d", nonce)
 
-	blobs := encodeBlobs(data)
+	blobs := shared.EncodeBlobs(data)
 	var commitments []types.KZGCommitment
 	var hashes []common.Hash
 	for _, b := range blobs {
@@ -91,25 +99,23 @@ func main() {
 		log.Fatalf("Error sending tx: %v", err)
 	}
 
-	log.Printf("Done")
+	log.Printf("Transaction submitted")
+
+	if *after > 0 {
+		waitForBlock(ctx, client, *after)
+	}
 }
 
-func encodeBlobs(data []byte) []types.Blob {
-	blobs := []types.Blob{{}}
-	blobIndex := 0
-	fieldIndex := -1
-	for i := 0; i < len(data); i += 31 {
-		fieldIndex++
-		if fieldIndex == params.FieldElementsPerBlob {
-			blobs = append(blobs, types.Blob{})
-			blobIndex++
-			fieldIndex = 0
+func waitForBlock(ctx context.Context, client *ethclient.Client, block uint64) {
+	for {
+		bn, err := client.BlockNumber(ctx)
+		if err != nil {
+			log.Fatalf("Error requesting block number: %v", err)
 		}
-		max := i + 31
-		if max > len(data) {
-			max = len(data)
+		if bn >= block {
+			return
 		}
-		copy(blobs[blobIndex][fieldIndex][:], data[i:max])
+		log.Printf("Waiting for block %d, current %d", block, bn)
+		time.Sleep(1 * time.Second)
 	}
-	return blobs
 }
