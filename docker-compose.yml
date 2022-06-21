@@ -2,6 +2,7 @@ version: '3.4'
 
 volumes:
   geth_data:
+  geth_data2:
   beacon_node_data:
   beacon_node_follower_data:
 
@@ -12,8 +13,27 @@ services:
       dockerfile: Dockerfile.geth
     ports:
       - "8545:8545"
+    environment:
+      GETH_VERBOSITY: 6
     volumes:
       - "geth_data:/db"
+      - type: bind
+        source: ./geth-genesis.json
+        target: /genesis.json
+
+  execution-node-2:
+    depends_on:
+      - execution-node
+    build:
+      context: .
+      dockerfile: Dockerfile.geth
+    environment:
+      PEER: execution-node:30303
+      GETH_VERBOSITY: 6
+    ports:
+      - "8546:8545"
+    volumes:
+      - "geth_data2:/db"
       - type: bind
         source: ./geth-genesis.json
         target: /genesis.json
