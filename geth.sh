@@ -42,12 +42,14 @@ fi
 # retrieve our public IP address for discovery
 EXTERNAL_IP=$(ip addr show eth0 | grep inet | awk '{ print $2 }' | cut -d '/' -f1)
 ADDITIONAL_FLAGS="--nodiscover --nodekeyhex ${BOOTNODE_KEY_HEX} --nat extip:${EXTERNAL_IP}"
+MINE=--mine
 
 if [ -n "$PEER" ]; then
     PEER_PUBKEY=$(bootnode -nodekeyhex "$BOOTNODE_KEY_HEX" -writeaddress)
     PEER_ENODE="enode://${PEER_PUBKEY}@${PEER}"
     echo "Configuring static node at ${PEER_ENODE}"
     ADDITIONAL_FLAGS="--bootnodes ${PEER_ENODE}"
+    MINE=
     # wait a bit for the peer to come online
     sleep 4
 fi
@@ -71,5 +73,4 @@ exec geth \
     --authrpc.jwtsecret=0x98ea6e4f216f2fb4b69fff9b3a44842c38686ca685f3f55dc48c5d3fb1107be4 \
     --allow-insecure-unlock \
     --password "${GETH_DATA_DIR}/password" \
-    --unlock "0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b" \
-    --mine
+    --unlock "0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b" $MINE
