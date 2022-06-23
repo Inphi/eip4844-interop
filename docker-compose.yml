@@ -80,6 +80,7 @@ services:
     ports:
       - "3501:3500"
       - "4001:4000"
+      - "13001:13000"
     volumes:
       - "beacon_node_follower_data:/chaindata"
       - type: bind
