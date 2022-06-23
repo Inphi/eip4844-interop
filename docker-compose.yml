@@ -14,7 +14,7 @@ services:
     ports:
       - "8545:8545"
     environment:
-      GETH_VERBOSITY: 6
+      GETH_VERBOSITY: 4
     volumes:
       - "geth_data:/db"
       - type: bind
@@ -29,7 +29,7 @@ services:
       dockerfile: Dockerfile.geth
     environment:
       PEER: execution-node:30303
-      GETH_VERBOSITY: 6
+      GETH_VERBOSITY: 4
     ports:
       - "8546:8545"
     volumes:
