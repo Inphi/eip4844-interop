@@ -23,11 +23,32 @@ jobs:
     - uses: actions/setup-go@v3
       with:
         go-version: '^1.18.0'
+
     - name: Upload blobs
       run: go run ./upload -before 10 -after 20 eth.png
     - name: Download blobs
       run: go run ./download -start 1 -count 100 -addr /ip4/0.0.0.0/tcp/13000 > output.png
+    - name: Download blobs from peer
+      run: go run ./download -start 1 -count 100 -addr /ip4/0.0.0.0/tcp/13001 > output2.png
     - name: List
       run: ls -l
     - name: Compare files
-      run: git diff --no-index eth.png output.png
+      run: git diff --no-index eth.png output.png && git diff --no-index eth.png output2.png
+
+    - name: Collect docker logs on failure
+      if: failure()
+      uses: jwalton/gh-docker-logs@v1
+      with:
+        images: 'eip4844-interop_beacon-node-follower,eip4844-interop_beacon-node,eip4844-interop_execution-node-2,eip4844-interop_execution-node,eip4844-interop_validator-node'
+        dest: './logs'
+
+    - name: Tar logs
+      if: failure()
+      run: tar cvzf ./logs.tgz ./logs
+
+    - name: Upload logs to GitHub
+      if: failure()
+      uses: actions/upload-artifact@master
+      with:
+          name: logs.tgz
+          path: ./logs.tgz

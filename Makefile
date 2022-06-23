@@ -1,5 +1,11 @@
 devnet-up:
-	docker-compose up -d execution-node beacon-node beacon-node-follower validator-node jaeger-tracing
+	docker-compose up -d\
+		execution-node\
+		execution-node-2\
+		beacon-node\
+		beacon-node-follower\
+		validator-node\
+		jaeger-tracing
 
 devnet-clean:
 	docker-compose down

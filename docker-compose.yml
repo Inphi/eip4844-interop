@@ -2,6 +2,7 @@ version: '3.4'
 
 volumes:
   geth_data:
+  geth_data2:
   beacon_node_data:
   beacon_node_follower_data:
 
@@ -12,8 +13,27 @@ services:
       dockerfile: Dockerfile.geth
     ports:
       - "8545:8545"
+    environment:
+      GETH_VERBOSITY: 4
     volumes:
       - "geth_data:/db"
+      - type: bind
+        source: ./geth-genesis.json
+        target: /genesis.json
+
+  execution-node-2:
+    depends_on:
+      - execution-node
+    build:
+      context: .
+      dockerfile: Dockerfile.geth
+    environment:
+      PEER: execution-node:30303
+      GETH_VERBOSITY: 4
+    ports:
+      - "8546:8545"
+    volumes:
+      - "geth_data2:/db"
       - type: bind
         source: ./geth-genesis.json
         target: /genesis.json
@@ -31,7 +51,7 @@ services:
       PROCESS_NAME: beacon-node
       VERBOSITY: debug
     command: >
-      run_beacon_node.sh --min-sync-peers=0
+      run_beacon_node.sh --min-sync-peers=0 --disable-sync
     ports:
       - "3500:3500"
       - "4000:4000"
@@ -44,14 +64,14 @@ services:
 
   beacon-node-follower:
     depends_on:
-      - execution-node
+      - execution-node-2
       - beacon-node
       - jaeger-tracing
     build:
       context: .
       dockerfile: ./Dockerfile.prysm
     environment:
-      EXECUTION_NODE_URL: http://execution-node:8545
+      EXECUTION_NODE_URL: http://execution-node-2:8545
       TRACING_ENDPOINT: http://jaeger-tracing:14268/api/traces
       PROCESS_NAME: beacon-node-follower
       BEACON_NODE_RPC: http://beacon-node:3500
@@ -60,6 +80,7 @@ services:
     ports:
       - "3501:3500"
       - "4001:4000"
+      - "13001:13000"
     volumes:
       - "beacon_node_follower_data:/chaindata"
       - type: bind

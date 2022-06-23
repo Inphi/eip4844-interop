@@ -1,23 +1,33 @@
 #!/bin/env bash
 
-set -exu
+set -exu -o pipefail
 
 : "${BEACON_NODE_RPC:-}"
 
-# Give the primary beacon node a sec to boot up. TODO(inphi): this should be more robust
-sleep 3
+# wait for the beacon node to start
+RETRIES=60
+i=0
+until curl --fail --silent "${BEACON_NODE_RPC}/eth/v1/node/health"; do
+    sleep 1
+    if [ $i -eq $RETRIES ]; then
+        echo "Timed out retrieving beacon node p2p addr"
+        exit 1
+    fi
+    echo "waiting for beacon node RPC..."
+    ((i=i+1))
+done
 
 # Retrieve the multiaddr of the primary beacon node. We will sync blocks from this peer.
-eval PEER=$(curl --fail --silent "$BEACON_NODE_RPC"/eth/v1/node/identity | jq '.data.p2p_addresses[0]')
-
+PEER=$(curl --fail "$BEACON_NODE_RPC"/eth/v1/node/identity | jq '.data.p2p_addresses[0]' | tr -d '"')
 # Retrieve the generated genesis time so we can follow the peer with matching state roots
-eval INTEROP_GENESIS_TIME=$(curl --fail --silent "$BEACON_NODE_RPC"/eth/v1/beacon/genesis | jq .data.genesis_time)
+INTEROP_GENESIS_TIME=$(curl --fail "$BEACON_NODE_RPC"/eth/v1/beacon/genesis | jq .data.genesis_time | tr -d '"')
 
 if [ "$PEER" = "null" ]; then
     echo "Unable to start beacon-node: Beacon Node address is unavailable via $BEACON_NODE_RPC}"
     exit 1
 fi
 
+# TODO(inphi): Content Discovery using peer as bootstrap-node
 run_beacon_node.sh \
     --min-sync-peers=1 \
     --peer "$PEER" \
