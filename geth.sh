@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -exu
+set -exu -o pipefail
 
 VERBOSITY=${GETH_VERBOSITY:-4}
 GETH_DATA_DIR=/db

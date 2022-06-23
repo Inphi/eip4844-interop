@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 
 	"github.com/Inphi/eip4844-interop/shared"
@@ -88,8 +89,7 @@ func main() {
 			}
 		}
 		data = data[:i+1]
-		fmt.Printf("found blob at slot %v\n", sidecar.BeaconBlockSlot)
-		//_, _ = os.Stdout.Write(data)
+		_, _ = os.Stdout.Write(data)
 
 		// stop after the first sidecar with blobs:
 		break
