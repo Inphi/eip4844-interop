@@ -27,7 +27,9 @@ jobs:
       run: go run ./upload -before 10 -after 20 eth.png
     - name: Download blobs
       run: go run ./download -start 1 -count 100 -addr /ip4/0.0.0.0/tcp/13000 > output.png
+    - name: Download blobs from peer
+      run: go run ./download -start 1 -count 100 -addr /ip4/0.0.0.0/tcp/13001 > output2.png
     - name: List
       run: ls -l
     - name: Compare files
-      run: git diff --no-index eth.png output.png
+      run: git diff --no-index eth.png output.png && git diff --no-index eth.png output2.png
