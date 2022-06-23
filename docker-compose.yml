@@ -51,7 +51,7 @@ services:
       PROCESS_NAME: beacon-node
       VERBOSITY: debug
     command: >
-      run_beacon_node.sh --min-sync-peers=0
+      run_beacon_node.sh --min-sync-peers=0 --disable-sync
     ports:
       - "3500:3500"
       - "4000:4000"
@@ -64,14 +64,14 @@ services:
 
   beacon-node-follower:
     depends_on:
-      - execution-node
+      - execution-node-2
       - beacon-node
       - jaeger-tracing
     build:
       context: .
       dockerfile: ./Dockerfile.prysm
     environment:
-      EXECUTION_NODE_URL: http://execution-node:8545
+      EXECUTION_NODE_URL: http://execution-node-2:8545
       TRACING_ENDPOINT: http://jaeger-tracing:14268/api/traces
       PROCESS_NAME: beacon-node-follower
       BEACON_NODE_RPC: http://beacon-node:3500

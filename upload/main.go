@@ -99,7 +99,7 @@ func main() {
 		log.Fatalf("Error sending tx: %v", err)
 	}
 
-	log.Printf("Transaction submitted")
+	log.Printf("Transaction submitted. hash=%v", tx.Hash())
 
 	if *after > 0 {
 		waitForBlock(ctx, client, *after)

@@ -17,7 +17,6 @@ beacon-node \
     --deposit-contract 0x8A04d14125D0FDCDc742F4A05C051De07232EDa4 \
     --bootstrap-node= \
     --chain-config-file=/config/prysm-chain-config.yml \
-    --disable-sync \
     --contract-deployment-block 0 \
     --interop-num-validators 4 \
     --rpc-host 0.0.0.0 \

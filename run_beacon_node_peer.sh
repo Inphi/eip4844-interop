@@ -18,6 +18,7 @@ if [ "$PEER" = "null" ]; then
     exit 1
 fi
 
+# TODO(inphi): Content Discovery using peer as bootstrap-node
 run_beacon_node.sh \
     --min-sync-peers=1 \
     --peer "$PEER" \
