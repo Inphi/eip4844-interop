@@ -39,7 +39,7 @@ jobs:
       if: failure()
       uses: jwalton/gh-docker-logs@v1
       with:
-        images: eip4844-interop_beacon-node-follower, eip4844-interop_beacon-node, eip4844-interop_execution-node-2, eip4844-interop_execution-node, eip4844-interop_validator-node
+        images: 'eip4844-interop_beacon-node-follower,eip4844-interop_beacon-node,eip4844-interop_execution-node-2,eip4844-interop_execution-node,eip4844-interop_validator-node'
         dest: './logs'
 
     - name: Tar logs
