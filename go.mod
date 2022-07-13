@@ -8,8 +8,10 @@ require (
 	github.com/libp2p/go-libp2p v0.18.0
 	github.com/libp2p/go-libp2p-core v0.14.0
 	github.com/multiformats/go-multiaddr v0.5.0
+	github.com/protolambda/go-kzg v0.0.0-20220220065500-36404333406f
 	github.com/protolambda/ztyp v0.2.1
 	github.com/prysmaticlabs/prysm v0.0.0-00010101000000-000000000000
+	github.com/wealdtech/go-bytesutil v1.1.1
 )
 
 require (
@@ -145,7 +147,6 @@ require (
 	github.com/prometheus/common v0.32.1 // indirect
 	github.com/prometheus/procfs v0.7.3 // indirect
 	github.com/prometheus/prom2json v1.3.0 // indirect
-	github.com/protolambda/go-kzg v0.0.0-20220220065500-36404333406f // indirect
 	github.com/prysmaticlabs/go-bitfield v0.0.0-20210809151128-385d8c5e3fb7 // indirect
 	github.com/prysmaticlabs/gohashtree v0.0.1-alpha.0.20220303211031-f753e083138c // indirect
 	github.com/prysmaticlabs/prombbolt v0.0.0-20210126082820-9b7adba6db7c // indirect
