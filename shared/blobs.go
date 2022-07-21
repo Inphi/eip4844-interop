@@ -6,7 +6,7 @@ import (
 	ethpb "github.com/prysmaticlabs/prysm/proto/prysm/v1alpha1"
 )
 
-func EncodeBlobs(data []byte) []types.Blob {
+func EncodeBlobs(data []byte) types.Blobs {
 	blobs := []types.Blob{{}}
 	blobIndex := 0
 	fieldIndex := -1
