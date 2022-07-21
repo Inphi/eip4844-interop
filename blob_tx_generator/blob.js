@@ -17,7 +17,6 @@ function get_padded(data, blobs_len) {
     const datalen = Buffer.byteLength(data)
     pdata.fill(data, 0, datalen)
     // TODO: if data already fits in a pad, then ka-boom
-    pdata[datalen] = 0x80
     return pdata
 }
 
@@ -25,7 +24,7 @@ function get_blob(data) {
     let blob = Buffer.alloc(BLOB_SIZE, 'binary')
     for (let i = 0; i < FIELD_ELEMENTS_PER_BLOB; i++) {
         let chunk = Buffer.alloc(32, 'binary')
-        chunk.fill(data.subarray(i*31, (i+1)*31), 0, 31)
+        chunk.fill(data.subarray(i*32, (i+1)*32), 0, 32)
         blob.fill(chunk, i*32, (i+1)*32)
     }
 
@@ -58,9 +57,9 @@ function get_blobs(data) {
 }
 
 function sleep(ms) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
+    return new Promise((resolve) => {
+        setTimeout(resolve, ms);
+    });
 }
 
 async function estimateGas(tx) {
