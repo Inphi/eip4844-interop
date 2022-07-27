@@ -8,13 +8,10 @@ RUN go build -o /build/beacon-node -buildvcs=false ./cmd/beacon-chain
 RUN go build -o /build/validator -buildvcs=false ./cmd/validator
 
 FROM ubuntu:20.04
-RUN apt-get update && apt-get install -y curl jq
+RUN apt-get update && apt-get install -y curl jq iproute2
 
 COPY --from=builder /build/beacon-node /usr/local/bin/
 COPY --from=builder /build/validator /usr/local/bin/
-
-COPY run_beacon_node.sh /usr/local/bin/
-COPY run_beacon_node_peer.sh /usr/local/bin/
 
 WORKDIR /usr/local/bin
 EXPOSE 3500 4000 13000 12000 8080
