@@ -17,8 +17,8 @@ until curl --fail --silent "${BEACON_NODE_RPC}/eth/v1/node/health"; do
     ((i=i+1))
 done
 
-# Retrieve the multiaddr of the primary beacon node. We will sync blocks from this peer.
-PEER=$(curl --fail "$BEACON_NODE_RPC"/eth/v1/node/identity | jq '.data.p2p_addresses[0]' | tr -d '"')
+# Retrieve the enr of the bootstrap node. We will sync blocks from this peer.
+PEER=$(curl --fail "$BEACON_NODE_RPC"/eth/v1/node/identity | jq '.data.enr' | tr -d '"' | tr -d '=')
 # Retrieve the generated genesis time so we can follow the peer with matching state roots
 INTEROP_GENESIS_TIME=$(curl --fail "$BEACON_NODE_RPC"/eth/v1/beacon/genesis | jq .data.genesis_time | tr -d '"')
 
@@ -27,8 +27,7 @@ if [ "$PEER" = "null" ]; then
     exit 1
 fi
 
-# TODO(inphi): Content Discovery using peer as bootstrap-node
 run_beacon_node.sh \
     --min-sync-peers=1 \
-    --peer "$PEER" \
+    --bootstrap-node "$PEER" \
     --interop-genesis-time "$INTEROP_GENESIS_TIME" $@

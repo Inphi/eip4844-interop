@@ -50,8 +50,8 @@ services:
       TRACING_ENDPOINT: http://jaeger-tracing:14268/api/traces
       PROCESS_NAME: beacon-node
       VERBOSITY: debug
-    command: >
-      run_beacon_node.sh --min-sync-peers=0 --disable-sync
+      P2P_PRIV_KEY: /etc/prysm-priv-key
+    entrypoint: ["run_beacon_node.sh", "--min-sync-peers=0", "--disable-sync", "--bootstrap-node="]
     ports:
       - "3500:3500"
       - "4000:4000"
@@ -61,6 +61,12 @@ services:
       - type: bind
         source: ./prysm-chain-config.yml
         target: /config/prysm-chain-config.yml
+      - type: bind
+        source: ./run_beacon_node.sh
+        target: /usr/local/bin/run_beacon_node.sh
+      - type: bind
+        source: ./prysm-priv-key
+        target: /etc/prysm-priv-key
 
   beacon-node-follower:
     depends_on:
@@ -76,7 +82,8 @@ services:
       PROCESS_NAME: beacon-node-follower
       BEACON_NODE_RPC: http://beacon-node:3500
       VERBOSITY: debug
-    command: run_beacon_node_peer.sh
+      P2P_PRIV_KEY: /etc/prysm-priv-key
+    entrypoint: run_beacon_node_peer.sh
     ports:
       - "3501:3500"
       - "4001:4000"
@@ -86,6 +93,15 @@ services:
       - type: bind
         source: ./prysm-chain-config.yml
         target: /config/prysm-chain-config.yml
+      - type: bind
+        source: ./run_beacon_node.sh
+        target: /usr/local/bin/run_beacon_node.sh
+      - type: bind
+        source: ./run_beacon_node_peer.sh
+        target: /usr/local/bin/run_beacon_node_peer.sh
+      - type: bind
+        source: ./prysm-follower-priv-key
+        target: /etc/prysm-priv-key
 
   validator-node:
     depends_on:

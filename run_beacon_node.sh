@@ -6,6 +6,7 @@ set -exu -o pipefail
 : "${PROCESS_NAME:-beacon-node}"
 : "${TRACING_ENDPOINT:-}"
 : "${VERBOSITY:-info}"
+: "${P2P_PRIV_KEY:-}"
 
 # wait for the execution node to start
 RETRIES=60
@@ -21,6 +22,8 @@ do
     ((i=i+1))
 done
 
+EXTERNAL_IP=$(ip addr show eth0 | grep inet | awk '{ print $2 }' | cut -d '/' -f1)
+
 beacon-node \
     --accept-terms-of-use \
     --verbosity="$VERBOSITY" \
@@ -29,7 +32,6 @@ beacon-node \
     --interop-eth1data-votes \
     --http-web3provider="$EXECUTION_NODE_URL" \
     --deposit-contract 0x8A04d14125D0FDCDc742F4A05C051De07232EDa4 \
-    --bootstrap-node= \
     --chain-config-file=/config/prysm-chain-config.yml \
     --contract-deployment-block 0 \
     --interop-num-validators 4 \
@@ -39,6 +41,8 @@ beacon-node \
     --grpc-gateway-port 3500 \
     --enable-debug-rpc-endpoints \
     --p2p-local-ip 0.0.0.0 \
+    --p2p-host-ip "$EXTERNAL_IP" \
+    --p2p-priv-key="$P2P_PRIV_KEY"\
     --enable-tracing \
     --tracing-endpoint "$TRACING_ENDPOINT" \
     --tracing-process-name "$PROCESS_NAME" $@
