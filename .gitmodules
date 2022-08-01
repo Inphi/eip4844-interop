@@ -5,4 +5,4 @@
 [submodule "prysm"]
 	path = prysm
 	url = https://github.com/Inphi/prysm
-	branch = inphi/clean-slate
+	branch = terencechain-rebase
