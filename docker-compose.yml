@@ -114,6 +114,9 @@ services:
       validator
       --accept-terms-of-use
       --beacon-rpc-provider beacon-node:4000
+      --rpc
+      --grpc-gateway-host 0.0.0.0
+      --grpc-gateway-port 7500
       --interop-num-validators=4
       --interop-start-index=0
       --force-clear-db
@@ -122,6 +125,8 @@ services:
       --enable-tracing
       --tracing-endpoint http://jaeger-tracing:14268/api/traces
       --tracing-process-name validator-node
+    ports:
+      - "7500:7500"
     volumes:
       - type: bind
         source: ./prysm-chain-config.yml
