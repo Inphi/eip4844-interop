@@ -15,9 +15,6 @@ jobs:
       with:
         submodules: recursive
     - run: make devnet-up
-    - name: 10s Sleep
-      run: sleep 10s
-      shell: bash
     - run: docker ps -a
     - name: Wait for geth
       uses: ifaxity/wait-on-action@v1
