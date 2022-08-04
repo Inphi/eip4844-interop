@@ -3,7 +3,7 @@ module github.com/Inphi/eip4844-interop
 go 1.18
 
 require (
-	github.com/ethereum/go-ethereum v1.10.18
+	github.com/ethereum/go-ethereum v1.10.21
 	github.com/holiman/uint256 v1.2.0
 	github.com/libp2p/go-libp2p v0.20.3
 	github.com/libp2p/go-libp2p-core v0.17.0
