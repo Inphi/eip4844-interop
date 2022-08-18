@@ -54,6 +54,7 @@ if [ -n "$PEER" ]; then
     sleep 4
 fi
 
+# TODO: figure out why beacon node doesn't advance when syncmode=snap
 exec geth \
     --datadir "$GETH_DATA_DIR" \
     --verbosity "$VERBOSITY" \
@@ -73,4 +74,5 @@ exec geth \
     --authrpc.jwtsecret=0x98ea6e4f216f2fb4b69fff9b3a44842c38686ca685f3f55dc48c5d3fb1107be4 \
     --allow-insecure-unlock \
     --password "${GETH_DATA_DIR}/password" \
+    --syncmode=full \
     --unlock "0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b" $MINE
