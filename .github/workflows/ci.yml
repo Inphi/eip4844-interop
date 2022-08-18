@@ -42,7 +42,8 @@ jobs:
 
     - uses: actions/setup-go@v3
       with:
-        go-version: '^1.18.0'
+#       go 1.19 is incompatible with the github.com/lucas-clemente/quic-go v0.27.2 dependency
+        go-version: '1.18'
     - name: Upload blobs
       run: go run ./upload -before 10 -after 20 eth.png
       timeout-minutes: 10
