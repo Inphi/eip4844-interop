@@ -5,6 +5,10 @@ RUN apk add --no-cache make gcc musl-dev linux-headers git
 COPY ./go-ethereum /app/go-ethereum
 
 WORKDIR /app/go-ethereum
+
+# The flag below may be needed if blst throws SIGILL, which happens with certain (older) CPUs
+# ENV CGO_CFLAGS="-O -D__BLST_PORTABLE__"
+
 # Build directly as make geth doesn't work because it expects a normal git repository rather than a submodule. We set -buildvcs directly here to avoid this
 RUN go build \
     -ldflags "-extldflags -Wl,-z,stack-size=0x800000" \
