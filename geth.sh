@@ -56,6 +56,7 @@ fi
 
 # TODO: figure out why beacon node doesn't advance when syncmode=snap
 exec geth \
+    --syncmode=full \
     --datadir "$GETH_DATA_DIR" \
     --verbosity "$VERBOSITY" \
     --networkid "$NETWORKID" \

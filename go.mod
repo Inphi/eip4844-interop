@@ -9,7 +9,7 @@ require (
 	github.com/libp2p/go-libp2p-core v0.17.0
 	github.com/multiformats/go-multiaddr v0.6.0
 	github.com/protolambda/ztyp v0.2.1
-	github.com/prysmaticlabs/prysm v0.0.0-00010101000000-000000000000
+	github.com/prysmaticlabs/prysm/v3 v3.0.0
 	github.com/wealdtech/go-bytesutil v1.1.1
 )
 
@@ -82,6 +82,7 @@ require (
 	github.com/libp2p/go-libp2p-peerstore v0.7.0 // indirect
 	github.com/libp2p/go-libp2p-pubsub v0.7.1-0.20220701163738-60cf38003244 // indirect
 	github.com/libp2p/go-libp2p-resource-manager v0.3.0 // indirect
+	github.com/libp2p/go-mplex v0.7.0 // indirect
 	github.com/libp2p/go-msgio v0.2.0 // indirect
 	github.com/libp2p/go-nat v0.1.0 // indirect
 	github.com/libp2p/go-netroute v0.2.0 // indirect
@@ -132,7 +133,7 @@ require (
 	github.com/protolambda/go-kzg v0.0.0-20220220065500-36404333406f // indirect
 	github.com/prysmaticlabs/fastssz v0.0.0-20220628121656-93dfe28febab // indirect
 	github.com/prysmaticlabs/go-bitfield v0.0.0-20210809151128-385d8c5e3fb7 // indirect
-	github.com/prysmaticlabs/gohashtree v0.0.1-alpha.0.20220303211031-f753e083138c // indirect
+	github.com/prysmaticlabs/gohashtree v0.0.2-alpha // indirect
 	github.com/prysmaticlabs/prombbolt v0.0.0-20210126082820-9b7adba6db7c // indirect
 	github.com/raulk/clock v1.1.0 // indirect
 	github.com/raulk/go-watchdog v1.2.0 // indirect
@@ -192,6 +193,6 @@ require (
 
 replace github.com/ethereum/go-ethereum => ./go-ethereum
 
-replace github.com/prysmaticlabs/prysm => ./prysm
+replace github.com/prysmaticlabs/prysm/v3 => ./prysm
 
 replace github.com/ferranbt/fastssz => github.com/prysmaticlabs/fastssz v0.0.0-20220110145812-fafb696cae88
