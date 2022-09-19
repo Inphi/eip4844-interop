@@ -43,6 +43,7 @@ beacon-node \
     --p2p-local-ip 0.0.0.0 \
     --p2p-host-ip "$EXTERNAL_IP" \
     --p2p-priv-key="$P2P_PRIV_KEY"\
+    --subscribe-all-subnets \
     --enable-tracing \
     --tracing-endpoint "$TRACING_ENDPOINT" \
     --tracing-process-name "$PROCESS_NAME" $@
