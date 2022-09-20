@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 
-	ethpb "github.com/prysmaticlabs/prysm/proto/prysm/v1alpha1"
+	ethpb "github.com/prysmaticlabs/prysm/v3/proto/prysm/v1alpha1"
 	bytesutil2 "github.com/wealdtech/go-bytesutil"
 )
 

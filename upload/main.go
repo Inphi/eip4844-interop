@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/Inphi/eip4844-interop/shared"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"

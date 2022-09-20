@@ -51,7 +51,7 @@ services:
       PROCESS_NAME: beacon-node
       VERBOSITY: debug
       P2P_PRIV_KEY: /etc/prysm-priv-key
-    entrypoint: ["run_beacon_node.sh", "--min-sync-peers=0", "--disable-sync", "--bootstrap-node="]
+    entrypoint: ["run_beacon_node.sh", "--min-sync-peers=0", "--bootstrap-node="]
     ports:
       - "3500:3500"
       - "4000:4000"
