@@ -58,6 +58,17 @@ jobs:
     - name: Compare files
       run: git diff --no-index eth.png output.png && git diff --no-index eth.png output2.png
 
+    - name: Fee market EL test
+      run: go run ./tests/fee-market
+
+    - name: Ensure execution payload contains the excess_blobs field
+      run: curl --fail --url http://0.0.0.0:3500/eth/v2/beacon/blocks/head | jq --exit-status .data.message.body.execution_payload.excess_blobs
+      # Induce non-zero excess_blobs
+    - name: Send multiple blob transactions
+      run: go run ./upload -count 20 -after 200 eth.png
+    - name: Ensure execution payload contains a non-zero excess_blobs field
+      run: curl --fail --url http://0.0.0.0:3500/eth/v2/beacon/blocks/head | jq --exit-status .data.message.body.execution_payload.excess_blobs | grep -v '"0"'
+ 
     - name: Collect docker logs on failure
       if: failure()
       uses: jwalton/gh-docker-logs@v1

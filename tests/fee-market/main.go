@@ -2,14 +2,12 @@ package main
 
 import (
 	"context"
-	"flag"
 	"log"
 	"math/big"
-	"os"
 	"sync"
-	"time"
 
 	"github.com/Inphi/eip4844-interop/shared"
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -21,20 +19,6 @@ import (
 func main() {
 	prv := "45a915e4d060149eb4365960e6a7a45f334393093061116b197e3240065ff2d8"
 	addr := "http://localhost:8545"
-
-	before := flag.Uint64("before", 0, "Block to wait for before submitting transaction")
-	after := flag.Uint64("after", 0, "Block to wait for after submitting transaction")
-	count := flag.Uint64("count", 1, "Number of submitted transactions")
-	flag.Parse()
-
-	file := flag.Arg(0)
-	if file == "" {
-		log.Fatalf("File parameter missing")
-	}
-	data, err := os.ReadFile(file)
-	if err != nil {
-		log.Fatalf("Error reading file: %v", err)
-	}
 
 	chainId := big.NewInt(1)
 	signer := types.NewDankSigner(chainId)
@@ -50,26 +34,25 @@ func main() {
 		log.Fatalf("Failed to load private key: %v", err)
 	}
 
-	if *before > 0 {
-		waitForBlock(ctx, client, *before)
-	}
-
 	nonce, err := client.PendingNonceAt(ctx, crypto.PubkeyToAddress(key.PublicKey))
 	if err != nil {
 		log.Fatalf("Error getting nonce: %v", err)
 	}
 	log.Printf("Nonce: %d", nonce)
 
-	blobs := shared.EncodeBlobs(data)
+	// send dummy data
+	blobs := shared.EncodeBlobs([]byte("EKANS"))
 	commitments, versionedHashes, aggregatedProof, err := blobs.ComputeCommitmentsAndAggregatedProof()
 
+	// Send multiple transactions asynchronously to induce non-zero excess_blobs
 	var txs []*types.Transaction
-	for i := uint64(0); i < *count; i++ {
+	numTxs := 20
+	for i := 0; i < numTxs; i++ {
 		to := common.HexToAddress("ffb38a7a99e3e2335be83fc74b7faa19d5531243")
 		txData := types.SignedBlobTx{
 			Message: types.BlobTxMessage{
 				ChainID:             view.Uint256View(*uint256.NewInt(chainId.Uint64())),
-				Nonce:               view.Uint64View(nonce + i),
+				Nonce:               view.Uint64View(nonce + uint64(i)),
 				Gas:                 210000,
 				GasFeeCap:           view.Uint256View(*uint256.NewInt(5000000000)),
 				GasTipCap:           view.Uint256View(*uint256.NewInt(5000000000)),
@@ -107,21 +90,31 @@ func main() {
 	}
 	wg.Wait()
 
-	if *after > 0 {
-		waitForBlock(ctx, client, *after)
-	}
-}
-
-func waitForBlock(ctx context.Context, client *ethclient.Client, block uint64) {
-	for {
-		bn, err := client.BlockNumber(ctx)
-		if err != nil {
-			log.Fatalf("Error requesting block number: %v", err)
+	log.Printf("Waiting for transactions to be included...")
+	receiptBlockHashes := make(map[string]bool)
+	for _, tx := range txs {
+		for {
+			receipt, err := client.TransactionReceipt(ctx, tx.Hash())
+			if err == ethereum.NotFound {
+				continue
+			}
+			if err != nil {
+				log.Fatalf("Error getting tx receipt for %v: %v", tx.Hash(), err)
+			}
+			receiptBlockHashes[receipt.BlockHash.Hex()] = true
+			break
 		}
-		if bn >= block {
+	}
+
+	for blockHash, _ := range receiptBlockHashes {
+		block, err := client.BlockByHash(ctx, common.HexToHash(blockHash))
+		if err != nil {
+			log.Fatalf("Error getting block: %v", err)
+		}
+		if block.ExcessBlobs() != 0 {
+			log.Printf("non-zero ExcessBlobs found. block_hash=%v excess_blobs=%v", blockHash, block.ExcessBlobs())
 			return
 		}
-		log.Printf("Waiting for block %d, current %d", block, bn)
-		time.Sleep(1 * time.Second)
 	}
+	log.Fatal("Failed to find a block containing non-zero excess_blobs")
 }
