@@ -14,49 +14,17 @@ jobs:
       uses: actions/checkout@v3
       with:
         submodules: recursive
-    - run: make devnet-up
-    - run: docker ps -a
-    - name: Wait for geth
-      uses: ifaxity/wait-on-action@v1
-      with:
-        resource: http-get://localhost:8545
-        timeout: 100000
-    - name: Wait for beacon-node
-      uses: ifaxity/wait-on-action@v1
-      continue-on-error: true
-      with:
-        resource: http-get://localhost:3500/eth/v1/beacon/genesis
-        timeout: 100000
-    - name: Wait for beacon-node-follower
-      uses: ifaxity/wait-on-action@v1
-      continue-on-error: true
-      with:
-        resource: http-get://localhost:3501/eth/v1/beacon/genesis
-        timeout: 100000
-    - name: Wait for validator
-      uses: ifaxity/wait-on-action@v1
-      continue-on-error: true
-      with:
-        resource: http-get://localhost:7500/
-        timeout: 100000
 
     - uses: actions/setup-go@v3
       with:
 #       go 1.19 is incompatible with the github.com/lucas-clemente/quic-go v0.27.2 dependency
         go-version: '1.18'
-    - name: Upload blobs
-      run: go run ./upload -before 10 -after 20 eth.png
-      timeout-minutes: 10
-    - name: Download blobs
-      run: go run ./download -start 1 -count 100 -addr /ip4/0.0.0.0/tcp/13000 > output.png
-      timeout-minutes: 10
-    - name: Download blobs from peer
-      run: go run ./download -start 1 -count 100 -addr /ip4/0.0.0.0/tcp/13001 > output2.png
-      timeout-minutes: 10
-    - name: List
-      run: ls -l
-    - name: Compare files
-      run: git diff --no-index eth.png output.png && git diff --no-index eth.png output2.png
+
+    - name: Run pre-EIP4844 tests
+      run: go run ./tests/pre-4844
+
+    - name: Run Blob transaction tests
+      run: go run ./tests/blobtx
 
     - name: Collect docker logs on failure
       if: failure()
