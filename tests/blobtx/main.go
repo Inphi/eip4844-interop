@@ -30,6 +30,7 @@ import (
 	"github.com/prysmaticlabs/prysm/v3/beacon-chain/sync"
 	consensustypes "github.com/prysmaticlabs/prysm/v3/consensus-types/primitives"
 	ethpbv1 "github.com/prysmaticlabs/prysm/v3/proto/eth/v1"
+	ethpbv2 "github.com/prysmaticlabs/prysm/v3/proto/eth/v2"
 	ethpb "github.com/prysmaticlabs/prysm/v3/proto/prysm/v1alpha1"
 )
 
@@ -56,21 +57,17 @@ func main() {
 	startSlot := GetHeadSlot(ctx)
 
 	UploadBlobs(ctx, blobs)
-
 	WaitForNextSlot(ctx)
-	endSlot := GetHeadSlot(ctx)
-	count := uint64(endSlot.SubSlot(startSlot))
+	slot := FindBlobSlot(ctx, startSlot)
 
 	log.Printf("checking blob from beacon node")
-	downloadedData := DownloadBlobs(ctx, startSlot, count, shared.BeaconMultiAddress)
+	downloadedData := DownloadBlobs(ctx, slot, 1, shared.BeaconMultiAddress)
 	downloadedBlobs := shared.EncodeBlobs(downloadedData)
 	AssertBlobsEquals(blobs, downloadedBlobs)
 
 	log.Printf("checking blob from beacon node follower")
 	time.Sleep(time.Second * 2 * time.Duration(ctrl.Env.BeaconChainConfig.SecondsPerSlot)) // wait a bit for sync
-	endSlot = GetHeadSlot(ctx)
-	count = uint64(endSlot.SubSlot(startSlot))
-	downloadedData = DownloadBlobs(ctx, startSlot, count, shared.BeaconFollowerMultiAddress)
+	downloadedData = DownloadBlobs(ctx, slot, 1, shared.BeaconFollowerMultiAddress)
 	downloadedBlobs = shared.EncodeBlobs(downloadedData)
 	AssertBlobsEquals(blobs, downloadedBlobs)
 }
@@ -154,6 +151,31 @@ func UploadBlobs(ctx context.Context, blobs types.Blobs) {
 	log.Printf("Waiting for transaction (%v) to be included...", tx.Hash())
 	if err := shared.WaitForReceipt(ctx, ctrl.Env.EthClient, tx.Hash()); err != nil {
 		log.Fatalf("Error waiting for transaction receipt %v: %v", tx.Hash(), err)
+	}
+}
+
+func FindBlobSlot(ctx context.Context, startSlot consensustypes.Slot) consensustypes.Slot {
+	slot := startSlot
+	endSlot := GetHeadSlot(ctx)
+	for {
+		if slot == endSlot {
+			log.Fatalf("Unable to find beacon block containing blobs")
+		}
+
+		blockID := fmt.Sprintf("%d", uint64(slot))
+		req := &ethpbv2.BlockRequestV2{BlockId: []byte(blockID)}
+		block, err := ctrl.Env.BeaconChainClient.GetBlockV2(ctx, req)
+		if err != nil {
+			log.Fatalf("beaconchainclient.GetBlock: %v", err)
+		}
+		eip4844, ok := block.Data.Message.(*ethpbv2.SignedBeaconBlockContainer_Eip4844Block)
+		if ok {
+			if len(eip4844.Eip4844Block.Body.BlobKzgs) != 0 {
+				return eip4844.Eip4844Block.Slot
+			}
+		}
+
+		slot = slot.Add(1)
 	}
 }
 
