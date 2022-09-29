@@ -171,12 +171,12 @@ func WaitForEip4844ForkEpoch() {
 }
 
 type BeaconChainConfig struct {
-	AltairForkEpoch         uint64
-	BellatrixForkEpoch      uint64
-	Eip4844ForkEpoch        uint64
-	SecondsPerSlot          uint64
-	SlotsPerEpoch           uint64
-	TerminalTotalDifficulty uint64
+	AltairForkEpoch         uint64 `yaml:"ALTAIR_FORK_EPOCH"`
+	BellatrixForkEpoch      uint64 `yaml:"BELLATRIX_FORK_EPOCH"`
+	Eip4844ForkEpoch        uint64 `yaml:"EIP4844_FORK_EPOCH"`
+	SecondsPerSlot          uint64 `yaml:"SECONDS_PER_SLOT"`
+	SlotsPerEpoch           uint64 `yaml:"SLOTS_PER_EPOCH"`
+	TerminalTotalDifficulty uint64 `yaml:"TERMINAL_TOTAL_DIFFICULTY"`
 }
 
 type TestEnvironment struct {
