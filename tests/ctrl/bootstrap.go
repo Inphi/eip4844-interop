@@ -180,10 +180,11 @@ type BeaconChainConfig struct {
 }
 
 type TestEnvironment struct {
-	GethChainConfig   *params.ChainConfig
-	BeaconChainConfig *BeaconChainConfig
-	EthClient         *ethclient.Client
-	BeaconChainClient beaconservice.BeaconChainClient
+	GethChainConfig           *params.ChainConfig
+	BeaconChainConfig         *BeaconChainConfig
+	EthClient                 *ethclient.Client
+	BeaconChainClient         beaconservice.BeaconChainClient
+	BeaconChainFollowerClient beaconservice.BeaconChainClient
 }
 
 func newTestEnvironment() *TestEnvironment {
@@ -192,15 +193,20 @@ func newTestEnvironment() *TestEnvironment {
 	if err != nil {
 		log.Fatalf("Failed to connect to the Ethereum client: %v", err)
 	}
-	beaconGRPCConn, err := grpc.DialContext(ctx, shared.BeaconRPC, grpc.WithInsecure())
+	beaconGRPCConn, err := grpc.DialContext(ctx, shared.BeaconGRPC, grpc.WithInsecure())
 	if err != nil {
-		log.Fatalf("Failed to dial beacon grpc", err)
+		log.Fatalf("Failed to dial beacon grpc: %v", err)
+	}
+	beaconFollowerGRPCConn, err := grpc.DialContext(ctx, shared.BeaconFollowerGRPC, grpc.WithInsecure())
+	if err != nil {
+		log.Fatalf("Failed to dial beacon grpc: %v", err)
 	}
 
 	return &TestEnvironment{
-		GethChainConfig:   ReadGethChainConfig(),
-		BeaconChainConfig: ReadBeaconChainConfig(),
-		EthClient:         eclient,
-		BeaconChainClient: beaconservice.NewBeaconChainClient(beaconGRPCConn),
+		GethChainConfig:           ReadGethChainConfig(),
+		BeaconChainConfig:         ReadBeaconChainConfig(),
+		EthClient:                 eclient,
+		BeaconChainClient:         beaconservice.NewBeaconChainClient(beaconGRPCConn),
+		BeaconChainFollowerClient: beaconservice.NewBeaconChainClient(beaconFollowerGRPCConn),
 	}
 }
