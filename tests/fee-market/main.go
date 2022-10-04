@@ -110,20 +110,6 @@ func FlattenBlobs(blobsData []types.Blobs) []byte {
 	return out
 }
 
-func AssertBlobsEquals(a, b types.Blobs) {
-	// redundant for nice for debugging
-	if len(a) != len(b) {
-		log.Fatalf("data length mismatch (%d != %d)", len(a), len(b))
-	}
-	for i, _ := range a {
-		for j := 0; j < params.FieldElementsPerBlob; j++ {
-			if !bytes.Equal(a[i][j][:], b[i][j][:]) {
-				log.Fatal("blobs data mismatch")
-			}
-		}
-	}
-}
-
 func WaitForNextSlot(ctx context.Context) {
 	if err := ctrl.WaitForSlot(ctx, GetHeadSlot(ctx).Add(1)); err != nil {
 		log.Fatalf("error waiting for next slot: %v", err)

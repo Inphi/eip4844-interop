@@ -5,4 +5,4 @@
 [submodule "prysm"]
 	path = prysm
 	url = https://github.com/Inphi/prysm
-	branch = inphi/latest/dgc/ingest-excess-blob
+	branch = eip-4844
