@@ -84,7 +84,7 @@ func main() {
 		}
 		anyBlobs = true
 		for _, blob := range sidecar.Blobs {
-			data := shared.DecodeBlob(blob.Blob)
+			data := shared.DecodeBlobs(blob.Blob)
 			_, _ = os.Stdout.Write(data)
 		}
 

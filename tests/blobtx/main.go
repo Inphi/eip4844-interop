@@ -184,14 +184,7 @@ func DownloadBlobs(ctx context.Context, startSlot consensustypes.Slot, client be
 
 	blobsBuffer := new(bytes.Buffer)
 	for _, blob := range sidecar.Blobs {
-		data := blob.Data
-		i := len(data) - 1
-		for ; i >= 0; i-- {
-			if data[i] != 0x00 {
-				break
-			}
-		}
-		data = data[:i+1]
+		data := shared.DecodeBlob(blob.Data)
 		_, _ = blobsBuffer.Write(data)
 	}
 

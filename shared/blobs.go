@@ -25,11 +25,28 @@ func EncodeBlobs(data []byte) types.Blobs {
 	return blobs
 }
 
-func DecodeBlob(blob [][]byte) []byte {
+func DecodeBlobs(blobs [][]byte) []byte {
 	var data []byte
-	for _, b := range blob {
+	for _, b := range blobs {
+		// ignore the last byte in every 32-byte blob (see encoding in EncodeBlobs)
 		data = append(data, b[0:31]...)
 	}
+	return TrimArray(data)
+}
+
+func DecodeBlob(blob []byte) []byte {
+	var data []byte
+	for i, b := range blob {
+		// ignore the last byte in every 32-byte block (see encoding in EncodeBlobs)
+		if (i+1)%32 == 0 {
+			continue
+		}
+		data = append(data, b)
+	}
+	return TrimArray(data)
+}
+
+func TrimArray(data []byte) []byte {
 	// XXX: the following removes trailing 0s, which could be unexpected for certain blobs
 	i := len(data) - 1
 	for ; i >= 0; i-- {

@@ -103,7 +103,7 @@ func FlattenBlobs(blobsData []types.Blobs) []byte {
 			for i := range blob {
 				rawBlob[i] = blob[i][:]
 			}
-			decoded := shared.DecodeBlob(rawBlob)
+			decoded := shared.DecodeBlobs(rawBlob)
 			out = append(out, decoded...)
 		}
 	}
@@ -321,7 +321,7 @@ func DownloadBlobs(ctx context.Context, startSlot consensustypes.Slot, count uin
 		}
 		anyBlobs = true
 		for _, blob := range sidecar.Blobs {
-			data := shared.DecodeBlob(blob.Blob)
+			data := shared.DecodeBlobs(blob.Blob)
 			_, _ = blobsBuffer.Write(data)
 		}
 
