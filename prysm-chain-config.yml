@@ -1,7 +1,7 @@
 CONFIG_NAME: "local"
 ALTAIR_FORK_EPOCH: 1
 BELLATRIX_FORK_EPOCH: 2
-EIP4844_FORK_EPOCH: 3 # ensure this happens before shardingForkBlock in execution
+EIP4844_FORK_EPOCH: 3 # ensure this happens at exactly shardingForkBlock in execution
 SECONDS_PER_SLOT: 6
 SLOTS_PER_EPOCH: 3
 TERMINAL_TOTAL_DIFFICULTY: 2

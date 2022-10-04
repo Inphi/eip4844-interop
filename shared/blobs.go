@@ -3,7 +3,6 @@ package shared
 import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/params"
-	ethpb "github.com/prysmaticlabs/prysm/v3/proto/prysm/v1alpha1"
 )
 
 func EncodeBlobs(data []byte) types.Blobs {
@@ -26,12 +25,10 @@ func EncodeBlobs(data []byte) types.Blobs {
 	return blobs
 }
 
-func DecodeBlobs(sidecar *ethpb.BlobsSidecar) []byte {
+func DecodeBlob(blob [][]byte) []byte {
 	var data []byte
-	for _, blob := range sidecar.Blobs {
-		for _, b := range blob.Blob {
-			data = append(data, b[0:31]...)
-		}
+	for _, b := range blob {
+		data = append(data, b[0:31]...)
 	}
 	// XXX: the following removes trailing 0s, which could be unexpected for certain blobs
 	i := len(data) - 1
