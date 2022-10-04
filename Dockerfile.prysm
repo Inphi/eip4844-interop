@@ -1,5 +1,11 @@
 FROM golang:1.18 as builder
 
+COPY ./prysm/go.mod ./prysm/go.sum /app/prysm/
+
+WORKDIR /app/prysm
+
+RUN go mod download
+
 COPY ./prysm /app/prysm
 
 WORKDIR /app/prysm
