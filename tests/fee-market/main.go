@@ -3,13 +3,12 @@ package main
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
-	"io"
+	beaconservice "github.com/prysmaticlabs/prysm/v3/proto/eth/service"
 	"log"
 	"math/big"
 	"sort"
-	"strings"
+	"strconv"
 	"sync"
 	"time"
 
@@ -20,20 +19,10 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/holiman/uint256"
-	"github.com/libp2p/go-libp2p"
-	libp2pcore "github.com/libp2p/go-libp2p-core"
-	"github.com/libp2p/go-libp2p-core/host"
-	"github.com/libp2p/go-libp2p-core/peer"
-	"github.com/libp2p/go-libp2p-core/protocol"
-	ma "github.com/multiformats/go-multiaddr"
 	"github.com/protolambda/ztyp/view"
-	"github.com/prysmaticlabs/prysm/v3/beacon-chain/p2p"
-	"github.com/prysmaticlabs/prysm/v3/beacon-chain/p2p/encoder"
-	beaconchainsync "github.com/prysmaticlabs/prysm/v3/beacon-chain/sync"
 	consensustypes "github.com/prysmaticlabs/prysm/v3/consensus-types/primitives"
 	ethpbv1 "github.com/prysmaticlabs/prysm/v3/proto/eth/v1"
 	ethpbv2 "github.com/prysmaticlabs/prysm/v3/proto/eth/v2"
-	ethpb "github.com/prysmaticlabs/prysm/v3/proto/prysm/v1alpha1"
 )
 
 func GetBlob() types.Blobs {
@@ -72,7 +61,7 @@ func main() {
 	log.Printf("checking blob from beacon node")
 	var downloadedData []byte
 	for _, b := range blocks {
-		data := DownloadBlobs(ctx, b.Slot, 1, shared.BeaconMultiAddress)
+		data := DownloadBlobs(ctx, b.Slot, ctrl.Env.BeaconChainClient)
 		downloadedData = append(downloadedData, data...)
 	}
 
@@ -87,7 +76,7 @@ func main() {
 
 	downloadedData = nil
 	for _, b := range blocks {
-		data := DownloadBlobs(ctx, b.Slot, 1, shared.BeaconFollowerMultiAddress)
+		data := DownloadBlobs(ctx, b.Slot, ctrl.Env.BeaconChainFollowerClient)
 		downloadedData = append(downloadedData, data...)
 	}
 	if !bytes.Equal(flatBlobs, downloadedData) {
@@ -273,149 +262,20 @@ func FindBlocksWithBlobs(ctx context.Context, startSlot consensustypes.Slot) []*
 	return blocks
 }
 
-func DownloadBlobs(ctx context.Context, startSlot consensustypes.Slot, count uint64, beaconMA string) []byte {
-	// TODO: Use Beacon gRPC to download blobs rather than p2p RPC
+func DownloadBlobs(ctx context.Context, startSlot consensustypes.Slot, client beaconservice.BeaconChainClient) []byte {
 	log.Print("downloading blobs...")
 
-	req := &ethpb.BlobsSidecarsByRangeRequest{
-		StartSlot: startSlot,
-		Count:     count,
-	}
-
-	h, err := libp2p.New()
+	req := ethpbv1.BlobsRequest{BlockId: []byte(strconv.FormatUint(uint64(startSlot), 10))}
+	sidecar, err := client.GetBlobsSidecar(ctx, &req)
 	if err != nil {
-		log.Fatalf("failed to create libp2p context: %v", err)
-	}
-	defer func() {
-		_ = h.Close()
-	}()
-
-	multiaddr, err := getMultiaddr(ctx, h, beaconMA)
-	if err != nil {
-		log.Fatalf("getMultiAddr: %v", err)
+		log.Fatalf("failed to send blobs sidecar request: %v", err)
 	}
 
-	addrInfo, err := peer.AddrInfoFromP2pAddr(multiaddr)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = h.Connect(ctx, *addrInfo)
-	if err != nil {
-		log.Fatalf("libp2p host connect: %v", err)
-	}
-
-	// Hack to ensure that we are able to download blob chunks with larger chunk sizes (which is 10 MiB post-bellatrix)
-	encoder.MaxChunkSize = 10 << 20
-	sidecars, err := sendBlobsSidecarsByRangeRequest(ctx, h, encoder.SszNetworkEncoder{}, addrInfo.ID, req)
-	if err != nil {
-		log.Fatalf("failed to send blobs p2p request: %v", err)
-	}
-
-	anyBlobs := false
 	blobsBuffer := new(bytes.Buffer)
-	for _, sidecar := range sidecars {
-		log.Printf("found sidecar with %d blobs", len(sidecar.Blobs))
-		if sidecar.Blobs == nil || len(sidecar.Blobs) == 0 {
-			continue
-		}
-		anyBlobs = true
-		for _, blob := range sidecar.Blobs {
-			data := shared.DecodeBlobs(blob.Blob)
-			_, _ = blobsBuffer.Write(data)
-		}
-
-		// stop after the first sidecar with blobs:
-		break
-	}
-
-	if !anyBlobs {
-		log.Fatalf("No blobs found in requested slots, sidecar count: %d", len(sidecars))
+	for _, blob := range sidecar.Blobs {
+		data := shared.DecodeBlob(blob.Data)
+		_, _ = blobsBuffer.Write(data)
 	}
 
 	return blobsBuffer.Bytes()
-}
-
-func getMultiaddr(ctx context.Context, h host.Host, addr string) (ma.Multiaddr, error) {
-	multiaddr, err := ma.NewMultiaddr(addr)
-	if err != nil {
-		return nil, err
-	}
-	_, id := peer.SplitAddr(multiaddr)
-	if id != "" {
-		return multiaddr, nil
-	}
-	// peer ID wasn't provided, look it up
-	id, err = retrievePeerID(ctx, h, addr)
-	if err != nil {
-		return nil, err
-	}
-	return ma.NewMultiaddr(fmt.Sprintf("%s/p2p/%s", addr, string(id)))
-}
-
-// Helper for retrieving the peer ID from a security error... obviously don't use this in production!
-// See https://github.com/libp2p/go-libp2p-noise/blob/v0.3.0/handshake.go#L250
-func retrievePeerID(ctx context.Context, h host.Host, addr string) (peer.ID, error) {
-	incorrectPeerID := "16Uiu2HAmSifdT5QutTsaET8xqjWAMPp4obrQv7LN79f2RMmBe3nY"
-	addrInfo, err := peer.AddrInfoFromString(fmt.Sprintf("%s/p2p/%s", addr, incorrectPeerID))
-	if err != nil {
-		return "", err
-	}
-	err = h.Connect(ctx, *addrInfo)
-	if err == nil {
-		return "", errors.New("unexpected successful connection")
-	}
-	if strings.Contains(err.Error(), "but remote key matches") {
-		split := strings.Split(err.Error(), " ")
-		return peer.ID(split[len(split)-1]), nil
-	}
-	return "", err
-}
-
-func sendBlobsSidecarsByRangeRequest(ctx context.Context, h host.Host, encoding encoder.NetworkEncoding, pid peer.ID, req *ethpb.BlobsSidecarsByRangeRequest) ([]*ethpb.BlobsSidecar, error) {
-	topic := fmt.Sprintf("%s%s", p2p.RPCBlobsSidecarsByRangeTopicV1, encoding.ProtocolSuffix())
-
-	stream, err := h.NewStream(ctx, pid, protocol.ID(topic))
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		_ = stream.Close()
-	}()
-
-	if _, err := encoding.EncodeWithMaxLength(stream, req); err != nil {
-		_ = stream.Reset()
-		return nil, err
-	}
-
-	if err := stream.CloseWrite(); err != nil {
-		_ = stream.Reset()
-		return nil, err
-	}
-
-	var blobsSidecars []*ethpb.BlobsSidecar
-	for {
-		blobs, err := readChunkedBlobsSidecar(stream, encoding)
-		if errors.Is(err, io.EOF) {
-			break
-		}
-		if err != nil {
-			return nil, err
-		}
-		blobsSidecars = append(blobsSidecars, blobs)
-	}
-	return blobsSidecars, nil
-}
-
-func readChunkedBlobsSidecar(stream libp2pcore.Stream, encoding encoder.NetworkEncoding) (*ethpb.BlobsSidecar, error) {
-	code, errMsg, err := beaconchainsync.ReadStatusCode(stream, encoding)
-	if err != nil {
-		return nil, err
-	}
-	if code != 0 {
-		return nil, errors.New(errMsg)
-	}
-	sidecar := new(ethpb.BlobsSidecar)
-	err = encoding.DecodeWithMaxLength(stream, sidecar)
-	return sidecar, err
 }

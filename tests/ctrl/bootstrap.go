@@ -44,12 +44,12 @@ func WaitForGeth(ctx context.Context) error {
 
 func WaitForBeaconNode(ctx context.Context) error {
 	log.Printf("waiting for prysm beacon node")
-	return WaitForService(ctx, fmt.Sprintf("%s/eth/v1/beacon/genesis", fmt.Sprintf("http://%s", shared.BeaconGatewayGRPC)))
+	return WaitForService(ctx, fmt.Sprintf("%s/eth/v1/beacon/genesis", shared.BeaconGateway))
 }
 
 func WaitForBeaconNodeFollower(ctx context.Context) error {
 	log.Printf("waiting for prysm beacon node follower")
-	return WaitForService(ctx, fmt.Sprintf("%s/eth/v1/beacon/genesis", shared.BeaconFollowerRPC))
+	return WaitForService(ctx, fmt.Sprintf("%s/eth/v1/beacon/genesis", shared.BeaconFollowerGateway))
 }
 
 func WaitForValidator(ctx context.Context) error {
