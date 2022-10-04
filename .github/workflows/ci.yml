@@ -23,8 +23,12 @@ jobs:
     - name: Run pre-EIP4844 tests
       run: go run ./tests/pre-4844
 
+    # TODO: A bit redundant. combine this test with fee-market
     - name: Run Blob transaction tests
       run: go run ./tests/blobtx
+
+    - name: Run Fee market spec tests
+      run: go run ./tests/fee-market
 
     - name: Collect docker logs on failure
       if: failure()

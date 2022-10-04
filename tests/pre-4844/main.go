@@ -21,7 +21,9 @@ func main() {
 
 	chainId := big.NewInt(1)
 	signer := types.NewDankSigner(chainId)
-	ctx := context.Background()
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*20)
+	defer cancel()
 
 	key, err := crypto.HexToECDSA(shared.PrivateKey)
 	if err != nil {
@@ -82,4 +84,5 @@ func main() {
 		// TODO: Avoid this issue by configuring the chain config at runtime
 		log.Fatalf("Test condition violation. Transaction must be included before eip4844 fork. Check the geth chain config")
 	}
+
 }

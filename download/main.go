@@ -70,6 +70,8 @@ func main() {
 		panic(err)
 	}
 
+	// Hack to ensure that we are able to download blob chunks with larger chunk sizes (which is 10 MiB post-bellatrix)
+	encoder.MaxChunkSize = 10 << 20
 	sidecars, err := sendBlobsSidecarsByRangeRequest(ctx, h, encoder.SszNetworkEncoder{}, addrInfo.ID, req)
 	if err != nil {
 		panic(err)
@@ -81,15 +83,10 @@ func main() {
 			continue
 		}
 		anyBlobs = true
-		data := shared.DecodeBlobs(sidecar)
-		i := len(data) - 1
-		for ; i >= 0; i-- {
-			if data[i] != 0x00 {
-				break
-			}
+		for _, blob := range sidecar.Blobs {
+			data := shared.DecodeBlob(blob.Blob)
+			_, _ = os.Stdout.Write(data)
 		}
-		data = data[:i+1]
-		_, _ = os.Stdout.Write(data)
 
 		// stop after the first sidecar with blobs:
 		break

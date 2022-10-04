@@ -13,12 +13,13 @@
     "muirGlacierBlock": 0,
     "berlinBlock": 0,
     "londonBlock": 0,
-    "shardingForkBlock": 24,
+    "shardingForkBlock": 5,
     "clique": {
       "period": 5,
       "epoch": 30000
     },
-    "terminalTotalDifficulty": 2
+    "terminalTotalDifficulty": 2,
+    "terminalTotalDifficultyPassed": true
   },
   "nonce": "0x42",
   "timestamp": "0x0",
