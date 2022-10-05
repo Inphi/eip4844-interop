@@ -4,5 +4,5 @@
 	branch = eip-4844
 [submodule "prysm"]
 	path = prysm
-	url = https://github.com/mdehoog/prysm
-	branch = blobs-api
+	url = https://github.com/Inphi/prysm
+	branch = eip-4844
