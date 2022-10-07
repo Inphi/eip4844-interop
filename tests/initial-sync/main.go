@@ -15,6 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/holiman/uint256"
 	"github.com/protolambda/ztyp/view"
+	"golang.org/x/sync/errgroup"
 )
 
 func GetBlobs() types.Blobs {
@@ -22,18 +23,36 @@ func GetBlobs() types.Blobs {
 	return shared.EncodeBlobs([]byte("EKANS"))
 }
 
-// 1. Uploads blobs
-// 2. Downloads blobs
-// 3. Asserts that downloaded blobs match the upload
-// 4. Asserts execution and beacon block attributes
+// Asserts blob syncing functionality during initial-sync
+// 1. Start a single EL/CL node
+// 2. Upload blobs
+// 3. Wait for blobs to be available
+// 4. Start follower EL/CL nodes
+// 5. Download blobs from follower
+// 6. Asserts that downloaded blobs match the upload
+// 7. Asserts execution and beacon block attributes
 func main() {
-	ctrl.InitE2ETest()
-	ctrl.WaitForShardingFork()
-	ctrl.WaitForEip4844ForkEpoch()
-	env := ctrl.GetEnv()
-
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*20)
 	defer cancel()
+
+	ctrl.StopDevnet()
+	env := ctrl.GetEnv()
+
+	g, gctx := errgroup.WithContext(ctx)
+	g.Go(func() error {
+		return env.GethNode.Start(gctx)
+	})
+	g.Go(func() error {
+		return env.BeaconNode.Start(gctx)
+	})
+	g.Go(func() error {
+		return env.ValidatorNode.Start(gctx)
+	})
+	if err := g.Wait(); err != nil {
+		log.Fatalf("failed to start services: %v", err)
+	}
+	ctrl.WaitForShardingFork()
+	ctrl.WaitForEip4844ForkEpoch()
 
 	ethClient, err := ctrl.GetExecutionClient(ctx)
 	if err != nil {
@@ -44,23 +63,45 @@ func main() {
 		log.Fatalf("unable to get beacon client: %v", err)
 	}
 
-	blobs := GetBlobs()
-
 	// Retrieve the current slot to being our blobs search on the beacon chain
 	startSlot := util.GetHeadSlot(ctx, beaconClient)
 
+	blobs := GetBlobs()
 	UploadBlobs(ctx, ethClient, blobs)
 	util.WaitForNextSlots(ctx, beaconClient, 1)
-	slot := util.FindBlobSlot(ctx, beaconClient, startSlot)
+	blobSlot := util.FindBlobSlot(ctx, beaconClient, startSlot)
+
+	// Wait a bit to induce substantial initial-sync in the beacon node follower
+	util.WaitForNextSlots(ctx, beaconClient, 10)
+
+	g.Go(func() error {
+		return env.GethNode2.Start(ctx)
+	})
+	g.Go(func() error {
+		return env.BeaconNodeFollower.Start(ctx)
+	})
+	if err := g.Wait(); err != nil {
+		log.Fatalf("failed to start services: %v", err)
+	}
+
+	beaconNodeFollowerClient, err := ctrl.GetBeaconNodeFollowerClient(ctx)
+	if err != nil {
+		log.Fatalf("failed to get beacon node follower client: %v", err)
+	}
+
+	syncSlot := util.GetHeadSlot(ctx, beaconClient)
+	if err := ctrl.WaitForSlotWithClient(ctx, beaconNodeFollowerClient, syncSlot); err != nil {
+		log.Fatalf("unable to wait for beacon follower sync: %v", err)
+	}
 
 	log.Printf("checking blob from beacon node")
-	downloadedData := util.DownloadBlobs(ctx, slot, 1, shared.BeaconMultiAddress)
+	downloadedData := util.DownloadBlobs(ctx, blobSlot, 1, shared.BeaconMultiAddress)
 	downloadedBlobs := shared.EncodeBlobs(downloadedData)
 	util.AssertBlobsEquals(blobs, downloadedBlobs)
 
 	log.Printf("checking blob from beacon node follower")
 	time.Sleep(time.Second * 2 * time.Duration(env.BeaconChainConfig.SecondsPerSlot)) // wait a bit for sync
-	downloadedData = util.DownloadBlobs(ctx, slot, 1, shared.BeaconFollowerMultiAddress)
+	downloadedData = util.DownloadBlobs(ctx, blobSlot, 1, shared.BeaconFollowerMultiAddress)
 	downloadedBlobs = shared.EncodeBlobs(downloadedData)
 	util.AssertBlobsEquals(blobs, downloadedBlobs)
 }
