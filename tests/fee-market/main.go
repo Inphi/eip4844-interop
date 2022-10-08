@@ -18,7 +18,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/params"
 	"github.com/holiman/uint256"
 	"github.com/libp2p/go-libp2p"
 	libp2pcore "github.com/libp2p/go-libp2p-core"
@@ -152,6 +151,7 @@ func UploadBlobsAndCheckBlockHeader(ctx context.Context, blobsData []types.Blobs
 				Gas:                 210000,
 				GasFeeCap:           view.Uint256View(*uint256.NewInt(5000000000)),
 				GasTipCap:           view.Uint256View(*uint256.NewInt(5000000000)),
+				MaxFeePerDataGas:    view.Uint256View(*uint256.NewInt(3000000000)), // needs to be at least the min fee
 				Value:               view.Uint256View(*uint256.NewInt(12345678)),
 				To:                  types.AddressOptionalSSZ{Address: (*types.AddressSSZ)(&to)},
 				BlobVersionedHashes: versionedHashes,
@@ -206,8 +206,8 @@ func UploadBlobsAndCheckBlockHeader(ctx context.Context, blobsData []types.Blobs
 			if err != nil {
 				log.Fatalf("Error getting block: %v", err)
 			}
-			excessBlobs := block.ExcessBlobs()
-			if excessBlobs == nil {
+			excessDataGas := block.ExcessDataGas()
+			if excessDataGas == nil {
 				log.Fatalf("nil excess_blobs in block header. block_hash=%v", blockHash)
 			}
 			blockNumbers[blocknum] = true
@@ -218,27 +218,30 @@ func UploadBlobsAndCheckBlockHeader(ctx context.Context, blobsData []types.Blobs
 		return blocks[i].Number().Uint64() < blocks[j].Number().Uint64()
 	})
 
-	var prevExcessBlobs int
-	parentBlock, err := ctrl.Env.EthClient.BlockByHash(ctx, blocks[0].ParentHash())
-	if err != nil {
-		log.Fatalf("Error getting block: %v", err)
-	}
-	if e := parentBlock.ExcessBlobs(); e != nil {
-		prevExcessBlobs = int(*e)
-	}
+	// Disable this check for now
+	/*
+		var prevExcessBlobs int
+		parentBlock, err := ctrl.Env.EthClient.BlockByHash(ctx, blocks[0].ParentHash())
+		if err != nil {
+			log.Fatalf("Error getting block: %v", err)
+		}
+		if e := parentBlock.ExcessBlobs(); e != nil {
+			prevExcessBlobs = int(*e)
+		}
 
-	for _, block := range blocks {
-		// Assuming each transaction contains a single blob
-		adjusted := len(block.Transactions()) + prevExcessBlobs
-		var expected int
-		if adjusted > params.TargetBlobsPerBlock {
-			expected = adjusted - params.TargetBlobsPerBlock
+		for _, block := range blocks {
+			// Assuming each transaction contains a single blob
+			adjusted := len(block.Transactions()) + prevExcessBlobs
+			var expected int
+			if adjusted > params.TargetBlobsPerBlock {
+				expected = adjusted - params.TargetBlobsPerBlock
+			}
+			if expected != int(*block.ExcessBlobs()) {
+				log.Fatal("unexpected excess_blobs field in header. expected %v. got %v", expected, *block.ExcessBlobs())
+			}
+			prevExcessBlobs = expected
 		}
-		if expected != int(*block.ExcessBlobs()) {
-			log.Fatal("unexpected excess_blobs field in header. expected %v. got %v", expected, *block.ExcessBlobs())
-		}
-		prevExcessBlobs = expected
-	}
+	*/
 }
 
 func FindBlocksWithBlobs(ctx context.Context, startSlot consensustypes.Slot) []*ethpbv2.BeaconBlockEip4844 {
