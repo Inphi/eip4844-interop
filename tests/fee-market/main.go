@@ -16,6 +16,7 @@ import (
 	"github.com/Inphi/eip4844-interop/shared"
 	"github.com/Inphi/eip4844-interop/tests/ctrl"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/consensus/misc"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/holiman/uint256"
@@ -218,30 +219,23 @@ func UploadBlobsAndCheckBlockHeader(ctx context.Context, blobsData []types.Blobs
 		return blocks[i].Number().Uint64() < blocks[j].Number().Uint64()
 	})
 
-	// Disable this check for now
-	/*
-		var prevExcessBlobs int
-		parentBlock, err := ctrl.Env.EthClient.BlockByHash(ctx, blocks[0].ParentHash())
-		if err != nil {
-			log.Fatalf("Error getting block: %v", err)
-		}
-		if e := parentBlock.ExcessBlobs(); e != nil {
-			prevExcessBlobs = int(*e)
-		}
+	prevExcessDataGas := new(big.Int)
+	parentBlock, err := ctrl.Env.EthClient.BlockByHash(ctx, blocks[0].ParentHash())
+	if err != nil {
+		log.Fatalf("Error getting block: %v", err)
+	}
+	if e := parentBlock.ExcessDataGas(); e != nil {
+		prevExcessDataGas.Set(e)
+	}
 
-		for _, block := range blocks {
-			// Assuming each transaction contains a single blob
-			adjusted := len(block.Transactions()) + prevExcessBlobs
-			var expected int
-			if adjusted > params.TargetBlobsPerBlock {
-				expected = adjusted - params.TargetBlobsPerBlock
-			}
-			if expected != int(*block.ExcessBlobs()) {
-				log.Fatal("unexpected excess_blobs field in header. expected %v. got %v", expected, *block.ExcessBlobs())
-			}
-			prevExcessBlobs = expected
+	for _, block := range blocks {
+		// Assuming each transaction contains a single blob
+		expected := misc.CalcExcessDataGas(prevExcessDataGas, len(block.Transactions()))
+		if expected.Cmp(block.ExcessDataGas()) != 0 {
+			log.Fatal("unexpected excess_data_gas field in header. expected %v. got %v", expected, block.ExcessDataGas())
 		}
-	*/
+		prevExcessDataGas = expected
+	}
 }
 
 func FindBlocksWithBlobs(ctx context.Context, startSlot consensustypes.Slot) []*ethpbv2.BeaconBlockEip4844 {
