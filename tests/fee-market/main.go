@@ -152,6 +152,7 @@ func UploadBlobsAndCheckBlockHeader(ctx context.Context, blobsData []types.Blobs
 				Gas:                 210000,
 				GasFeeCap:           view.Uint256View(*uint256.NewInt(5000000000)),
 				GasTipCap:           view.Uint256View(*uint256.NewInt(5000000000)),
+				MaxFeePerDataGas:    view.Uint256View(*uint256.NewInt(3000000000)), // needs to be at least the min fee
 				Value:               view.Uint256View(*uint256.NewInt(12345678)),
 				To:                  types.AddressOptionalSSZ{Address: (*types.AddressSSZ)(&to)},
 				BlobVersionedHashes: versionedHashes,
