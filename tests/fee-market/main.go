@@ -232,7 +232,7 @@ func UploadBlobsAndCheckBlockHeader(ctx context.Context, blobsData []types.Blobs
 		// Assuming each transaction contains a single blob
 		expected := misc.CalcExcessDataGas(prevExcessDataGas, len(block.Transactions()))
 		if expected.Cmp(block.ExcessDataGas()) != 0 {
-			log.Fatal("unexpected excess_data_gas field in header. expected %v. got %v", expected, block.ExcessDataGas())
+			log.Fatalf("unexpected excess_data_gas field in header. expected %v. got %v", expected, block.ExcessDataGas())
 		}
 		prevExcessDataGas = expected
 	}
