@@ -9,7 +9,7 @@ volumes:
 services:
   execution-node:
     build:
-      context: .
+      context: ./geth
       dockerfile: Dockerfile.geth
     ports:
       - "8545:8545"
@@ -18,14 +18,14 @@ services:
     volumes:
       - "geth_data:/db"
       - type: bind
-        source: ./geth-genesis.json
+        source: ./geth/geth-genesis.json
         target: /genesis.json
 
   execution-node-2:
     depends_on:
       - execution-node
     build:
-      context: .
+      context: ./geth
       dockerfile: Dockerfile.geth
     environment:
       PEER: execution-node:30303
@@ -35,7 +35,7 @@ services:
     volumes:
       - "geth_data2:/db"
       - type: bind
-        source: ./geth-genesis.json
+        source: ./geth/geth-genesis.json
         target: /genesis.json
 
   beacon-node:
@@ -43,8 +43,8 @@ services:
       - execution-node
       - jaeger-tracing
     build:
-      context: .
-      dockerfile: ./Dockerfile.prysm
+      context: ./prysm
+      dockerfile: Dockerfile.prysm
     environment:
       EXECUTION_NODE_URL: http://execution-node:8545
       TRACING_ENDPOINT: http://jaeger-tracing:14268/api/traces
@@ -59,13 +59,13 @@ services:
     volumes:
       - "beacon_node_data:/chaindata"
       - type: bind
-        source: ./prysm-chain-config.yml
+        source: ./prysm/prysm-chain-config.yml
         target: /config/prysm-chain-config.yml
       - type: bind
-        source: ./run_beacon_node.sh
+        source: ./prysm/run_beacon_node.sh
         target: /usr/local/bin/run_beacon_node.sh
       - type: bind
-        source: ./prysm-priv-key
+        source: ./prysm/prysm-priv-key
         target: /etc/prysm-priv-key
 
   beacon-node-follower:
@@ -74,8 +74,8 @@ services:
       - beacon-node
       - jaeger-tracing
     build:
-      context: .
-      dockerfile: ./Dockerfile.prysm
+      context: ./prysm
+      dockerfile: Dockerfile.prysm
     environment:
       EXECUTION_NODE_URL: http://execution-node-2:8545
       TRACING_ENDPOINT: http://jaeger-tracing:14268/api/traces
@@ -91,16 +91,16 @@ services:
     volumes:
       - "beacon_node_follower_data:/chaindata"
       - type: bind
-        source: ./prysm-chain-config.yml
+        source: ./prysm/prysm-chain-config.yml
         target: /config/prysm-chain-config.yml
       - type: bind
-        source: ./run_beacon_node.sh
+        source: ./prysm/run_beacon_node.sh
         target: /usr/local/bin/run_beacon_node.sh
       - type: bind
-        source: ./run_beacon_node_peer.sh
+        source: ./prysm/run_beacon_node_peer.sh
         target: /usr/local/bin/run_beacon_node_peer.sh
       - type: bind
-        source: ./prysm-follower-priv-key
+        source: ./prysm/prysm-follower-priv-key
         target: /etc/prysm-priv-key
 
   validator-node:
@@ -108,8 +108,8 @@ services:
       - beacon-node
       - jaeger-tracing
     build:
-      context: .
-      dockerfile: ./Dockerfile.prysm
+      context: ./prysm
+      dockerfile: Dockerfile.prysm
     command: >
       validator
       --accept-terms-of-use
@@ -129,7 +129,7 @@ services:
       - "7500:7500"
     volumes:
       - type: bind
-        source: ./prysm-chain-config.yml
+        source: ./prysm/prysm-chain-config.yml
         target: /config/prysm-chain-config.yml
 
   jaeger-tracing:
