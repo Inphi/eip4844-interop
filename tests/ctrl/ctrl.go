@@ -32,11 +32,19 @@ func Run(cmd *exec.Cmd) error {
 }
 
 func StartDevnet() error {
-	return Run(exec.Command("/bin/sh", "-c", "docker-compose up -d"))
+	err := Run(exec.Command("/bin/sh", "-c", "docker-compose up -d"))
+	if err != nil && err.(*exec.ExitError).ExitCode() == 127 {
+		err = Run(exec.Command("/bin/sh", "-c", "docker compose up -d"))
+	}
+	return err
 }
 
 func StopDevnet() error {
-	return Run(exec.Command("/bin/sh", "-c", "docker-compose down -v"))
+	err := Run(exec.Command("/bin/sh", "-c", "docker-compose down -v"))
+	if err != nil && err.(*exec.ExitError).ExitCode() == 127 {
+		err = Run(exec.Command("/bin/sh", "-c", "docker compose down -v"))
+	}
+	return err
 }
 
 func RestartDevnet() error {
