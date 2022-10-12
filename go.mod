@@ -204,9 +204,9 @@ require (
 	sigs.k8s.io/yaml v1.2.0 // indirect
 )
 
-replace github.com/ethereum/go-ethereum => ./go-ethereum
+replace github.com/ethereum/go-ethereum => ./geth/go-ethereum
 
-replace github.com/prysmaticlabs/prysm/v3 => ./prysm
+replace github.com/prysmaticlabs/prysm/v3 => ./prysm/prysm
 
 replace github.com/protolambda/go-kzg => github.com/Inphi/go-kzg v0.0.0-20220922202249-3c7bb745d469
 
