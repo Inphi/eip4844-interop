@@ -25,6 +25,7 @@ WORKDIR /app/lodestar
 
 RUN yarn install --ignore-optional
 
+COPY ./lodestar/lodestar /app/lodestar/lodestar
 COPY ./lodestar/lerna.json /app/lodestar/lerna.json
 COPY ./lodestar/tsconfig.build.json /app/lodestar/tsconfig.build.json
 COPY ./lodestar/tsconfig.json /app/lodestar/tsconfig.json
@@ -56,10 +57,16 @@ RUN yarn lerna run --scope @lodestar/db build
 COPY ./lodestar/packages/api /app/lodestar/packages/api
 RUN yarn lerna run --scope @lodestar/api build
 
+COPY ./lodestar/packages/light-client /app/lodestar/packages/light-client
+RUN yarn lerna run --scope @lodestar/light-client build
+
 COPY ./lodestar/packages/validator /app/lodestar/packages/validator
 RUN yarn lerna run --scope @lodestar/validator build
 
 COPY ./lodestar/packages/beacon-node /app/lodestar/packages/beacon-node
 RUN yarn lerna run --scope @lodestar/beacon-node build
+
+COPY ./lodestar/packages/cli /app/lodestar/packages/cli
+RUN yarn lerna run --scope @chainsafe/lodestar build
 
 EXPOSE 3500 4000 7500 13000 12000 8080
