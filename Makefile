@@ -2,10 +2,17 @@ devnet-up:
 	docker compose up -d\
 		execution-node\
 		execution-node-2\
-		beacon-node\
-		beacon-node-follower\
-		validator-node\
+		prysm-beacon-node\
+		prysm-beacon-node-follower\
+		prysm-validator-node\
 		jaeger-tracing
+
+lodestar-up:
+	docker compose up -d\
+		execution-node\
+		execution-node-2\
+		lodestar-beacon-node\
+		lodestar-beacon-node-follower
 
 devnet-down:
 	docker compose down -v
