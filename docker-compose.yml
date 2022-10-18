@@ -60,8 +60,8 @@ services:
     volumes:
       - 'beacon_node_data:/chaindata'
       - type: bind
-        source: ./prysm/prysm-chain-config.yml
-        target: /config/prysm-chain-config.yml
+        source: ./prysm/chain-config.yml
+        target: /config/chain-config.yml
       - type: bind
         source: ./prysm/run_beacon_node.sh
         target: /usr/local/bin/run_beacon_node.sh
@@ -92,8 +92,8 @@ services:
     volumes:
       - 'beacon_node_follower_data:/chaindata'
       - type: bind
-        source: ./prysm/prysm-chain-config.yml
-        target: /config/prysm-chain-config.yml
+        source: ./prysm/chain-config.yml
+        target: /config/chain-config.yml
       - type: bind
         source: ./prysm/run_beacon_node.sh
         target: /usr/local/bin/run_beacon_node.sh
@@ -121,7 +121,7 @@ services:
       --interop-num-validators=4
       --interop-start-index=0
       --force-clear-db
-      --chain-config-file=/config/prysm-chain-config.yml
+      --chain-config-file=/config/chain-config.yml
       --suggested-fee-recipient 0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b
       --enable-tracing
       --tracing-endpoint http://jaeger-tracing:14268/api/traces
@@ -130,8 +130,8 @@ services:
       - '7500:7500'
     volumes:
       - type: bind
-        source: ./prysm/prysm-chain-config.yml
-        target: /config/prysm-chain-config.yml
+        source: ./prysm/chain-config.yml
+        target: /config/chain-config.yml
 
   lodestar-beacon-node:
     depends_on:
@@ -149,6 +149,9 @@ services:
       - '13000:13000'
     volumes:
       - 'beacon_node_data:/chaindata'
+      - type: bind
+        source: ./lodestar/chain-config.yml
+        target: /config/chain-config.yml
       - type: bind
         source: ./lodestar/run_beacon_node.sh
         target: /usr/local/bin/run_beacon_node.sh
@@ -172,6 +175,9 @@ services:
       - '13001:13000'
     volumes:
       - 'beacon_node_follower_data:/chaindata'
+      - type: bind
+        source: ./lodestar/chain-config.yml
+        target: /config/chain-config.yml
       - type: bind
         source: ./lodestar/run_beacon_node.sh
         target: /usr/local/bin/run_beacon_node.sh

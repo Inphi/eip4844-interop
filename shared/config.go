@@ -27,7 +27,7 @@ func GethChainConfigFilepath() string {
 }
 
 func BeaconChainConfigFilepath() string {
-	return fmt.Sprintf("%s/prysm/prysm-chain-config.yml", GetBaseDir())
+	return fmt.Sprintf("%s/prysm/chain-config.yml", GetBaseDir())
 }
 
 func UpdateChainConfig(config *params.ChainConfig) error {

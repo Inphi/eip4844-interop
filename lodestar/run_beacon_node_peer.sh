@@ -29,10 +29,13 @@ if [ "$ENR" = "null" ]; then
 fi
 
 # https://chainsafe.notion.site/chainsafe/Lodestar-flags-02406e481f664d84adb56c2c348e49aa
-./lodestar dev --genesisValidators 1 --genesisTime "$INTEROP_GENESIS_TIME" \
-  --dataDir /chaindata \
-  --network.connectToDiscv5Bootnodes true \
-  --bootnodes $ENR \
-  --eth1 \
-  --eth1.providerUrls="$EXECUTION_NODE_URL" \
-  --reset
+./lodestar dev \
+    --paramsFile /config/chain-config.yml \
+    --genesisValidators 1 \
+    --genesisTime "$INTEROP_GENESIS_TIME" \
+    --dataDir /chaindata \
+    --network.connectToDiscv5Bootnodes true \
+    --bootnodes $ENR \
+    --eth1 \
+    --eth1.providerUrls="$EXECUTION_NODE_URL" \
+    --reset
