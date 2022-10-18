@@ -3,13 +3,30 @@ FROM node:16
 RUN apt-get update && \
     apt-get install -y jq
 
+COPY ./lodestar/package.json /app/lodestar/package.json
+COPY ./lodestar/yarn.lock /app/lodestar/yarn.lock
+
+copy ./lodestar/packages/api/package.json /app/lodestar/packages/api/package.json
+copy ./lodestar/packages/beacon-node/package.json /app/lodestar/packages/beacon-node/package.json
+copy ./lodestar/packages/cli/package.json /app/lodestar/packages/cli/package.json
+copy ./lodestar/packages/config/package.json /app/lodestar/packages/config/package.json
+copy ./lodestar/packages/db/package.json /app/lodestar/packages/db/package.json
+copy ./lodestar/packages/flare/package.json /app/lodestar/packages/flare/package.json
+copy ./lodestar/packages/fork-choice/package.json /app/lodestar/packages/fork-choice/package.json
+copy ./lodestar/packages/light-client/package.json /app/lodestar/packages/light-client/package.json
+copy ./lodestar/packages/params/package.json /app/lodestar/packages/params/package.json
+copy ./lodestar/packages/spec-test-util/package.json /app/lodestar/packages/spec-test-util/package.json
+copy ./lodestar/packages/state-transition/package.json /app/lodestar/packages/state-transition/package.json
+copy ./lodestar/packages/types/package.json /app/lodestar/packages/types/package.json
+copy ./lodestar/packages/utils/package.json /app/lodestar/packages/utils/package.json
+copy ./lodestar/packages/validator/package.json /app/lodestar/packages/validator/package.json
+
 WORKDIR /app/lodestar
 
-COPY ./lodestar /app/lodestar
-
 RUN yarn install --ignore-optional
+# RUN yarn global add lerna
 
-RUN yarn global add lerna
+COPY ./lodestar /app/lodestar
 
 RUN yarn build
 

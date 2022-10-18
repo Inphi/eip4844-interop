@@ -72,7 +72,7 @@ services:
   prysm-beacon-node-follower:
     depends_on:
       - execution-node-2
-      - beacon-node
+      - prysm-beacon-node
       - jaeger-tracing
     build:
       context: ./prysm
@@ -106,7 +106,7 @@ services:
 
   prysm-validator-node:
     depends_on:
-      - beacon-node
+      - prysm-beacon-node
       - jaeger-tracing
     build:
       context: ./prysm
@@ -185,15 +185,15 @@ services:
         source: ./lodestar/run_beacon_node_peer.sh
         target: /usr/local/bin/run_beacon_node_peer.sh
 
-  # jaeger-tracing:
-  #   image: jaegertracing/all-in-one:1.35
-  #   environment:
-  #     COLLECTOR_ZIPKIN_HTTP_PORT: 9411
-  #   ports:
-  #     - '5775:5775/udp'
-  #     - '6831:6831/udp'
-  #     - '6832:6832/udp'
-  #     - '5778:5778'
-  #     - '16686:16686'
-  #     - '14268:14268'
-  #     - '9411:9411'
+  jaeger-tracing:
+    image: jaegertracing/all-in-one:1.35
+    environment:
+      COLLECTOR_ZIPKIN_HTTP_PORT: 9411
+    ports:
+      - '5775:5775/udp'
+      - '6831:6831/udp'
+      - '6832:6832/udp'
+      - '5778:5778'
+      - '16686:16686'
+      - '14268:14268'
+      - '9411:9411'

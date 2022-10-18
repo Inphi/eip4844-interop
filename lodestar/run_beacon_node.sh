@@ -22,6 +22,7 @@ echo 'Execution client running. Starting Lodestar beacon node.'
 
 # https://chainsafe.github.io/lodestar/usage/local/
 ./lodestar dev \
+    --logLevel verbose \
     --paramsFile /config/chain-config.yml \
     --genesisValidators 1 \
     --startValidators 0..1 \
