@@ -1,15 +1,12 @@
-CONFIG_NAME: 'local'
-ALTAIR_FORK_EPOCH: 1
-BELLATRIX_FORK_EPOCH: 2
-EIP4844_FORK_EPOCH: 3 # ensure this happens at exactly shardingForkBlock in execution
-SECONDS_PER_SLOT: 6
-# SLOTS_PER_EPOCH: 3 # Lodestar doesn't seem to respect this setting
+CONFIG_NAME: 'minimal'
+
 TERMINAL_TOTAL_DIFFICULTY: 2 # Has to match geth-genesis
 
-# avoid collisions with mainnet/eip4844 config versioning
-GENESIS_FORK_VERSION: 0x00000ffe
-ALTAIR_FORK_VERSION: 0x01000ffe
-BELLATRIX_FORK_VERSION: 0x02000ffe
-EIP4844_FORK_VERSION: 0x03000ffe
+ALTAIR_FORK_EPOCH: 1
+BELLATRIX_FORK_EPOCH: 2
+CAPELLA_FORK_EPOCH: 3
+EIP4844_FORK_EPOCH: 4 # ensure this happens at exactly shardingForkBlock in execution
 
-DOMAIN_BLOBS_SIDECAR: 0x0a000000
+SECONDS_PER_SLOT: 4
+SLOTS_PER_EPOCH: 3 # Lodestar doesn't seem to respect this setting
+
