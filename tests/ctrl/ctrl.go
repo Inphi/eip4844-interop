@@ -25,10 +25,6 @@ func Run(cmd *exec.Cmd) error {
 	return nil
 }
 
-func StartDevnet(svcs ...string) error {
-	return StartServices(svcs...)
-}
-
 // guards against concurrent access to the docker daemon
 var dockerMutex sync.Mutex
 
