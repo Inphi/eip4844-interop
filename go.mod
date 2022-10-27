@@ -8,7 +8,7 @@ require (
 	github.com/libp2p/go-libp2p v0.20.3
 	github.com/libp2p/go-libp2p-core v0.17.0
 	github.com/multiformats/go-multiaddr v0.6.0
-	github.com/protolambda/go-kzg v0.0.0-20220318042159-d646366d060f
+	github.com/protolambda/go-kzg v0.0.0-20221025081131-f3a74d3b1d0c
 	github.com/protolambda/ztyp v0.2.1
 	github.com/prysmaticlabs/prysm/v3 v3.1.1
 	github.com/wealdtech/go-bytesutil v1.1.1
@@ -65,7 +65,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.0.1 // indirect
 	github.com/hashicorp/go-bexpr v0.1.11 // indirect
 	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d // indirect
-	github.com/herumi/bls-eth-go-binary v0.0.0-20220216073600-600054663ec1 // indirect
+	github.com/herumi/bls-eth-go-binary v1.28.1 // indirect
 	github.com/holiman/bloomfilter/v2 v2.0.3 // indirect
 	github.com/huin/goupnp v1.0.3 // indirect
 	github.com/ipfs/go-cid v0.2.0 // indirect
@@ -77,7 +77,7 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/k0kubun/go-ansi v0.0.0-20180517002512-3bf9e2903213 // indirect
 	github.com/kevinms/leakybucket-go v0.0.0-20200115003610-082473db97ca // indirect
-	github.com/kilic/bls12-381 v0.1.1-0.20210208205449-6045b0235e36 // indirect
+	github.com/kilic/bls12-381 v0.1.1-0.20220929213557-ca162e8a70f4 // indirect
 	github.com/klauspost/compress v1.15.7 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.14 // indirect
 	github.com/koron/go-ssdp v0.0.3 // indirect
@@ -206,10 +206,6 @@ require (
 replace github.com/ethereum/go-ethereum => ./geth/go-ethereum
 
 replace github.com/prysmaticlabs/prysm/v3 => ./prysm/prysm
-
-replace github.com/protolambda/go-kzg => github.com/Inphi/go-kzg v0.0.0-20220922202249-3c7bb745d469
-
-replace github.com/kilic/bls12-381 => github.com/Inphi/bls12-381 v0.0.0-20220819032644-3ae7bcd28efc
 
 // See https://github.com/prysmaticlabs/grpc-gateway/issues/2
 replace github.com/grpc-ecosystem/grpc-gateway/v2 => github.com/prysmaticlabs/grpc-gateway/v2 v2.3.1-0.20220721162526-0d1c40b5f064
