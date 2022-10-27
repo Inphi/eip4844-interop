@@ -79,6 +79,7 @@ func (s *dockerService) Start(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	// loop until the status request returns successfully
 	for {
 		if _, err := http.DefaultClient.Do(req); err == nil {
 			close(s.started)
