@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/Inphi/eip4844-interop/shared"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -84,8 +85,10 @@ func (s *dockerService) Start(ctx context.Context) error {
 			close(s.started)
 			return nil
 		}
-		if err := ctx.Err(); err != nil {
-			return err
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(1 * time.Second):
 		}
 	}
 }
