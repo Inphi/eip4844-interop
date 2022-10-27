@@ -92,7 +92,6 @@ func FindBlobSlot(ctx context.Context, client service.BeaconChainClient, startSl
 }
 
 func AssertBlobsEquals(a, b types.Blobs) {
-	// redundant for nice for debugging
 	if len(a) != len(b) {
 		log.Fatalf("data length mismatch (%d != %d)", len(a), len(b))
 	}

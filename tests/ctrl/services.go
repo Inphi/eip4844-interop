@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/Inphi/eip4844-interop/shared"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -85,8 +86,10 @@ func (s *dockerService) Start(ctx context.Context) error {
 			close(s.started)
 			return nil
 		}
-		if err := ctx.Err(); err != nil {
-			return err
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(1 * time.Second):
 		}
 	}
 }
@@ -97,20 +100,6 @@ func (s *dockerService) Stop(ctx context.Context) error {
 
 func (s *dockerService) Started() <-chan struct{} {
 	return s.started
-}
-
-func (s *dockerService) updateStarted() {
-	ctx := context.Background()
-	req, err := http.NewRequestWithContext(ctx, "GET", s.statusURL, nil)
-	if err != nil {
-		panic(err)
-	}
-
-	for {
-		if _, err := http.DefaultClient.Do(req); err == nil {
-			close(s.started)
-		}
-	}
 }
 
 func ServiceReady(ctx context.Context, svc Service) error {
