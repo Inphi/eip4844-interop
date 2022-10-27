@@ -30,6 +30,9 @@ jobs:
     - name: Run Fee market spec tests
       run: go run ./tests/fee-market
 
+    - name: Run Initial sync tests
+      run: go run ./tests/initial-sync
+
     - name: Collect docker logs on failure
       if: failure()
       uses: jwalton/gh-docker-logs@v1
