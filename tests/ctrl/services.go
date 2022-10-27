@@ -98,20 +98,6 @@ func (s *dockerService) Started() <-chan struct{} {
 	return s.started
 }
 
-func (s *dockerService) updateStarted() {
-	ctx := context.Background()
-	req, err := http.NewRequestWithContext(ctx, "GET", s.statusURL, nil)
-	if err != nil {
-		panic(err)
-	}
-
-	for {
-		if _, err := http.DefaultClient.Do(req); err == nil {
-			close(s.started)
-		}
-	}
-}
-
 func ServiceReady(ctx context.Context, svc Service) error {
 	for {
 		select {

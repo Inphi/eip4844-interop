@@ -60,10 +60,3 @@ func StopDevnet() error {
 	}
 	return err
 }
-
-func RestartDevnet() error {
-	if err := StopDevnet(); err != nil {
-		return err
-	}
-	return StartDevnet()
-}
