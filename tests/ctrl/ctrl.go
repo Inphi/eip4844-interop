@@ -1,19 +1,13 @@
 package ctrl
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
+	"strings"
+	"sync"
 )
-
-var services = []string{
-	"execution-node",
-	"execution-node-2",
-	"beacon-node",
-	"beacon-node-follower",
-	"validator-node",
-	"jaeger-tracing",
-}
 
 func Run(cmd *exec.Cmd) error {
 	cmd.Stdout = os.Stdout
@@ -31,10 +25,26 @@ func Run(cmd *exec.Cmd) error {
 	return nil
 }
 
-func StartDevnet() error {
-	err := Run(exec.Command("/bin/sh", "-c", "docker-compose up -d"))
+// guards against concurrent access to the docker daemon
+var dockerMutex sync.Mutex
+
+func StartServices(svcs ...string) error {
+	dockerMutex.Lock()
+	defer dockerMutex.Unlock()
+
+	svcArg := strings.Join(svcs, " ")
+	log.Printf("starting services %s", svcArg)
+	err := Run(exec.Command("/bin/sh", "-c", fmt.Sprintf("docker-compose up -d %s", svcArg)))
 	if err != nil && err.(*exec.ExitError).ExitCode() == 127 {
-		err = Run(exec.Command("/bin/sh", "-c", "docker compose up -d"))
+		err = Run(exec.Command("/bin/sh", "-c", fmt.Sprintf("docker compose up -d %s", svcArg)))
+	}
+	return err
+}
+
+func StopService(svc string) error {
+	err := Run(exec.Command("/bin/sh", "-c", fmt.Sprintf("docker-compose stop %s", svc)))
+	if err != nil && err.(*exec.ExitError).ExitCode() == 127 {
+		err = Run(exec.Command("/bin/sh", "-c", fmt.Sprintf("docker compose stop %s", svc)))
 	}
 	return err
 }
@@ -45,11 +55,4 @@ func StopDevnet() error {
 		err = Run(exec.Command("/bin/sh", "-c", "docker compose down -v"))
 	}
 	return err
-}
-
-func RestartDevnet() error {
-	if err := StopDevnet(); err != nil {
-		return err
-	}
-	return StartDevnet()
 }

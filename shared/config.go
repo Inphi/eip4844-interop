@@ -45,7 +45,8 @@ var (
 	BeaconRPC                  = "localhost:4000"
 	BeaconGatewayGRPC          = "localhost:3500"
 	BeaconMultiAddress         = "/ip4/0.0.0.0/tcp/13000"
-	BeaconFollowerRPC          = "http://localhost:3501"
+	BeaconFollowerRPC          = "localhost:4001"
+	BeaconGatewayFollowerGRPC  = "localhost:3501"
 	BeaconFollowerMultiAddress = "/ip4/0.0.0.0/tcp/13001"
 	ValidatorRPC               = "http://localhost:7500"
 )

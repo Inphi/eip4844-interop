@@ -11,6 +11,7 @@ require (
 	github.com/protolambda/ztyp v0.2.1
 	github.com/prysmaticlabs/prysm/v3 v3.1.1
 	github.com/wealdtech/go-bytesutil v1.1.1
+	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f
 	google.golang.org/grpc v1.40.0
 	gopkg.in/yaml.v2 v2.4.0
 )
@@ -179,7 +180,6 @@ require (
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
 	golang.org/x/net v0.0.0-20220624214902-1bab6f366d9e // indirect
 	golang.org/x/oauth2 v0.0.0-20220223155221-ee480838109b // indirect
-	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f // indirect
 	golang.org/x/sys v0.0.0-20220818161305-2296e01440c6 // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/text v0.3.7 // indirect
