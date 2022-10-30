@@ -3,10 +3,14 @@ version: '3.4'
 volumes:
   geth_data:
   geth_data2:
+  nethermind_data:
+  nethermind_data_2:
   beacon_node_data:
   beacon_node_follower_data:
   lighthouse_shared_config:
   lighthouse_data:
+  beacon_node_follower_data_2:
+  lodestar_beacon_node_follower_data_2:
 
 services:
   execution-bootnode:
@@ -64,6 +68,32 @@ services:
         source: ./geth/geth.sh
         target: /usr/local/bin/geth.sh
 
+  nethermind-execution-node:
+    depends_on:
+      - execution-node
+    build:
+      context: ./nethermind
+      dockerfile: ./Dockerfile.nethermind
+    ports:
+      - "8547:8545"
+    volumes:
+      - "nethermind_data:/db"
+      - "./nethermind/genesis.json:/genesis.json"
+      - "./nethermind/config.cfg:/nethermind/configs/mainnet.cfg"
+
+  nethermind-execution-node-2:
+    depends_on:
+      - execution-node
+    build:
+      context: ./nethermind
+      dockerfile: ./Dockerfile.nethermind
+    ports:
+      - "8548:8545"
+    volumes:
+      - "nethermind_data_2:/db"
+      - "./nethermind/genesis.json:/genesis.json"
+      - "./nethermind/config.cfg:/nethermind/configs/mainnet.cfg"
+
   prysm-beacon-node:
     depends_on:
       - execution-node
@@ -117,6 +147,41 @@ services:
       - '13001:13000'
     volumes:
       - 'beacon_node_follower_data:/chaindata'
+      - type: bind
+        source: ./shared/chain-config.yml
+        target: /config/chain-config.yml
+      - type: bind
+        source: ./prysm/run_beacon_node.sh
+        target: /usr/local/bin/run_beacon_node.sh
+      - type: bind
+        source: ./prysm/run_beacon_node_peer.sh
+        target: /usr/local/bin/run_beacon_node_peer.sh
+      - type: bind
+        source: ./prysm/prysm-follower-priv-key
+        target: /etc/prysm-priv-key
+
+  prysm-beacon-node-follower-2:
+    depends_on:
+      - nethermind-execution-node
+      - prysm-beacon-node
+      - jaeger-tracing
+    build:
+      context: ./prysm
+      dockerfile: Dockerfile.prysm
+    environment:
+      EXECUTION_NODE_URL: http://nethermind-execution-node:8545
+      TRACING_ENDPOINT: http://jaeger-tracing:14268/api/traces
+      PROCESS_NAME: beacon-node-follower-2
+      BEACON_NODE_RPC: http://prysm-beacon-node:3500
+      VERBOSITY: debug
+      P2P_PRIV_KEY: /etc/prysm-priv-key
+    entrypoint: run_beacon_node_peer.sh
+    ports:
+      - '3502:3500'
+      - '4002:4000'
+      - '13002:13000'
+    volumes:
+      - 'beacon_node_follower_data_2:/chaindata'
       - type: bind
         source: ./shared/chain-config.yml
         target: /config/chain-config.yml
@@ -199,6 +264,34 @@ services:
       - '13001:13000'
     volumes:
       - 'beacon_node_follower_data:/chaindata'
+      - type: bind
+        source: ./shared/chain-config.yml
+        target: /config/chain-config.yml
+      - type: bind
+        source: ./lodestar/run_beacon_node.sh
+        target: /usr/local/bin/run_beacon_node.sh
+      - type: bind
+        source: ./lodestar/run_beacon_node_peer.sh
+        target: /usr/local/bin/run_beacon_node_peer.sh
+
+  lodestar-beacon-node-follower-2:
+    depends_on:
+      - nethermind-execution-node-2
+      - prysm-beacon-node
+    build:
+      context: ./lodestar
+      dockerfile: Dockerfile.lodestar
+    environment:
+      EXECUTION_NODE_URL: http://nethermind-execution-node-2:8545
+      BEACON_NODE_RPC: http://prysm-beacon-node:3500
+      PROCESS_NAME: lodestar-beacon-node-follower-2
+      VERBOSITY: debug
+    entrypoint: run_beacon_node_peer.sh
+    ports:
+      - '3505:3500'
+      - '13005:13000'
+    volumes:
+      - 'lodestar_beacon_node_follower_data_2:/chaindata'
       - type: bind
         source: ./shared/chain-config.yml
         target: /config/chain-config.yml

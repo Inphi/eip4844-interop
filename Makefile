@@ -24,6 +24,16 @@ lodestar-up:
 		lodestar-beacon-node\
 		lodestar-beacon-node-follower\
 
+nethermind-up:
+	docker compose --project-name eip4844-interop up -d\
+		execution-node\
+		prysm-beacon-node\
+		prysm-validator-node\
+		nethermind-execution-node\
+		nethermind-execution-node-2\
+		prysm-beacon-node-follower-2\
+		lodestar-beacon-node-follower-2
+
 devnet-down:
 	docker compose --project-name eip4844-interop down -v
 

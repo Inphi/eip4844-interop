@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: 2022 Demerzel Solutions Limited
+# SPDX-License-Identifier: LGPL-3.0-only
+
+FROM mcr.microsoft.com/dotnet/sdk:6.0-jammy AS build
+
+COPY ./nethermind/ .
+
+RUN dotnet publish src/Nethermind/Nethermind.Runner -c release -p:Commit=4844$(date +%s) -p:BuildTimestamp=$(date +%s) -o out
+
+FROM mcr.microsoft.com/dotnet/aspnet:6.0-jammy
+
+RUN apt-get update && apt-get -y install libsnappy-dev libc6-dev libc6
+
+# Fix rocksdb issue in ubuntu 22.04
+RUN ln -s /usr/lib/x86_64-linux-gnu/libdl.so.2 /usr/lib/x86_64-linux-gnu/libdl.so > /dev/null 2>&1 
+WORKDIR /nethermind
+
+COPY --from=build /out .
+
+LABEL git_commit=$COMMIT_HASH
+
+EXPOSE 8545
+EXPOSE 8551
+EXPOSE 30303
+
+VOLUME /nethermind/nethermind_db
+VOLUME /nethermind/logs
+VOLUME /nethermind/keystore
+
+ENTRYPOINT ["./Nethermind.Runner"]
