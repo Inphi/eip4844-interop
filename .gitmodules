@@ -10,3 +10,7 @@
 	path = erigon/erigon
 	url = https://github.com/roberto-bayardo/erigon
 	branch = devnet-v3
+[submodule "lighthouse"]
+	path = lighthouse/lighthouse
+	url = https://github.com/sigp/lighthouse
+	branch = eip4844
