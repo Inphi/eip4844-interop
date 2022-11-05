@@ -28,7 +28,6 @@ lighthouse \
 	--debug-level $VERBOSITY \
 	--datadir /chaindata \
 	--purge-db \
-	--dummy-eth1 \
 	--eth1-endpoints "$EXECUTION_NODE_URL" \
 	--testnet-dir $TESTNET_DIR \
 	--port $NETWORK_PORT \

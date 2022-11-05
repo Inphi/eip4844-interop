@@ -3,6 +3,7 @@ version: '3.4'
 volumes:
   geth_data:
   geth_data2:
+  geth_data3:
   beacon_node_data:
   beacon_node_follower_data:
   lighthouse_beacon_node_data:
@@ -35,6 +36,23 @@ services:
       - "8546:8545"
     volumes:
       - "geth_data2:/db"
+      - type: bind
+        source: ./geth/geth-genesis.json
+        target: /genesis.json
+
+  execution-node-3:
+    depends_on:
+      - execution-node
+    build:
+      context: ./geth
+      dockerfile: Dockerfile.geth
+    environment:
+      PEER: execution-node:30303
+      GETH_VERBOSITY: 4
+    ports:
+      - "8547:8545"
+    volumes:
+      - "geth_data3:/db"
       - type: bind
         source: ./geth/geth-genesis.json
         target: /genesis.json
@@ -135,14 +153,14 @@ services:
 
   lighthouse-beacon-node-follower:
     depends_on:
-      - execution-node
+      - execution-node-3
       - beacon-node
     build:
       context: ./lighthouse
       dockerfile: Dockerfile.lighthouse
     environment:
       BEACON_NODE_RPC: http://beacon-node:3500
-      EXECUTION_NODE_URL: http://execution-node:8545
+      EXECUTION_NODE_URL: http://execution-node-3:8545
       VERBOSITY: debug
       TESTNET_DIR: /config
     entrypoint: ["run_beacon_node_peer.sh"]

@@ -19,8 +19,7 @@ done
 
 # Retrieve the enr of the bootstrap node. We will sync blocks from this peer.
 PEER=$(curl --fail "$BEACON_NODE_RPC"/eth/v1/node/identity | jq '.data.enr' | tr -d '"' | tr -d '=')
-# Retrieve the generated genesis time so we can follow the peer with matching state roots
-INTEROP_GENESIS_TIME=$(curl --fail "$BEACON_NODE_RPC"/eth/v1/beacon/genesis | jq .data.genesis_time | tr -d '"')
+P2P_ADDRESS=$(curl --fail "$BEACON_NODE_RPC"/eth/v1/node/identity | jq -r .data.p2p_addresses[0])
 
 if [ "$PEER" = "null" ]; then
     echo "Unable to start beacon-node: Beacon Node address is unavailable via $BEACON_NODE_RPC}"
@@ -30,4 +29,4 @@ fi
 run_beacon_node.sh \
     --target-peers=1 \
     --boot-nodes "$PEER" \
-    --interop-genesis-time "$INTEROP_GENESIS_TIME" $@
+    --libp2p-addresses "$P2P_ADDRESS" $@
