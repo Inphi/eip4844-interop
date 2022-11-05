@@ -38,7 +38,5 @@ lighthouse \
 	--enr-address $EXTERNAL_IP \
 	--enr-udp-port $NETWORK_PORT \
 	--enr-tcp-port $NETWORK_PORT \
-
-
 	--subscribe-all-subnets \
 	--disable-packet-filter $@

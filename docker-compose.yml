@@ -54,9 +54,9 @@ services:
       P2P_PRIV_KEY: /etc/prysm-priv-key
     entrypoint: ["run_beacon_node.sh", "--min-sync-peers=0", "--bootstrap-node="]
     ports:
-      - "3500:3500" # json-rpc
-      - "4000:4000" # grpc 
-      - "13000:13000" #p2p
+      - "3500:3500"
+      - "4000:4000"
+      - "13000:13000"
     volumes:
       - "beacon_node_data:/chaindata"
       - type: bind
