@@ -5,6 +5,7 @@ volumes:
   geth_data2:
   beacon_node_data:
   beacon_node_follower_data:
+  lighthouse_beacon_node_data:
 
 services:
   execution-node:
@@ -53,9 +54,9 @@ services:
       P2P_PRIV_KEY: /etc/prysm-priv-key
     entrypoint: ["run_beacon_node.sh", "--min-sync-peers=0", "--bootstrap-node="]
     ports:
-      - "3500:3500"
-      - "4000:4000"
-      - "13000:13000"
+      - "3500:3500" # json-rpc
+      - "4000:4000" # grpc 
+      - "13000:13000" #p2p
     volumes:
       - "beacon_node_data:/chaindata"
       - type: bind
@@ -131,6 +132,37 @@ services:
       - type: bind
         source: ./prysm/prysm-chain-config.yml
         target: /config/prysm-chain-config.yml
+
+  lighthouse-beacon-node-follower:
+    depends_on:
+      - execution-node
+      - beacon-node
+    build:
+      context: ./lighthouse
+      dockerfile: Dockerfile.lighthouse
+    environment:
+      BEACON_NODE_RPC: http://beacon-node:3500
+      EXECUTION_NODE_URL: http://execution-node:8545
+      VERBOSITY: debug
+      TESTNET_DIR: /config
+    entrypoint: ["run_beacon_node_peer.sh"]
+    ports:
+      - "5052:5052"
+      - "9000:9000"
+    volumes:
+      - "lighthouse_beacon_node_data:/chaindata"
+      - type: bind
+        source: ./lighthouse/chain-config.yml
+        target: /config/config.yaml
+      - type: bind
+        source: ./lighthouse/deploy_block.txt
+        target: /config/deploy_block.txt
+      - type: bind
+        source: ./lighthouse/run_beacon_node.sh
+        target: /usr/local/bin/run_beacon_node.sh
+      - type: bind
+        source: ./lighthouse/run_beacon_node_peer.sh
+        target: /usr/local/bin/run_beacon_node_peer.sh
 
   jaeger-tracing:
     image: jaegertracing/all-in-one:1.35

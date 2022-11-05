@@ -7,6 +7,10 @@ devnet-up:
 		validator-node\
 		jaeger-tracing
 
+lighthouse-up:
+	docker compose up -d\
+		lighthouse-beacon-node-follower
+
 devnet-down:
 	docker compose down -v
 
