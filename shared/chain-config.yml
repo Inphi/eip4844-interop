@@ -1,4 +1,6 @@
+PRESET_BASE: 'mainnet'
 CONFIG_NAME: "local"
+
 ALTAIR_FORK_EPOCH: 1
 BELLATRIX_FORK_EPOCH: 2
 EIP4844_FORK_EPOCH: 3 # ensure this happens at exactly shardingForkBlock in execution
@@ -15,7 +17,6 @@ EIP4844_FORK_VERSION: 0x03000ffe
 DOMAIN_BLOBS_SIDECAR: 0x0a000000
 
 # All missing values below (except for DEPOSIT_CONTRACT_ADDRESS) copied from mainnet 
-PRESET_BASE: 'mainnet'
 
 # Genesis
 # ---------------------------------------------------------------
