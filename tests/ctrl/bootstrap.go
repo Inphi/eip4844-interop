@@ -21,7 +21,7 @@ import (
 )
 
 func WaitForService(ctx context.Context, url string) error {
-	ctx, cancel := context.WithTimeout(ctx, time.Second*60)
+	ctx, cancel := context.WithTimeout(ctx, time.Minute*2)
 	defer cancel()
 	for {
 		if _, err := http.Get(url); err == nil {
