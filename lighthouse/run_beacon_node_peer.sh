@@ -3,6 +3,7 @@
 set -exu -o pipefail
 
 : "${BEACON_NODE_RPC:-}"
+: "${TESTNET_DIR:-}"
 
 # wait for the beacon node to start
 RETRIES=60
@@ -25,6 +26,10 @@ if [ "$PEER" = "null" ]; then
     echo "Unable to start beacon-node: Beacon Node address is unavailable via $BEACON_NODE_RPC}"
     exit 1
 fi
+
+echo "Retrieving genesis state from beacon node..."
+curl --header "Accept: application/octet-stream" --output $TESTNET_DIR/genesis.ssz "${BEACON_NODE_RPC}/eth/v2/debug/beacon/states/genesis"
+echo "Genesis state saved to $TESTNET_DIR/genesis.ssz"
 
 run_beacon_node.sh \
     --target-peers=1 \

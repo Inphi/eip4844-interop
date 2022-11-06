@@ -28,7 +28,8 @@ lighthouse \
 	--debug-level $VERBOSITY \
 	--datadir /chaindata \
 	--purge-db \
-	--eth1-endpoints "$EXECUTION_NODE_URL" \
+	--execution-endpoint "$EXECUTION_NODE_URL" \
+	--execution-jwt-secret-key 0x98ea6e4f216f2fb4b69fff9b3a44842c38686ca685f3f55dc48c5d3fb1107be4 \
 	--testnet-dir $TESTNET_DIR \
 	--port $NETWORK_PORT \
 	--http \
