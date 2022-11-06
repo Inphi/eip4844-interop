@@ -170,7 +170,7 @@ services:
     volumes:
       - "lighthouse_beacon_node_data:/chaindata"
       - type: bind
-        source: ./lighthouse/chain-config.yml
+        source: ./shared/chain-config.yml
         target: /config/config.yaml
       - type: bind
         source: ./lighthouse/deploy_block.txt
