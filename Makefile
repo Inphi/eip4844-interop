@@ -9,6 +9,10 @@ devnet-up:
 
 lighthouse-up:
 	docker compose up -d\
+		execution-node\
+		execution-node-3\
+		beacon-node\
+		validator-node\
 		lighthouse-beacon-node-follower
 
 devnet-down:
