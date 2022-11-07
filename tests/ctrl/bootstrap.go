@@ -6,99 +6,54 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"net/http"
 	"time"
 
 	"github.com/Inphi/eip4844-interop/shared"
 	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/params"
 	types "github.com/prysmaticlabs/prysm/v3/consensus-types/primitives"
 	beaconservice "github.com/prysmaticlabs/prysm/v3/proto/eth/service"
 	ethpbv1 "github.com/prysmaticlabs/prysm/v3/proto/eth/v1"
-	"google.golang.org/grpc"
+	"golang.org/x/sync/errgroup"
 	"gopkg.in/yaml.v2"
 )
 
-func WaitForService(ctx context.Context, url string) error {
-	ctx, cancel := context.WithTimeout(ctx, time.Second*60)
-	defer cancel()
-	for {
-		if _, err := http.Get(url); err == nil {
-			break
-		}
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(1 * time.Second):
-		}
-	}
-	return nil
-
-}
-
-func WaitForGeth(ctx context.Context) error {
-	log.Printf("waiting for geth")
-	return WaitForService(ctx, shared.GethRPC)
-}
-
-func WaitForBeaconNode(ctx context.Context) error {
-	log.Printf("waiting for prysm beacon node")
-	return WaitForService(ctx, fmt.Sprintf("%s/eth/v1/beacon/genesis", fmt.Sprintf("http://%s", shared.BeaconGatewayGRPC)))
-}
-
-func WaitForBeaconNodeFollower(ctx context.Context) error {
-	log.Printf("waiting for prysm beacon node follower")
-	return WaitForService(ctx, fmt.Sprintf("%s/eth/v1/beacon/genesis", shared.BeaconFollowerRPC))
-}
-
-func WaitForValidator(ctx context.Context) error {
-	log.Printf("waiting for validator")
-	return WaitForService(ctx, shared.ValidatorRPC)
-}
-
-func WaitForServices(ctx context.Context) error {
-	if err := WaitForGeth(ctx); err != nil {
-		return fmt.Errorf("%w: geth offlinev", err)
-	}
-	if err := WaitForBeaconNode(ctx); err != nil {
-		return fmt.Errorf("%w: beacon node offline", err)
-	}
-	if err := WaitForBeaconNodeFollower(ctx); err != nil {
-		return fmt.Errorf("%w: beacon node follower offline", err)
-	}
-	if err := WaitForValidator(ctx); err != nil {
-		return fmt.Errorf("%w: validator is offline", err)
-	}
-	return nil
-}
-
-var Env *TestEnvironment
+var env *TestEnvironment
 
 func InitE2ETest() {
-	if err := RestartDevnet(); err != nil {
-		log.Fatalf("unable to restart devnet: %v", err)
+	ctx := context.Background()
+	if err := StopDevnet(); err != nil {
+		log.Fatalf("unable to stop devnet: %v", err)
 	}
-	if err := WaitForServices(context.Background()); err != nil {
-		log.Fatal(err)
-	}
+	env := GetEnv()
+	env.StartAll(ctx)
+}
 
-	Env = newTestEnvironment()
+func GetEnv() *TestEnvironment {
+	if env == nil {
+		env = newTestEnvironment()
+	}
+	return env
 }
 
 func WaitForShardingFork() {
 	ctx := context.Background()
 
-	config := Env.GethChainConfig
+	config := env.GethChainConfig
 	eip4844ForkBlock := config.ShardingForkBlock.Uint64()
 
 	stallTimeout := 1 * time.Minute
+
+	client, err := GetExecutionClient(ctx)
+	if err != nil {
+		log.Fatalf("unable to retrive beacon node client: %v", err)
+	}
 
 	log.Printf("waiting for sharding fork block...")
 	var lastBn uint64
 	var lastUpdate time.Time
 	for {
-		bn, err := Env.EthClient.BlockNumber(ctx)
+		bn, err := client.BlockNumber(ctx)
 		if err != nil {
 			log.Fatalf("ethclient.BlockNumber: %v", err)
 		}
@@ -143,9 +98,17 @@ func ReadBeaconChainConfig() *BeaconChainConfig {
 }
 
 func WaitForSlot(ctx context.Context, slot types.Slot) error {
+	client, err := GetBeaconNodeClient(ctx)
+	if err != nil {
+		return err
+	}
+	return WaitForSlotWithClient(ctx, client, slot)
+}
+
+func WaitForSlotWithClient(ctx context.Context, client beaconservice.BeaconChainClient, slot types.Slot) error {
 	req := &ethpbv1.BlockRequest{BlockId: []byte("head")}
 	for {
-		header, err := Env.BeaconChainClient.GetBlockHeader(ctx, req)
+		header, err := client.GetBlockHeader(ctx, req)
 		if err != nil {
 			return fmt.Errorf("unable to retrieve block header: %v", err)
 		}
@@ -153,17 +116,17 @@ func WaitForSlot(ctx context.Context, slot types.Slot) error {
 		if headSlot >= slot {
 			break
 		}
-		time.Sleep(time.Second * time.Duration(Env.BeaconChainConfig.SecondsPerSlot))
+		time.Sleep(time.Second * time.Duration(env.BeaconChainConfig.SecondsPerSlot))
 	}
 	return nil
 }
 
 func WaitForEip4844ForkEpoch() {
-	log.Printf("waiting for eip4844 fork epoch...")
+	log.Println("waiting for eip4844 fork epoch...")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 
-	config := Env.BeaconChainConfig
+	config := env.BeaconChainConfig
 	eip4844Slot := config.Eip4844ForkEpoch * config.SlotsPerEpoch
 	if err := WaitForSlot(ctx, types.Slot(eip4844Slot)); err != nil {
 		log.Fatal(err)
@@ -180,27 +143,43 @@ type BeaconChainConfig struct {
 }
 
 type TestEnvironment struct {
-	GethChainConfig   *params.ChainConfig
-	BeaconChainConfig *BeaconChainConfig
-	EthClient         *ethclient.Client
-	BeaconChainClient beaconservice.BeaconChainClient
+	GethChainConfig    *params.ChainConfig
+	BeaconChainConfig  *BeaconChainConfig
+	BeaconNode         Service
+	GethNode           Service
+	ValidatorNode      Service
+	BeaconNodeFollower Service
+	GethNode2          Service
 }
 
 func newTestEnvironment() *TestEnvironment {
-	ctx := context.Background()
-	eclient, err := ethclient.DialContext(ctx, shared.GethRPC)
-	if err != nil {
-		log.Fatalf("Failed to connect to the Ethereum client: %v", err)
-	}
-	beaconGRPCConn, err := grpc.DialContext(ctx, shared.BeaconRPC, grpc.WithInsecure())
-	if err != nil {
-		log.Fatalf("Failed to dial beacon grpc", err)
-	}
-
 	return &TestEnvironment{
-		GethChainConfig:   ReadGethChainConfig(),
-		BeaconChainConfig: ReadBeaconChainConfig(),
-		EthClient:         eclient,
-		BeaconChainClient: beaconservice.NewBeaconChainClient(beaconGRPCConn),
+		GethChainConfig:    ReadGethChainConfig(),
+		BeaconChainConfig:  ReadBeaconChainConfig(),
+		BeaconNode:         NewBeaconNode(),
+		GethNode:           NewGethNode(),
+		ValidatorNode:      NewValidatorNode(),
+		BeaconNodeFollower: NewBeaconNodeFollower(),
+		GethNode2:          NewGethNode2(),
 	}
+}
+
+func (env *TestEnvironment) StartAll(ctx context.Context) error {
+	g, ctx := errgroup.WithContext(ctx)
+	g.Go(func() error {
+		return env.BeaconNode.Start(ctx)
+	})
+	g.Go(func() error {
+		return env.GethNode.Start(ctx)
+	})
+	g.Go(func() error {
+		return env.ValidatorNode.Start(ctx)
+	})
+	g.Go(func() error {
+		return env.BeaconNodeFollower.Start(ctx)
+	})
+	g.Go(func() error {
+		return env.GethNode2.Start(ctx)
+	})
+	return g.Wait()
 }
