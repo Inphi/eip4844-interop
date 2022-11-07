@@ -1,5 +1,9 @@
 name: CI
 
+# The flag below may be needed if blst throws SIGILL, which happens with certain (older) CPUs
+env:
+  CGO_CFLAGS: "-O -D__BLST_PORTABLE__"
+
 on:
   push:
     branches: [ "master", "devnet-v3" ]
