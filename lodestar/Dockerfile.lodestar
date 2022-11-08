@@ -5,6 +5,7 @@ RUN apt-get update && \
 
 COPY ./lodestar/package.json /app/lodestar/package.json
 COPY ./lodestar/yarn.lock /app/lodestar/yarn.lock
+COPY ./lodestar/trusted_setup.txt /app/lodestar/trusted_setup.txt
 
 COPY ./lodestar/packages/api/package.json /app/lodestar/packages/api/package.json
 COPY ./lodestar/packages/beacon-node/package.json /app/lodestar/packages/beacon-node/package.json
