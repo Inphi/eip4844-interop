@@ -39,6 +39,7 @@ fi
     --eth1 \
     --eth1.providerUrls="$EXECUTION_NODE_URL" \
     --reset \
+    --server http://localhost:3500 \
     --rest \
     --rest.address 0.0.0.0 \
     --rest.port 3500 \

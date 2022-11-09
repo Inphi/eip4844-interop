@@ -27,6 +27,7 @@ echo 'Execution client running. Starting Lodestar beacon node.'
     --genesisValidators 1 \
     --startValidators 0..1 \
     --enr.ip 127.0.0.1 \
+    --server http://localhost:3500 \
     --reset \
     --eth1 \
     --eth1.providerUrls="$EXECUTION_NODE_URL" \

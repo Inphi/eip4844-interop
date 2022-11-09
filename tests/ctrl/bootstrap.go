@@ -195,10 +195,16 @@ func (env *TestEnvironment) StartAll(ctx context.Context) error {
 		return nil
 	})
 	g.Go(func() error {
-		return env.BeaconNodeFollower.Start(ctx)
+		if env.BeaconNodeFollower != nil {
+			return env.BeaconNodeFollower.Start(ctx)
+		}
+		return nil
 	})
 	g.Go(func() error {
-		return env.GethNode2.Start(ctx)
+		if env.GethNode2 != nil {
+			return env.GethNode2.Start(ctx)
+		}
+		return nil
 	})
 	return g.Wait()
 }
