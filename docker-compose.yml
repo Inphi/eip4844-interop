@@ -81,7 +81,7 @@ services:
       EXECUTION_NODE_URL: http://execution-node-2:8545
       TRACING_ENDPOINT: http://jaeger-tracing:14268/api/traces
       PROCESS_NAME: beacon-node-follower
-      BEACON_NODE_RPC: http://beacon-node:3500
+      BEACON_NODE_RPC: http://prysm-beacon-node:3500
       VERBOSITY: debug
       P2P_PRIV_KEY: /etc/prysm-priv-key
     entrypoint: run_beacon_node_peer.sh
@@ -114,7 +114,7 @@ services:
     command: >
       validator
       --accept-terms-of-use
-      --beacon-rpc-provider beacon-node:4000
+      --beacon-rpc-provider prysm-beacon-node:4000
       --rpc
       --grpc-gateway-host 0.0.0.0
       --grpc-gateway-port 7500
