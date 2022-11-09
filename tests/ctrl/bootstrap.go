@@ -18,28 +18,31 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-var env *TestEnvironment
+var consensusClientEnvironments = map[string]*TestEnvironment{
+	"prysm":    newPrysmTestEnvironment(),
+	"lodestar": newLodestarTestEnvironment(),
+	// ... lighthouse
+}
 
-func InitE2ETest() {
+var client string
+
+func GetEnv() *TestEnvironment {
+	return consensusClientEnvironments[client]
+}
+
+func InitE2ETest(clientName string) {
 	ctx := context.Background()
 	if err := StopDevnet(); err != nil {
 		log.Fatalf("unable to stop devnet: %v", err)
 	}
-	env := GetEnv()
-	env.StartAll(ctx)
-}
-
-func GetEnv() *TestEnvironment {
-	if env == nil {
-		env = newTestEnvironment()
-	}
-	return env
+	client = clientName
+	GetEnv().StartAll(ctx)
 }
 
 func WaitForShardingFork() {
 	ctx := context.Background()
 
-	config := env.GethChainConfig
+	config := GetEnv().GethChainConfig
 	eip4844ForkBlock := config.ShardingForkBlock.Uint64()
 
 	stallTimeout := 1 * time.Minute
@@ -84,8 +87,8 @@ func ReadGethChainConfig() *params.ChainConfig {
 	return genesis.Config
 }
 
-func ReadBeaconChainConfig() *BeaconChainConfig {
-	path := shared.BeaconChainConfigFilepath()
+func ReadBeaconChainConfig(clientName string) *BeaconChainConfig {
+	path := shared.BeaconChainConfigFilepath(clientName)
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		log.Fatalf("unable to read beacon chain config file at %v: %v", path, err)
@@ -116,7 +119,7 @@ func WaitForSlotWithClient(ctx context.Context, client beaconservice.BeaconChain
 		if headSlot >= slot {
 			break
 		}
-		time.Sleep(time.Second * time.Duration(env.BeaconChainConfig.SecondsPerSlot))
+		time.Sleep(time.Second * time.Duration(GetEnv().BeaconChainConfig.SecondsPerSlot))
 	}
 	return nil
 }
@@ -126,7 +129,7 @@ func WaitForEip4844ForkEpoch() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 
-	config := env.BeaconChainConfig
+	config := GetEnv().BeaconChainConfig
 	eip4844Slot := config.Eip4844ForkEpoch * config.SlotsPerEpoch
 	if err := WaitForSlot(ctx, types.Slot(eip4844Slot)); err != nil {
 		log.Fatal(err)
@@ -152,14 +155,27 @@ type TestEnvironment struct {
 	GethNode2          Service
 }
 
-func newTestEnvironment() *TestEnvironment {
+func newPrysmTestEnvironment() *TestEnvironment {
+	clientName := "prysm"
 	return &TestEnvironment{
+		BeaconChainConfig:  ReadBeaconChainConfig(clientName),
+		BeaconNode:         NewBeaconNode(clientName),
+		BeaconNodeFollower: NewBeaconNodeFollower(clientName),
+		ValidatorNode:      NewValidatorNode(clientName),
 		GethChainConfig:    ReadGethChainConfig(),
-		BeaconChainConfig:  ReadBeaconChainConfig(),
-		BeaconNode:         NewBeaconNode(),
 		GethNode:           NewGethNode(),
-		ValidatorNode:      NewValidatorNode(),
-		BeaconNodeFollower: NewBeaconNodeFollower(),
+		GethNode2:          NewGethNode2(),
+	}
+}
+
+func newLodestarTestEnvironment() *TestEnvironment {
+	clientName := "lodestar"
+	return &TestEnvironment{
+		BeaconChainConfig:  ReadBeaconChainConfig(clientName),
+		BeaconNode:         NewBeaconNode(clientName),
+		BeaconNodeFollower: NewBeaconNodeFollower(clientName),
+		GethChainConfig:    ReadGethChainConfig(),
+		GethNode:           NewGethNode(),
 		GethNode2:          NewGethNode2(),
 	}
 }

@@ -26,8 +26,8 @@ func GethChainConfigFilepath() string {
 	return fmt.Sprintf("%s/geth/geth-genesis.json", GetBaseDir())
 }
 
-func BeaconChainConfigFilepath() string {
-	return fmt.Sprintf("%s/prysm/chain-config.yml", GetBaseDir())
+func BeaconChainConfigFilepath(clientName string) string {
+	return fmt.Sprintf("%s/%s/chain-config.yml", GetBaseDir(), clientName)
 }
 
 func UpdateChainConfig(config *params.ChainConfig) error {

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"os"
 	"sort"
 	"sync"
 	"time"
@@ -35,11 +36,14 @@ func GetBlob() types.Blobs {
 // 3. Asserts that downloaded blobs match the upload
 // 4. Asserts execution and beacon block attributes
 func main() {
-	ctrl.InitE2ETest()
+	clientName := "prysm"
+	if len(os.Args) > 1 {
+		clientName = os.Args[1]
+	}
+	ctrl.InitE2ETest(clientName)
 	ctrl.WaitForShardingFork()
 	ctrl.WaitForEip4844ForkEpoch()
 	env := ctrl.GetEnv()
-
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*20)
 	defer cancel()
 

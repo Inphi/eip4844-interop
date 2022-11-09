@@ -18,13 +18,18 @@ type Service interface {
 	Started() <-chan struct{}
 }
 
-func NewBeaconNode() Service {
+func NewBeaconNode(clientName string) Service {
 	url := fmt.Sprintf("http://%s/eth/v1/beacon/genesis", shared.BeaconGatewayGRPC)
-	return newDockerService("beacon-node", url)
+	return newDockerService(fmt.Sprintf("%s-beacon-node", clientName), url)
 }
 
-func NewValidatorNode() Service {
-	return newDockerService("validator-node", shared.ValidatorRPC)
+func NewValidatorNode(clientName string) Service {
+	return newDockerService(fmt.Sprintf("%s-validator-node", clientName), shared.ValidatorRPC)
+}
+
+func NewBeaconNodeFollower(clientName string) Service {
+	url := fmt.Sprintf("http://%s/eth/v1/beacon/genesis", shared.BeaconGatewayFollowerGRPC)
+	return newDockerService(fmt.Sprintf("%s-beacon-node-follower", clientName), url)
 }
 
 func GetBeaconNodeClient(ctx context.Context) (beaconservice.BeaconChainClient, error) {
@@ -34,11 +39,6 @@ func GetBeaconNodeClient(ctx context.Context) (beaconservice.BeaconChainClient, 
 		return nil, fmt.Errorf("%w: failed to dial beacon grpc", err)
 	}
 	return beaconservice.NewBeaconChainClient(conn), nil
-}
-
-func NewBeaconNodeFollower() Service {
-	url := fmt.Sprintf("http://%s/eth/v1/beacon/genesis", shared.BeaconGatewayFollowerGRPC)
-	return newDockerService("beacon-node-follower", url)
 }
 
 func GetBeaconNodeFollowerClient(ctx context.Context) (beaconservice.BeaconChainClient, error) {
