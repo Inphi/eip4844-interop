@@ -38,4 +38,8 @@ fi
     --bootnodes $ENR \
     --eth1 \
     --eth1.providerUrls="$EXECUTION_NODE_URL" \
-    --reset
+    --reset \
+    --rest \
+    --rest.address 0.0.0.0 \
+    --rest.port 3500 \
+    --rest.namespace "*" \

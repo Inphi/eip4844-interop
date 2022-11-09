@@ -27,7 +27,6 @@ echo 'Execution client running. Starting Lodestar beacon node.'
     --genesisValidators 1 \
     --startValidators 0..1 \
     --enr.ip 127.0.0.1 \
-    --server http://localhost:4000 \
     --reset \
     --eth1 \
     --eth1.providerUrls="$EXECUTION_NODE_URL" \
@@ -35,7 +34,7 @@ echo 'Execution client running. Starting Lodestar beacon node.'
     --dataDir /chaindata \
     --rest \
     --rest.address 0.0.0.0 \
-    --rest.port 4000 \
+    --rest.port 3500 \
     --rest.namespace "*" \
     --metrics \
     --logFile /logs/beacon.log \

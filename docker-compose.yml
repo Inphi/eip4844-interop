@@ -165,7 +165,7 @@ services:
       dockerfile: Dockerfile.lodestar
     environment:
       EXECUTION_NODE_URL: http://execution-node-2:8545
-      BEACON_NODE_RPC: http://lodestar-beacon-node:4000
+      BEACON_NODE_RPC: http://lodestar-beacon-node:3500
       PROCESS_NAME: lodestar-beacon-node-follower
       VERBOSITY: debug
     entrypoint: run_beacon_node_peer.sh

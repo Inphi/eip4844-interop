@@ -189,7 +189,10 @@ func (env *TestEnvironment) StartAll(ctx context.Context) error {
 		return env.GethNode.Start(ctx)
 	})
 	g.Go(func() error {
-		return env.ValidatorNode.Start(ctx)
+		if env.ValidatorNode != nil {
+			return env.ValidatorNode.Start(ctx)
+		}
+		return nil
 	})
 	g.Go(func() error {
 		return env.BeaconNodeFollower.Start(ctx)

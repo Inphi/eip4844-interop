@@ -10,7 +10,9 @@ devnet-up:
 lodestar-up:
 	docker compose up -d\
 		execution-node\
+		execution-node-2\
 		lodestar-beacon-node\
+		lodestar-beacon-follower\
 
 devnet-down:
 	docker compose down -v
