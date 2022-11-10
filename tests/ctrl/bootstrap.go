@@ -3,17 +3,16 @@ package ctrl
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"time"
 
 	"github.com/Inphi/eip4844-interop/shared"
+	"github.com/Inphi/eip4844-interop/tests/util"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/prysmaticlabs/prysm/v3/api/client/beacon"
 	types "github.com/prysmaticlabs/prysm/v3/consensus-types/primitives"
-	beaconservice "github.com/prysmaticlabs/prysm/v3/proto/eth/service"
-	ethpbv1 "github.com/prysmaticlabs/prysm/v3/proto/eth/v1"
 	"golang.org/x/sync/errgroup"
 	"gopkg.in/yaml.v2"
 )
@@ -52,6 +51,8 @@ func WaitForShardingFork() {
 		log.Fatalf("unable to retrive beacon node client: %v", err)
 	}
 
+	beaconClient, _ := GetBeaconNodeClient(ctx)
+
 	log.Printf("waiting for sharding fork block...")
 	var lastBn uint64
 	var lastUpdate time.Time
@@ -60,6 +61,10 @@ func WaitForShardingFork() {
 		if err != nil {
 			log.Fatalf("ethclient.BlockNumber: %v", err)
 		}
+
+		slot := util.GetHeadSlot(ctx, beaconClient)
+		log.Print("Got beacon head slot: ", slot)
+
 		if bn >= eip4844ForkBlock {
 			break
 		}
@@ -108,14 +113,9 @@ func WaitForSlot(ctx context.Context, slot types.Slot) error {
 	return WaitForSlotWithClient(ctx, client, slot)
 }
 
-func WaitForSlotWithClient(ctx context.Context, client beaconservice.BeaconChainClient, slot types.Slot) error {
-	req := &ethpbv1.BlockRequest{BlockId: []byte("head")}
+func WaitForSlotWithClient(ctx context.Context, client *beacon.Client, slot types.Slot) error {
 	for {
-		header, err := client.GetBlockHeader(ctx, req)
-		if err != nil {
-			return fmt.Errorf("unable to retrieve block header: %v", err)
-		}
-		headSlot := header.Data.Header.Message.Slot
+		headSlot := util.GetHeadSlot(ctx, client)
 		if headSlot >= slot {
 			break
 		}

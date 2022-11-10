@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"log"
 	"math/big"
 	"os"
@@ -21,8 +20,8 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/holiman/uint256"
 	"github.com/protolambda/ztyp/view"
+	"github.com/prysmaticlabs/prysm/v3/api/client/beacon"
 	consensustypes "github.com/prysmaticlabs/prysm/v3/consensus-types/primitives"
-	"github.com/prysmaticlabs/prysm/v3/proto/eth/service"
 	ethpbv2 "github.com/prysmaticlabs/prysm/v3/proto/eth/v2"
 )
 
@@ -226,7 +225,7 @@ func UploadBlobsAndCheckBlockHeader(ctx context.Context, client *ethclient.Clien
 	}
 }
 
-func FindBlocksWithBlobs(ctx context.Context, client service.BeaconChainClient, startSlot consensustypes.Slot) []*ethpbv2.BeaconBlockEip4844 {
+func FindBlocksWithBlobs(ctx context.Context, client *beacon.Client, startSlot consensustypes.Slot) []*ethpbv2.BeaconBlockEip4844 {
 	slot := startSlot
 	endSlot := util.GetHeadSlot(ctx, client)
 
@@ -236,18 +235,18 @@ func FindBlocksWithBlobs(ctx context.Context, client service.BeaconChainClient, 
 			break
 		}
 
-		blockID := fmt.Sprintf("%d", uint64(slot))
-		req := &ethpbv2.BlockRequestV2{BlockId: []byte(blockID)}
-		block, err := client.GetBlockV2(ctx, req)
-		if err != nil {
-			log.Fatalf("beaconchainclient.GetBlock: %v", err)
-		}
-		eip4844, ok := block.Data.Message.(*ethpbv2.SignedBeaconBlockContainer_Eip4844Block)
-		if ok {
-			if len(eip4844.Eip4844Block.Body.BlobKzgs) != 0 {
-				blocks = append(blocks, eip4844.Eip4844Block)
-			}
-		}
+		// blockID := fmt.Sprintf("%d", uint64(slot))
+		// req := &ethpbv2.BlockRequestV2{BlockId: []byte(blockID)}
+		// block, err := client.GetBlock(ctx, req)
+		// if err != nil {
+		// 	log.Fatalf("beaconchainclient.GetBlock: %v", err)
+		// }
+		// eip4844, ok := block.Data.Message.(*ethpbv2.SignedBeaconBlockContainer_Eip4844Block)
+		// if ok {
+		// 	if len(eip4844.Eip4844Block.Body.BlobKzgs) != 0 {
+		// 		blocks = append(blocks, eip4844.Eip4844Block)
+		// 	}
+		// }
 
 		slot = slot.Add(1)
 	}
