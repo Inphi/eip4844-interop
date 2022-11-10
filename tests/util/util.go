@@ -50,8 +50,13 @@ func WaitForNextSlots(ctx context.Context, client *beacon.Client, slots consensu
 	}
 }
 
+type Body struct {
+	BlobKzgs []string `json:"blob_kzgs"`
+}
+
 type Message struct {
 	Slot string
+	Body Body
 }
 
 type Data struct {
@@ -62,19 +67,25 @@ type Block struct {
 	Data Data
 }
 
-func GetHeadSlot(ctx context.Context, client *beacon.Client) consensustypes.Slot {
-	blockJSON, err := client.GetBlockJSON(ctx, "head")
+func GetBlock(ctx context.Context, client *beacon.Client, blockId beacon.StateOrBlockId) (Block, error) {
+	blockJSON, err := client.GetBlockJSON(ctx, blockId)
 	if err != nil {
-		log.Fatalf("unable to get beacon chain head: %v", err)
+		log.Fatalf("unable to get beacon chain block: %v", err)
 	}
 	var block Block
 	err = json.Unmarshal(blockJSON, &block)
 	if err != nil {
-		log.Fatalf("unable to get beacon chain head: %v", err)
+		log.Fatalf("unable to unmarshall beacon chain block JSON: %v", err)
 	}
+
+	return block, nil
+}
+
+func GetHeadSlot(ctx context.Context, client *beacon.Client) consensustypes.Slot {
+	block, _ := GetBlock(ctx, client, "head")
 	slot, err := strconv.ParseUint(block.Data.Message.Slot, 10, 64)
 	if err != nil {
-		log.Fatalf("unable to get beacon chain head: %v", err)
+		log.Fatalf("unable to parse beacon chain head slot: %v", err)
 	}
 	return (consensustypes.Slot)(slot)
 }
@@ -89,18 +100,14 @@ func FindBlobSlot(ctx context.Context, client *beacon.Client, startSlot consensu
 			log.Fatalf("Unable to find beacon block containing blobs")
 		}
 
-		// blockID := fmt.Sprintf("%d", uint64(slot))
-		// req := &ethpbv2.BlockRequestV2{BlockId: []byte(blockID)}
-		// block, err := client.GetBlockV2(ctx, req)
-		// if err != nil {
-		// 	log.Fatalf("beaconchainclient.GetBlock: %v", err)
-		// }
-		// eip4844, ok := block.Data.Message.(*ethpbv2.SignedBeaconBlockContainer_Eip4844Block)
-		// if ok {
-		// 	if len(eip4844.Eip4844Block.Body.BlobKzgs) != 0 {
-		// 		return eip4844.Eip4844Block.Slot
-		// 	}
-		// }
+		block, err := GetBlock(ctx, client, beacon.IdFromSlot(slot))
+		if err != nil {
+			log.Fatalf("beaconchainclient.GetBlock: %v", err)
+		}
+
+		if len(block.Data.Message.Body.BlobKzgs) != 0 {
+			return slot
+		}
 
 		slot = slot.Add(1)
 	}

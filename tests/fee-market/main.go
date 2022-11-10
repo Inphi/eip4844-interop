@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"os"
 	"sort"
+	"strconv"
 	"sync"
 	"time"
 
@@ -22,7 +23,6 @@ import (
 	"github.com/protolambda/ztyp/view"
 	"github.com/prysmaticlabs/prysm/v3/api/client/beacon"
 	consensustypes "github.com/prysmaticlabs/prysm/v3/consensus-types/primitives"
-	ethpbv2 "github.com/prysmaticlabs/prysm/v3/proto/eth/v2"
 )
 
 func GetBlob() types.Blobs {
@@ -69,12 +69,14 @@ func main() {
 	util.WaitForNextSlots(ctx, beaconClient, 1)
 	util.WaitForNextSlots(ctx, beaconClient, 1)
 
+	log.Print("blobs uploaded. finding blocks with blobs")
+
 	blocks := FindBlocksWithBlobs(ctx, beaconClient, startSlot)
 
 	log.Printf("checking blob from beacon node")
 	var downloadedData []byte
 	for _, b := range blocks {
-		data := util.DownloadBlobs(ctx, b.Slot, 1, shared.BeaconMultiAddress)
+		data := util.DownloadBlobs(ctx, SlotForBlock(b), 1, shared.BeaconMultiAddress)
 		downloadedData = append(downloadedData, data...)
 	}
 
@@ -89,12 +91,17 @@ func main() {
 
 	downloadedData = nil
 	for _, b := range blocks {
-		data := util.DownloadBlobs(ctx, b.Slot, 1, shared.BeaconFollowerMultiAddress)
+		data := util.DownloadBlobs(ctx, SlotForBlock(b), 1, shared.BeaconFollowerMultiAddress)
 		downloadedData = append(downloadedData, data...)
 	}
 	if !bytes.Equal(flatBlobs, downloadedData) {
 		log.Fatalf("mismatch %d %v", len(flatBlobs), len(downloadedData))
 	}
+}
+
+func SlotForBlock(block util.Block) consensustypes.Slot {
+	slot, _ := strconv.ParseUint(block.Data.Message.Slot, 10, 64)
+	return consensustypes.Slot(slot)
 }
 
 func FlattenBlobs(blobsData []types.Blobs) []byte {
@@ -225,28 +232,24 @@ func UploadBlobsAndCheckBlockHeader(ctx context.Context, client *ethclient.Clien
 	}
 }
 
-func FindBlocksWithBlobs(ctx context.Context, client *beacon.Client, startSlot consensustypes.Slot) []*ethpbv2.BeaconBlockEip4844 {
+func FindBlocksWithBlobs(ctx context.Context, client *beacon.Client, startSlot consensustypes.Slot) []util.Block {
 	slot := startSlot
 	endSlot := util.GetHeadSlot(ctx, client)
 
-	var blocks []*ethpbv2.BeaconBlockEip4844
+	var blocks []util.Block
 	for {
 		if slot == endSlot {
 			break
 		}
 
-		// blockID := fmt.Sprintf("%d", uint64(slot))
-		// req := &ethpbv2.BlockRequestV2{BlockId: []byte(blockID)}
-		// block, err := client.GetBlock(ctx, req)
-		// if err != nil {
-		// 	log.Fatalf("beaconchainclient.GetBlock: %v", err)
-		// }
-		// eip4844, ok := block.Data.Message.(*ethpbv2.SignedBeaconBlockContainer_Eip4844Block)
-		// if ok {
-		// 	if len(eip4844.Eip4844Block.Body.BlobKzgs) != 0 {
-		// 		blocks = append(blocks, eip4844.Eip4844Block)
-		// 	}
-		// }
+		block, err := util.GetBlock(ctx, client, beacon.IdFromSlot(slot))
+		if err != nil {
+			log.Fatalf("Failed to GetBlock: %v", err)
+		}
+
+		if len(block.Data.Message.Body.BlobKzgs) != 0 {
+			blocks = append(blocks, block)
+		}
 
 		slot = slot.Add(1)
 	}

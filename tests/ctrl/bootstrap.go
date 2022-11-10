@@ -51,8 +51,6 @@ func WaitForShardingFork() {
 		log.Fatalf("unable to retrive beacon node client: %v", err)
 	}
 
-	beaconClient, _ := GetBeaconNodeClient(ctx)
-
 	log.Printf("waiting for sharding fork block...")
 	var lastBn uint64
 	var lastUpdate time.Time
@@ -61,9 +59,6 @@ func WaitForShardingFork() {
 		if err != nil {
 			log.Fatalf("ethclient.BlockNumber: %v", err)
 		}
-
-		slot := util.GetHeadSlot(ctx, beaconClient)
-		log.Print("Got beacon head slot: ", slot)
 
 		if bn >= eip4844ForkBlock {
 			break
