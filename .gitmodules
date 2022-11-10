@@ -5,7 +5,7 @@
 [submodule "prysm/prysm"]
 	path = prysm/prysm
 	url = https://github.com/Inphi/prysm
-	branch = eip-4844
+	branch = dgc/add-json-getblock
 [submodule "lodestar/lodestar"]
 	path = lodestar/lodestar
 	url = https://github.com/dgcoffman/lodestar
