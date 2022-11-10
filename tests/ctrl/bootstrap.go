@@ -23,10 +23,16 @@ var consensusClientEnvironments = map[string]*TestEnvironment{
 	// ... lighthouse
 }
 
+// Stateful. InitE2ETest sets this.
 var client string
 
 func GetEnv() *TestEnvironment {
 	return consensusClientEnvironments[client]
+}
+
+func InitEnvForClient(clientName string) *TestEnvironment {
+	client = clientName
+	return consensusClientEnvironments[clientName]
 }
 
 func InitE2ETest(clientName string) {
@@ -34,8 +40,7 @@ func InitE2ETest(clientName string) {
 	if err := StopDevnet(); err != nil {
 		log.Fatalf("unable to stop devnet: %v", err)
 	}
-	client = clientName
-	GetEnv().StartAll(ctx)
+	InitEnvForClient(clientName).StartAll(ctx)
 }
 
 func WaitForShardingFork() {
