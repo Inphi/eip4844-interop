@@ -1,10 +1,14 @@
-CONFIG_NAME: "local"
+CONFIG_NAME: 'local'
+
+TERMINAL_TOTAL_DIFFICULTY: 2 # Has to match geth-genesis
+
 ALTAIR_FORK_EPOCH: 1
 BELLATRIX_FORK_EPOCH: 2
-EIP4844_FORK_EPOCH: 3 # ensure this happens at exactly shardingForkBlock in execution
+# CAPELLA_FORK_EPOCH: 3
+EIP4844_FORK_EPOCH: 4
+
 SECONDS_PER_SLOT: 6
 SLOTS_PER_EPOCH: 3
-TERMINAL_TOTAL_DIFFICULTY: 2
 
 # avoid collisions with mainnet/eip4844 config versioning
 GENESIS_FORK_VERSION: 0x00000ffe

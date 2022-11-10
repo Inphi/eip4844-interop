@@ -8,3 +8,4 @@ CAPELLA_FORK_EPOCH: 3
 EIP4844_FORK_EPOCH: 4
 
 SECONDS_PER_SLOT: 6
+# SLOTS_PER_EPOCH: 3 -- this is not configurable in Lodestar
