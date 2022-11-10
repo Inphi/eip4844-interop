@@ -60,7 +60,7 @@ services:
     volumes:
       - 'beacon_node_data:/chaindata'
       - type: bind
-        source: ./prysm/chain-config.yml
+        source: ./shared/chain-config.yml
         target: /config/chain-config.yml
       - type: bind
         source: ./prysm/run_beacon_node.sh
@@ -92,7 +92,7 @@ services:
     volumes:
       - 'beacon_node_follower_data:/chaindata'
       - type: bind
-        source: ./prysm/chain-config.yml
+        source: ./shared/chain-config.yml
         target: /config/chain-config.yml
       - type: bind
         source: ./prysm/run_beacon_node.sh
@@ -130,7 +130,7 @@ services:
       - '7500:7500'
     volumes:
       - type: bind
-        source: ./prysm/chain-config.yml
+        source: ./shared/chain-config.yml
         target: /config/chain-config.yml
 
   lodestar-beacon-node:
@@ -150,7 +150,7 @@ services:
     volumes:
       - 'beacon_node_data:/chaindata'
       - type: bind
-        source: ./lodestar/chain-config.yml
+        source: ./shared/chain-config.yml
         target: /config/chain-config.yml
       - type: bind
         source: ./lodestar/run_beacon_node.sh
@@ -176,7 +176,7 @@ services:
     volumes:
       - 'beacon_node_follower_data:/chaindata'
       - type: bind
-        source: ./lodestar/chain-config.yml
+        source: ./shared/chain-config.yml
         target: /config/chain-config.yml
       - type: bind
         source: ./lodestar/run_beacon_node.sh

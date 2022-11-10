@@ -20,7 +20,7 @@ import (
 var consensusClientEnvironments = map[string]*TestEnvironment{
 	"prysm":    newPrysmTestEnvironment(),
 	"lodestar": newLodestarTestEnvironment(),
-	// ... lighthouse
+	// "lighthouse": newLighthouseTestEnvironment(),
 }
 
 // Stateful. InitE2ETest sets this.
@@ -92,8 +92,8 @@ func ReadGethChainConfig() *params.ChainConfig {
 	return genesis.Config
 }
 
-func ReadBeaconChainConfig(clientName string) *BeaconChainConfig {
-	path := shared.BeaconChainConfigFilepath(clientName)
+func ReadBeaconChainConfig() *BeaconChainConfig {
+	path := shared.BeaconChainConfigFilepath()
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		log.Fatalf("unable to read beacon chain config file at %v: %v", path, err)
@@ -158,7 +158,7 @@ type TestEnvironment struct {
 func newPrysmTestEnvironment() *TestEnvironment {
 	clientName := "prysm"
 	return &TestEnvironment{
-		BeaconChainConfig:  ReadBeaconChainConfig(clientName),
+		BeaconChainConfig:  ReadBeaconChainConfig(),
 		BeaconNode:         NewBeaconNode(clientName),
 		BeaconNodeFollower: NewBeaconNodeFollower(clientName),
 		ValidatorNode:      NewValidatorNode(clientName),
@@ -171,7 +171,7 @@ func newPrysmTestEnvironment() *TestEnvironment {
 func newLodestarTestEnvironment() *TestEnvironment {
 	clientName := "lodestar"
 	return &TestEnvironment{
-		BeaconChainConfig:  ReadBeaconChainConfig(clientName),
+		BeaconChainConfig:  ReadBeaconChainConfig(),
 		BeaconNode:         NewBeaconNode(clientName),
 		BeaconNodeFollower: NewBeaconNodeFollower(clientName),
 		GethChainConfig:    ReadGethChainConfig(),

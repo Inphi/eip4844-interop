@@ -1,7 +1,7 @@
 [submodule "geth/go-ethereum"]
 	path = geth/go-ethereum
 	url = https://github.com/mdehoog/go-ethereum
-	branch = eip-4844
+	branch = devnet-v3
 [submodule "prysm/prysm"]
 	path = prysm/prysm
 	url = https://github.com/Inphi/prysm
@@ -10,3 +10,7 @@
 	path = lodestar/lodestar
 	url = https://github.com/dgcoffman/lodestar
 	branch = dgc/eip-4844
+[submodule "erigon/erigon"]
+	path = erigon/erigon
+	url = https://github.com/roberto-bayardo/erigon
+	branch = devnet-v3
