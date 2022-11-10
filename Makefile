@@ -12,7 +12,7 @@ lodestar-up:
 		execution-node\
 		execution-node-2\
 		lodestar-beacon-node\
-		lodestar-beacon-follower\
+		lodestar-beacon-node-follower\
 
 devnet-down:
 	docker compose down -v

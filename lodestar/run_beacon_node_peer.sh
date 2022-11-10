@@ -38,6 +38,7 @@ fi
     --bootnodes $ENR \
     --eth1 \
     --eth1.providerUrls="$EXECUTION_NODE_URL" \
+    --execution.urls="$EXECUTION_NODE_URL" \
     --reset \
     --server http://localhost:3500 \
     --rest \
