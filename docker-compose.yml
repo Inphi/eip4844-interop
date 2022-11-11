@@ -145,7 +145,6 @@ services:
     entrypoint: ['run_beacon_node.sh']
     ports:
       - '3500:3500'
-      - '4000:4000'
       - '13000:13000'
     volumes:
       - 'beacon_node_data:/chaindata'
@@ -171,7 +170,6 @@ services:
     entrypoint: run_beacon_node_peer.sh
     ports:
       - '3501:3500'
-      - '4001:4000'
       - '13001:13000'
     volumes:
       - 'beacon_node_follower_data:/chaindata'
