@@ -11,7 +11,7 @@ on:
     branches: ['master', 'devnet-v3']
 
 jobs:
-  build:
+  test-prysm:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -36,6 +36,37 @@ jobs:
 
       - name: Prysm - Run Initial sync tests
         run: go run ./tests/initial-sync prysm
+
+      - name: Collect docker logs on failure
+        if: failure()
+        uses: jwalton/gh-docker-logs@v1
+        with:
+          images: 'eip4844-interop_beacon-node-follower,eip4844-interop_beacon-node,eip4844-interop_execution-node-2,eip4844-interop_execution-node,eip4844-interop_validator-node'
+          dest: './logs'
+
+      - name: Tar logs
+        if: failure()
+        run: tar cvzf ./logs.tgz ./logs
+
+      - name: Upload logs to GitHub
+        if: failure()
+        uses: actions/upload-artifact@master
+        with:
+          name: logs.tgz
+          path: ./logs.tgz
+
+  test-lodestar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-go@v3
+        with:
+          #       go 1.19 is incompatible with the github.com/lucas-clemente/quic-go v0.27.2 dependency
+          go-version: '1.18'
 
       - name: Lodestar - Run pre-EIP4844 tests
         run: go run ./tests/pre-4844 lodestar
