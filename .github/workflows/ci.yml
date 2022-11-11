@@ -24,19 +24,8 @@ jobs:
           #       go 1.19 is incompatible with the github.com/lucas-clemente/quic-go v0.27.2 dependency
           go-version: '1.18'
 
-  test:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        ci_node_total: [2]
-        ci_node_index: [0, 1, 0, 0, 0]
-
       - name: Prysm - Run pre-EIP4844 tests
         run: go run ./tests/pre-4844 prysm
-
-      - name: Lodestar - Run pre-EIP4844 tests
-        run: go run ./tests/pre-4844 lodestar
 
       # TODO: A bit redundant. combine this test with fee-market
       - name: Prysm - Run Blob transaction tests
@@ -48,15 +37,17 @@ jobs:
       - name: Prysm - Run Initial sync tests
         run: go run ./tests/initial-sync prysm
 
-      # TODO - Make them pass
-      # - name: Lodestar - Run Blob transaction tests
-      #   run: go run ./tests/blobtx lodestar
+      - name: Lodestar - Run pre-EIP4844 tests
+        run: go run ./tests/pre-4844 lodestar
 
-      # - name: Lodestar - Run Fee market spec tests
-      #   run: go run ./tests/fee-market lodestar
+      - name: Lodestar - Run Blob transaction tests
+        run: go run ./tests/blobtx lodestar
 
-      # - name: Lodestar - Run Initial sync tests
-      #   run: go run ./tests/initial-sync lodestar
+      - name: Lodestar - Run Fee market spec tests
+        run: go run ./tests/fee-market lodestar
+
+      - name: Lodestar - Run Initial sync tests
+        run: go run ./tests/initial-sync lodestar
 
       - name: Collect docker logs on failure
         if: failure()
