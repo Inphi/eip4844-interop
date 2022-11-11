@@ -3,10 +3,12 @@ package util
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 
@@ -19,13 +21,11 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/protocol"
 	ma "github.com/multiformats/go-multiaddr"
+	"github.com/prysmaticlabs/prysm/v3/api/client/beacon"
 	"github.com/prysmaticlabs/prysm/v3/beacon-chain/p2p"
 	"github.com/prysmaticlabs/prysm/v3/beacon-chain/p2p/encoder"
 	"github.com/prysmaticlabs/prysm/v3/beacon-chain/sync"
 	consensustypes "github.com/prysmaticlabs/prysm/v3/consensus-types/primitives"
-	"github.com/prysmaticlabs/prysm/v3/proto/eth/service"
-	ethpbv1 "github.com/prysmaticlabs/prysm/v3/proto/eth/v1"
-	ethpbv2 "github.com/prysmaticlabs/prysm/v3/proto/eth/v2"
 	ethpb "github.com/prysmaticlabs/prysm/v3/proto/prysm/v1alpha1"
 )
 
@@ -33,14 +33,9 @@ func init() {
 	encoder.MaxChunkSize = 10 << 20
 }
 
-func WaitForSlot(ctx context.Context, client service.BeaconChainClient, slot consensustypes.Slot) error {
-	req := &ethpbv1.BlockRequest{BlockId: []byte("head")}
+func WaitForSlot(ctx context.Context, client *beacon.Client, slot consensustypes.Slot) error {
 	for {
-		header, err := client.GetBlockHeader(ctx, req)
-		if err != nil {
-			return fmt.Errorf("unable to retrieve block header: %v", err)
-		}
-		headSlot := header.Data.Header.Message.Slot
+		headSlot := GetHeadSlot(ctx, client)
 		if headSlot >= slot {
 			break
 		}
@@ -49,24 +44,55 @@ func WaitForSlot(ctx context.Context, client service.BeaconChainClient, slot con
 	return nil
 }
 
-func WaitForNextSlots(ctx context.Context, client service.BeaconChainClient, slots consensustypes.Slot) {
+func WaitForNextSlots(ctx context.Context, client *beacon.Client, slots consensustypes.Slot) {
 	if err := WaitForSlot(ctx, client, GetHeadSlot(ctx, client).AddSlot(slots)); err != nil {
 		log.Fatalf("error waiting for next slot: %v", err)
 	}
 }
 
-func GetHeadSlot(ctx context.Context, client service.BeaconChainClient) consensustypes.Slot {
-	req := &ethpbv1.BlockRequest{BlockId: []byte("head")}
-	header, err := client.GetBlockHeader(ctx, req)
+type Body struct {
+	BlobKzgs []string `json:"blob_kzgs"`
+}
+
+type Message struct {
+	Slot string
+	Body Body
+}
+
+type Data struct {
+	Message Message
+}
+
+type Block struct {
+	Data Data
+}
+
+func GetBlock(ctx context.Context, client *beacon.Client, blockId beacon.StateOrBlockId) (Block, error) {
+	blockJSON, err := client.GetBlockJSON(ctx, blockId)
 	if err != nil {
-		log.Fatalf("unable to get beacon chain head: %v", err)
+		log.Fatalf("unable to get beacon chain block: %v", err)
 	}
-	return header.Data.Header.Message.Slot
+	var block Block
+	err = json.Unmarshal(blockJSON, &block)
+	if err != nil {
+		log.Fatalf("unable to unmarshall beacon chain block JSON: %v", err)
+	}
+
+	return block, nil
+}
+
+func GetHeadSlot(ctx context.Context, client *beacon.Client) consensustypes.Slot {
+	block, _ := GetBlock(ctx, client, "head")
+	slot, err := strconv.ParseUint(block.Data.Message.Slot, 10, 64)
+	if err != nil {
+		log.Fatalf("unable to parse beacon chain head slot: %v", err)
+	}
+	return (consensustypes.Slot)(slot)
 }
 
 // FindBlobSlot returns the first slot containing a blob since startSlot
 // Panics if no such slot could be found
-func FindBlobSlot(ctx context.Context, client service.BeaconChainClient, startSlot consensustypes.Slot) consensustypes.Slot {
+func FindBlobSlot(ctx context.Context, client *beacon.Client, startSlot consensustypes.Slot) consensustypes.Slot {
 	slot := startSlot
 	endSlot := GetHeadSlot(ctx, client)
 	for {
@@ -74,17 +100,13 @@ func FindBlobSlot(ctx context.Context, client service.BeaconChainClient, startSl
 			log.Fatalf("Unable to find beacon block containing blobs")
 		}
 
-		blockID := fmt.Sprintf("%d", uint64(slot))
-		req := &ethpbv2.BlockRequestV2{BlockId: []byte(blockID)}
-		block, err := client.GetBlockV2(ctx, req)
+		block, err := GetBlock(ctx, client, beacon.IdFromSlot(slot))
 		if err != nil {
 			log.Fatalf("beaconchainclient.GetBlock: %v", err)
 		}
-		eip4844, ok := block.Data.Message.(*ethpbv2.SignedBeaconBlockContainer_Eip4844Block)
-		if ok {
-			if len(eip4844.Eip4844Block.Body.BlobKzgs) != 0 {
-				return eip4844.Eip4844Block.Slot
-			}
+
+		if len(block.Data.Message.Body.BlobKzgs) != 0 {
+			return slot
 		}
 
 		slot = slot.Add(1)
@@ -152,8 +174,8 @@ func readChunkedBlobsSidecar(stream libp2pcore.Stream, encoding encoder.NetworkE
 	return sidecar, err
 }
 
+// Using p2p RPC
 func DownloadBlobs(ctx context.Context, startSlot consensustypes.Slot, count uint64, beaconMA string) []byte {
-	// TODO: Use Beacon gRPC to download blobs rather than p2p RPC
 	log.Print("downloading blobs...")
 
 	req := &ethpb.BlobsSidecarsByRangeRequest{

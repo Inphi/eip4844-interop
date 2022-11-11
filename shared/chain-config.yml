@@ -1,9 +1,9 @@
-PRESET_BASE: 'mainnet'
-CONFIG_NAME: "local"
+CONFIG_NAME: 'local'
 
 ALTAIR_FORK_EPOCH: 1
 BELLATRIX_FORK_EPOCH: 2
-EIP4844_FORK_EPOCH: 3 # ensure this happens at exactly shardingForkBlock in execution
+CAPELLA_FORK_EPOCH: 3
+EIP4844_FORK_EPOCH: 4 # ensure this happens at exactly shardingForkBlock in execution
 SECONDS_PER_SLOT: 6
 SLOTS_PER_EPOCH: 3
 TERMINAL_TOTAL_DIFFICULTY: 2
@@ -16,7 +16,7 @@ EIP4844_FORK_VERSION: 0x03000ffe
 
 DOMAIN_BLOBS_SIDECAR: 0x0a000000
 
-# All missing values below (except for DEPOSIT_CONTRACT_ADDRESS) copied from mainnet 
+# All missing values below (except for DEPOSIT_CONTRACT_ADDRESS) copied from mainnet
 
 # Genesis
 # ---------------------------------------------------------------

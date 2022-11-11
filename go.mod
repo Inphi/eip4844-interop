@@ -12,7 +12,6 @@ require (
 	github.com/prysmaticlabs/prysm/v3 v3.1.1
 	github.com/wealdtech/go-bytesutil v1.1.1
 	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f
-	google.golang.org/grpc v1.40.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -60,6 +59,7 @@ require (
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/gopacket v1.1.19 // indirect
 	github.com/google/uuid v1.3.0 // indirect
+	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.0.1 // indirect
 	github.com/hashicorp/go-bexpr v0.1.11 // indirect
@@ -147,6 +147,7 @@ require (
 	github.com/prysmaticlabs/go-bitfield v0.0.0-20210809151128-385d8c5e3fb7 // indirect
 	github.com/prysmaticlabs/gohashtree v0.0.2-alpha // indirect
 	github.com/prysmaticlabs/prombbolt v0.0.0-20210126082820-9b7adba6db7c // indirect
+	github.com/r3labs/sse v0.0.0-20210224172625-26fe804710bc // indirect
 	github.com/raulk/clock v1.1.0 // indirect
 	github.com/raulk/go-watchdog v1.2.0 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
@@ -189,7 +190,9 @@ require (
 	google.golang.org/api v0.34.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20210426193834-eac7f76ac494 // indirect
+	google.golang.org/grpc v1.40.0 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
+	gopkg.in/cenkalti/backoff.v1 v1.1.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect

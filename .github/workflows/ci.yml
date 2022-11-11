@@ -24,8 +24,11 @@ jobs:
 #       go 1.19 is incompatible with the github.com/lucas-clemente/quic-go v0.27.2 dependency
         go-version: '1.18'
 
-    - name: Run pre-EIP4844 tests
+    - name: Prysm - Run pre-EIP4844 tests
       run: go run ./tests/pre-4844
+
+    - name: Lodestar - Run pre-EIP4844 tests
+      run: go run ./tests/pre-4844 lodestar
 
     # TODO: A bit redundant. combine this test with fee-market
     - name: Run Blob transaction tests

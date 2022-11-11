@@ -3,43 +3,50 @@ package ctrl
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"time"
 
 	"github.com/Inphi/eip4844-interop/shared"
+	"github.com/Inphi/eip4844-interop/tests/util"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/prysmaticlabs/prysm/v3/api/client/beacon"
 	types "github.com/prysmaticlabs/prysm/v3/consensus-types/primitives"
-	beaconservice "github.com/prysmaticlabs/prysm/v3/proto/eth/service"
-	ethpbv1 "github.com/prysmaticlabs/prysm/v3/proto/eth/v1"
 	"golang.org/x/sync/errgroup"
 	"gopkg.in/yaml.v2"
 )
 
-var env *TestEnvironment
+var consensusClientEnvironments = map[string]*TestEnvironment{
+	"prysm":    newPrysmTestEnvironment(),
+	"lodestar": newLodestarTestEnvironment(),
+	// "lighthouse": newLighthouseTestEnvironment(),
+}
 
-func InitE2ETest() {
+// Stateful. InitE2ETest sets this.
+var client string
+
+func GetEnv() *TestEnvironment {
+	return consensusClientEnvironments[client]
+}
+
+func InitEnvForClient(clientName string) *TestEnvironment {
+	client = clientName
+	return consensusClientEnvironments[clientName]
+}
+
+func InitE2ETest(clientName string) {
 	ctx := context.Background()
 	if err := StopDevnet(); err != nil {
 		log.Fatalf("unable to stop devnet: %v", err)
 	}
-	env := GetEnv()
-	env.StartAll(ctx)
-}
-
-func GetEnv() *TestEnvironment {
-	if env == nil {
-		env = newTestEnvironment()
-	}
-	return env
+	InitEnvForClient(clientName).StartAll(ctx)
 }
 
 func WaitForShardingFork() {
 	ctx := context.Background()
 
-	config := env.GethChainConfig
+	config := GetEnv().GethChainConfig
 	eip4844ForkBlock := config.ShardingForkBlock.Uint64()
 
 	stallTimeout := 1 * time.Minute
@@ -57,6 +64,7 @@ func WaitForShardingFork() {
 		if err != nil {
 			log.Fatalf("ethclient.BlockNumber: %v", err)
 		}
+
 		if bn >= eip4844ForkBlock {
 			break
 		}
@@ -105,18 +113,13 @@ func WaitForSlot(ctx context.Context, slot types.Slot) error {
 	return WaitForSlotWithClient(ctx, client, slot)
 }
 
-func WaitForSlotWithClient(ctx context.Context, client beaconservice.BeaconChainClient, slot types.Slot) error {
-	req := &ethpbv1.BlockRequest{BlockId: []byte("head")}
+func WaitForSlotWithClient(ctx context.Context, client *beacon.Client, slot types.Slot) error {
 	for {
-		header, err := client.GetBlockHeader(ctx, req)
-		if err != nil {
-			return fmt.Errorf("unable to retrieve block header: %v", err)
-		}
-		headSlot := header.Data.Header.Message.Slot
+		headSlot := util.GetHeadSlot(ctx, client)
 		if headSlot >= slot {
 			break
 		}
-		time.Sleep(time.Second * time.Duration(env.BeaconChainConfig.SecondsPerSlot))
+		time.Sleep(time.Second * time.Duration(GetEnv().BeaconChainConfig.SecondsPerSlot))
 	}
 	return nil
 }
@@ -126,7 +129,7 @@ func WaitForEip4844ForkEpoch() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 
-	config := env.BeaconChainConfig
+	config := GetEnv().BeaconChainConfig
 	eip4844Slot := config.Eip4844ForkEpoch * config.SlotsPerEpoch
 	if err := WaitForSlot(ctx, types.Slot(eip4844Slot)); err != nil {
 		log.Fatal(err)
@@ -152,14 +155,27 @@ type TestEnvironment struct {
 	GethNode2          Service
 }
 
-func newTestEnvironment() *TestEnvironment {
+func newPrysmTestEnvironment() *TestEnvironment {
+	clientName := "prysm"
 	return &TestEnvironment{
-		GethChainConfig:    ReadGethChainConfig(),
 		BeaconChainConfig:  ReadBeaconChainConfig(),
-		BeaconNode:         NewBeaconNode(),
+		BeaconNode:         NewBeaconNode(clientName),
+		BeaconNodeFollower: NewBeaconNodeFollower(clientName),
+		ValidatorNode:      NewValidatorNode(clientName),
+		GethChainConfig:    ReadGethChainConfig(),
 		GethNode:           NewGethNode(),
-		ValidatorNode:      NewValidatorNode(),
-		BeaconNodeFollower: NewBeaconNodeFollower(),
+		GethNode2:          NewGethNode2(),
+	}
+}
+
+func newLodestarTestEnvironment() *TestEnvironment {
+	clientName := "lodestar"
+	return &TestEnvironment{
+		BeaconChainConfig:  ReadBeaconChainConfig(),
+		BeaconNode:         NewBeaconNode(clientName),
+		BeaconNodeFollower: NewBeaconNodeFollower(clientName),
+		GethChainConfig:    ReadGethChainConfig(),
+		GethNode:           NewGethNode(),
 		GethNode2:          NewGethNode2(),
 	}
 }
@@ -173,13 +189,22 @@ func (env *TestEnvironment) StartAll(ctx context.Context) error {
 		return env.GethNode.Start(ctx)
 	})
 	g.Go(func() error {
-		return env.ValidatorNode.Start(ctx)
+		if env.ValidatorNode != nil {
+			return env.ValidatorNode.Start(ctx)
+		}
+		return nil
 	})
 	g.Go(func() error {
-		return env.BeaconNodeFollower.Start(ctx)
+		if env.BeaconNodeFollower != nil {
+			return env.BeaconNodeFollower.Start(ctx)
+		}
+		return nil
 	})
 	g.Go(func() error {
-		return env.GethNode2.Start(ctx)
+		if env.GethNode2 != nil {
+			return env.GethNode2.Start(ctx)
+		}
+		return nil
 	})
 	return g.Wait()
 }
