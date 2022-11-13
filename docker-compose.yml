@@ -159,8 +159,10 @@ services:
     build:
       context: ./lighthouse
       dockerfile: Dockerfile.lighthouse
+      args:
+        - FEATURES=spec-minimal
     environment:
-      BEACON_NODE_RPC: http://beacon-node:3500
+      BEACON_NODE_RPC: http://prysm-beacon-node:3500
       EXECUTION_NODE_URL: http://execution-node-3:8545
       VERBOSITY: debug
       TESTNET_DIR: /config

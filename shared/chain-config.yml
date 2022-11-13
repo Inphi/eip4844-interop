@@ -1,3 +1,4 @@
+PRESET_BASE: 'minimal'
 CONFIG_NAME: 'local'
 
 ALTAIR_FORK_EPOCH: 1
