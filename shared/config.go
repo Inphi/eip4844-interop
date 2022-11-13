@@ -42,10 +42,9 @@ func UpdateChainConfig(config *params.ChainConfig) error {
 var (
 	GethRPC                    = "http://localhost:8545"
 	PrivateKey                 = "45a915e4d060149eb4365960e6a7a45f334393093061116b197e3240065ff2d8"
-	BeaconRPC                  = "localhost:4000"
-	BeaconGatewayGRPC          = "localhost:3500"
+	BeaconAPI                  = "localhost:3500"
 	BeaconMultiAddress         = "/ip4/0.0.0.0/tcp/13000"
-	BeaconFollowerRPC          = "http://localhost:3501"
+	BeaconFollowerAPI          = "localhost:3501"
 	BeaconFollowerMultiAddress = "/ip4/0.0.0.0/tcp/13001"
-	ValidatorRPC               = "http://localhost:7500"
+	ValidatorAPI               = "http://localhost:7500"
 )

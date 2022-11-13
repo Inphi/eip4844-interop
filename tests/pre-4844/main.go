@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"math/big"
+	"os"
 	"time"
 
 	"github.com/Inphi/eip4844-interop/shared"
@@ -17,7 +18,12 @@ import (
 
 // Asserts that transaction still work before the 4844 fork in execution
 func main() {
-	ctrl.InitE2ETest()
+	clientName := "prysm"
+	if len(os.Args) > 1 {
+		clientName = os.Args[1]
+	}
+
+	ctrl.InitE2ETest(clientName)
 
 	chainId := big.NewInt(1)
 	signer := types.NewDankSigner(chainId)
@@ -25,12 +31,16 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*20)
 	defer cancel()
 
+	client, err := ctrl.GetExecutionClient(ctx)
+	if err != nil {
+		log.Fatalf("unable to get execution client: %v", err)
+	}
+
 	key, err := crypto.HexToECDSA(shared.PrivateKey)
 	if err != nil {
 		log.Fatalf("Failed to load private key: %v", err)
 	}
 
-	client := ctrl.Env.EthClient
 	nonce, err := client.PendingNonceAt(ctx, crypto.PubkeyToAddress(key.PublicKey))
 	if err != nil {
 		log.Fatalf("Error getting nonce: %v", err)
@@ -79,7 +89,7 @@ func main() {
 		log.Fatalf("Error getting block: %v", err)
 	}
 
-	eip4844Block := ctrl.Env.GethChainConfig.ShardingForkBlock.Uint64()
+	eip4844Block := ctrl.GetEnv().GethChainConfig.ShardingForkBlock.Uint64()
 	if receipt.BlockNumber.Uint64() > eip4844Block {
 		// TODO: Avoid this issue by configuring the chain config at runtime
 		log.Fatalf("Test condition violation. Transaction must be included before eip4844 fork. Check the geth chain config")

@@ -12,6 +12,7 @@ WORKDIR /app/prysm
 
 # The flag below may be needed if blst throws SIGILL, which happens with certain (older) CPUs
 # ENV CGO_CFLAGS="-O -D__BLST_PORTABLE__"
+ENV CGO_CFLAGS=$CGO_CFLAGS
 
 RUN go build -o /build/beacon-node -buildvcs=false ./cmd/beacon-chain
 RUN go build -o /build/validator -buildvcs=false ./cmd/validator
