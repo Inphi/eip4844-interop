@@ -11,8 +11,8 @@ lighthouse-up:
 	docker compose up -d\
 		execution-node\
 		execution-node-3\
-		beacon-node\
-		validator-node\
+		prysm-beacon-node\
+		prysm-validator-node\
 		lighthouse-beacon-node-follower
 
 lodestar-up:
