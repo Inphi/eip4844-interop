@@ -1,5 +1,5 @@
 devnet-up:
-	docker compose --project-name eip4844-interop up -d\
+	docker compose up -d\
 		execution-node\
 		execution-node-2\
 		prysm-beacon-node\
@@ -8,7 +8,7 @@ devnet-up:
 		jaeger-tracing
 
 lodestar-up:
-	docker compose --project-name eip4844-interop up -d\
+	docker compose up -d\
 		execution-node\
 		execution-node-2\
 		lodestar-beacon-node\
@@ -20,9 +20,8 @@ devnet-down:
 devnet-restart: devnet-down devnet-up
 
 devnet-clean:
-	docker compose down
-	docker compose down --volumes
-	docker image ls 'eip4844-interop*' --format='{{.Repository}}' | xargs -r docker image rm -f
-	docker volume ls --filter name=eip4844-interop --format='{{.Name}}' | xargs -r docker volume rm -f
+	docker compose down --rmi local --volumes
+	docker image ls '`basename $PWD`-interop*' --format='{{.Repository}}' | xargs -r docker rmi
+	docker volume ls --filter name=`basename $PWD`-interop --format='{{.Name}}' | xargs -r docker volume rm
 
 .PHONY: devnet-clean
