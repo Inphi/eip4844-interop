@@ -59,6 +59,6 @@ PROPOSER_SCORE_BOOST: 40
 # Deposit contract
 # ---------------------------------------------------------------
 # Ethereum PoW Mainnet
-DEPOSIT_CHAIN_ID: 1
-DEPOSIT_NETWORK_ID: 1
+DEPOSIT_CHAIN_ID: 69
+DEPOSIT_NETWORK_ID: 69
 DEPOSIT_CONTRACT_ADDRESS: 0x8A04d14125D0FDCDc742F4A05C051De07232EDa4

@@ -16,7 +16,7 @@ services:
     environment:
       GETH_VERBOSITY: 4
     volumes:
-      - 'geth_data:/db'
+      - '/home/jim/development/eip4844-interop/geth_data:/db'
       - type: bind
         source: ./geth/geth-genesis.json
         target: /genesis.json
@@ -33,7 +33,7 @@ services:
     ports:
       - '8546:8545'
     volumes:
-      - 'geth_data2:/db'
+      - '/home/jim/development/eip4844-interop/geth_data2:/db'
       - type: bind
         source: ./geth/geth-genesis.json
         target: /genesis.json
@@ -163,7 +163,7 @@ services:
       context: ./lodestar
       dockerfile: Dockerfile.lodestar
     environment:
-      EXECUTION_NODE_URL: http://execution-node-2:8545
+      EXECUTION_NODE_URL: http://172.17.0.1:8551
       BEACON_NODE_RPC: http://lodestar-beacon-node:3500
       PROCESS_NAME: lodestar-beacon-node-follower
       VERBOSITY: debug
