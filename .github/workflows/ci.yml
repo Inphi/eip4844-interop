@@ -6,9 +6,9 @@ env:
 
 on:
   push:
-    branches: ['master', 'devnet-v3']
+    branches: ['master']
   pull_request:
-    branches: ['master', 'devnet-v3']
+    branches: ['master']
 
 jobs:
   test-prysm:
@@ -45,7 +45,7 @@ jobs:
         if: failure()
         uses: jwalton/gh-docker-logs@v1
         with:
-          images: 'eip4844-interop_beacon-node-follower,eip4844-interop_beacon-node,eip4844-interop_execution-node-2,eip4844-interop_execution-node,eip4844-interop_validator-node'
+          images: 'eip4844-interop_prysm-beacon-node-follower,eip4844-interop_prysm-beacon-node,eip4844-interop_execution-node-2,eip4844-interop_execution-node,eip4844-interop_prysm-validator-node'
           dest: './logs'
 
       - name: Tar logs
@@ -88,7 +88,7 @@ jobs:
         if: failure()
         uses: jwalton/gh-docker-logs@v1
         with:
-          images: 'eip4844-interop_beacon-node-follower,eip4844-interop_beacon-node,eip4844-interop_execution-node-2,eip4844-interop_execution-node,eip4844-interop_validator-node'
+          images: 'eip4844-interop_prysm-beacon-node-follower,eip4844-interop_prysm-beacon-node,eip4844-interop_execution-node-2,eip4844-interop_execution-node,eip4844-interop_prysm-validator-node'
           dest: './logs'
 
       - name: Tar logs
