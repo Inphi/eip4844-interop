@@ -51,7 +51,8 @@ func WaitForNextSlots(ctx context.Context, client *beacon.Client, slots consensu
 }
 
 type Body struct {
-	BlobKzgs []string `json:"blob_kzgs"`
+	// Does Prysm call this "blob_kzgs"? That's wrong.
+	BlobKzgs []string `json:"blob_kzg_commitments"`
 }
 
 type Message struct {
