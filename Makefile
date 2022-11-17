@@ -21,7 +21,7 @@ devnet-restart: devnet-down devnet-up
 
 devnet-clean:
 	docker compose --project-name eip-4844 down --rmi local --volumes
-	docker image ls 'eip-4844-interop*' --format='{{.Repository}}' | xargs -r docker rmi
-	docker volume ls --filter name=eip-4844-interop --format='{{.Name}}' | xargs -r docker volume rm
+	docker image ls 'eip-4844*' --format='{{.Repository}}' | xargs -r docker rmi
+	docker volume ls --filter name=eip-4844 --format='{{.Name}}' | xargs -r docker volume rm
 
 .PHONY: devnet-clean
