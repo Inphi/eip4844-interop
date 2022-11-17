@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"math/big"
+	"os"
 	"time"
 
 	"github.com/Inphi/eip4844-interop/shared"
@@ -27,7 +28,11 @@ func GetBlobs() types.Blobs {
 // 3. Asserts that downloaded blobs match the upload
 // 4. Asserts execution and beacon block attributes
 func main() {
-	ctrl.InitE2ETest()
+	clientName := "prysm"
+	if len(os.Args) > 1 {
+		clientName = os.Args[1]
+	}
+	ctrl.InitE2ETest(clientName)
 	ctrl.WaitForShardingFork()
 	ctrl.WaitForEip4844ForkEpoch()
 	env := ctrl.GetEnv()

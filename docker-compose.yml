@@ -12,11 +12,11 @@ services:
       context: ./geth
       dockerfile: Dockerfile.geth
     ports:
-      - "8545:8545"
+      - '8545:8545'
     environment:
       GETH_VERBOSITY: 4
     volumes:
-      - "geth_data:/db"
+      - 'geth_data:/db'
       - type: bind
         source: ./geth/geth-genesis.json
         target: /genesis.json
@@ -31,14 +31,14 @@ services:
       PEER: execution-node:30303
       GETH_VERBOSITY: 4
     ports:
-      - "8546:8545"
+      - '8546:8545'
     volumes:
-      - "geth_data2:/db"
+      - 'geth_data2:/db'
       - type: bind
         source: ./geth/geth-genesis.json
         target: /genesis.json
 
-  beacon-node:
+  prysm-beacon-node:
     depends_on:
       - execution-node
       - jaeger-tracing
@@ -51,16 +51,17 @@ services:
       PROCESS_NAME: beacon-node
       VERBOSITY: debug
       P2P_PRIV_KEY: /etc/prysm-priv-key
-    entrypoint: ["run_beacon_node.sh", "--min-sync-peers=0", "--bootstrap-node="]
+    entrypoint:
+      ['run_beacon_node.sh', '--min-sync-peers=0', '--bootstrap-node=']
     ports:
-      - "3500:3500"
-      - "4000:4000"
-      - "13000:13000"
+      - '3500:3500'
+      - '4000:4000'
+      - '13000:13000'
     volumes:
-      - "beacon_node_data:/chaindata"
+      - 'beacon_node_data:/chaindata'
       - type: bind
-        source: ./prysm/prysm-chain-config.yml
-        target: /config/prysm-chain-config.yml
+        source: ./shared/chain-config.yml
+        target: /config/chain-config.yml
       - type: bind
         source: ./prysm/run_beacon_node.sh
         target: /usr/local/bin/run_beacon_node.sh
@@ -68,10 +69,10 @@ services:
         source: ./prysm/prysm-priv-key
         target: /etc/prysm-priv-key
 
-  beacon-node-follower:
+  prysm-beacon-node-follower:
     depends_on:
       - execution-node-2
-      - beacon-node
+      - prysm-beacon-node
       - jaeger-tracing
     build:
       context: ./prysm
@@ -80,19 +81,19 @@ services:
       EXECUTION_NODE_URL: http://execution-node-2:8545
       TRACING_ENDPOINT: http://jaeger-tracing:14268/api/traces
       PROCESS_NAME: beacon-node-follower
-      BEACON_NODE_RPC: http://beacon-node:3500
+      BEACON_NODE_RPC: http://prysm-beacon-node:3500
       VERBOSITY: debug
       P2P_PRIV_KEY: /etc/prysm-priv-key
     entrypoint: run_beacon_node_peer.sh
     ports:
-      - "3501:3500"
-      - "4001:4000"
-      - "13001:13000"
+      - '3501:3500'
+      - '4001:4000'
+      - '13001:13000'
     volumes:
-      - "beacon_node_follower_data:/chaindata"
+      - 'beacon_node_follower_data:/chaindata'
       - type: bind
-        source: ./prysm/prysm-chain-config.yml
-        target: /config/prysm-chain-config.yml
+        source: ./shared/chain-config.yml
+        target: /config/chain-config.yml
       - type: bind
         source: ./prysm/run_beacon_node.sh
         target: /usr/local/bin/run_beacon_node.sh
@@ -103,9 +104,9 @@ services:
         source: ./prysm/prysm-follower-priv-key
         target: /etc/prysm-priv-key
 
-  validator-node:
+  prysm-validator-node:
     depends_on:
-      - beacon-node
+      - prysm-beacon-node
       - jaeger-tracing
     build:
       context: ./prysm
@@ -113,34 +114,84 @@ services:
     command: >
       validator
       --accept-terms-of-use
-      --beacon-rpc-provider beacon-node:4000
+      --beacon-rpc-provider prysm-beacon-node:4000
       --rpc
       --grpc-gateway-host 0.0.0.0
       --grpc-gateway-port 7500
       --interop-num-validators=4
       --interop-start-index=0
       --force-clear-db
-      --chain-config-file=/config/prysm-chain-config.yml
+      --chain-config-file=/config/chain-config.yml
       --suggested-fee-recipient 0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b
       --enable-tracing
       --tracing-endpoint http://jaeger-tracing:14268/api/traces
       --tracing-process-name validator-node
     ports:
-      - "7500:7500"
+      - '7500:7500'
     volumes:
       - type: bind
-        source: ./prysm/prysm-chain-config.yml
-        target: /config/prysm-chain-config.yml
+        source: ./shared/chain-config.yml
+        target: /config/chain-config.yml
+
+  lodestar-beacon-node:
+    depends_on:
+      - execution-node
+    build:
+      context: ./lodestar
+      dockerfile: Dockerfile.lodestar
+    environment:
+      EXECUTION_NODE_URL: http://execution-node:8545
+      PROCESS_NAME: lodestar-beacon-node
+    entrypoint: ['run_beacon_node.sh']
+    ports:
+      - '3500:3500'
+      - '13000:13000'
+    volumes:
+      - 'beacon_node_data:/chaindata'
+      - type: bind
+        source: ./shared/chain-config.yml
+        target: /config/chain-config.yml
+      - type: bind
+        source: ./lodestar/run_beacon_node.sh
+        target: /usr/local/bin/run_beacon_node.sh
+
+  lodestar-beacon-node-follower:
+    depends_on:
+      - execution-node-2
+      - lodestar-beacon-node
+    build:
+      context: ./lodestar
+      dockerfile: Dockerfile.lodestar
+    environment:
+      EXECUTION_NODE_URL: http://execution-node-2:8545
+      BEACON_NODE_RPC: http://lodestar-beacon-node:3500
+      PROCESS_NAME: lodestar-beacon-node-follower
+      VERBOSITY: debug
+    entrypoint: run_beacon_node_peer.sh
+    ports:
+      - '3501:3500'
+      - '13001:13000'
+    volumes:
+      - 'beacon_node_follower_data:/chaindata'
+      - type: bind
+        source: ./shared/chain-config.yml
+        target: /config/chain-config.yml
+      - type: bind
+        source: ./lodestar/run_beacon_node.sh
+        target: /usr/local/bin/run_beacon_node.sh
+      - type: bind
+        source: ./lodestar/run_beacon_node_peer.sh
+        target: /usr/local/bin/run_beacon_node_peer.sh
 
   jaeger-tracing:
     image: jaegertracing/all-in-one:1.35
     environment:
       COLLECTOR_ZIPKIN_HTTP_PORT: 9411
     ports:
-      - "5775:5775/udp"
-      - "6831:6831/udp"
-      - "6832:6832/udp"
-      - "5778:5778"
-      - "16686:16686"
-      - "14268:14268"
-      - "9411:9411"
+      - '5775:5775/udp'
+      - '6831:6831/udp'
+      - '6832:6832/udp'
+      - '5778:5778'
+      - '16686:16686'
+      - '14268:14268'
+      - '9411:9411'

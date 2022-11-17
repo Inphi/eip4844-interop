@@ -8,8 +8,7 @@ import (
 
 	"github.com/Inphi/eip4844-interop/shared"
 	"github.com/ethereum/go-ethereum/ethclient"
-	beaconservice "github.com/prysmaticlabs/prysm/v3/proto/eth/service"
-	"google.golang.org/grpc"
+	"github.com/prysmaticlabs/prysm/v3/api/client/beacon"
 )
 
 type Service interface {
@@ -18,36 +17,34 @@ type Service interface {
 	Started() <-chan struct{}
 }
 
-func NewBeaconNode() Service {
-	url := fmt.Sprintf("http://%s/eth/v1/beacon/genesis", shared.BeaconGatewayGRPC)
-	return newDockerService("beacon-node", url)
+func NewBeaconNode(clientName string) Service {
+	url := fmt.Sprintf("http://%s/eth/v1/beacon/genesis", shared.BeaconAPI)
+	return newDockerService(fmt.Sprintf("%s-beacon-node", clientName), url)
 }
 
-func NewValidatorNode() Service {
-	return newDockerService("validator-node", shared.ValidatorRPC)
+func NewValidatorNode(clientName string) Service {
+	return newDockerService(fmt.Sprintf("%s-validator-node", clientName), shared.ValidatorAPI)
 }
 
-func GetBeaconNodeClient(ctx context.Context) (beaconservice.BeaconChainClient, error) {
-	// TODO: cache conns for reuse
-	conn, err := grpc.DialContext(ctx, shared.BeaconRPC, grpc.WithInsecure())
+func NewBeaconNodeFollower(clientName string) Service {
+	url := fmt.Sprintf("http://%s/eth/v1/beacon/genesis", shared.BeaconFollowerAPI)
+	return newDockerService(fmt.Sprintf("%s-beacon-node-follower", clientName), url)
+}
+
+func GetBeaconNodeClient(ctx context.Context) (*beacon.Client, error) {
+	client, err := beacon.NewClient(shared.BeaconAPI)
 	if err != nil {
-		return nil, fmt.Errorf("%w: failed to dial beacon grpc", err)
+		return nil, fmt.Errorf("%w: failed to create beacon API client", err)
 	}
-	return beaconservice.NewBeaconChainClient(conn), nil
+	return client, nil
 }
 
-func NewBeaconNodeFollower() Service {
-	url := fmt.Sprintf("http://%s/eth/v1/beacon/genesis", shared.BeaconGatewayFollowerGRPC)
-	return newDockerService("beacon-node-follower", url)
-}
-
-func GetBeaconNodeFollowerClient(ctx context.Context) (beaconservice.BeaconChainClient, error) {
-	// TODO: cache conns for reuse
-	conn, err := grpc.DialContext(ctx, shared.BeaconFollowerRPC, grpc.WithInsecure())
+func GetBeaconNodeFollowerClient(ctx context.Context) (*beacon.Client, error) {
+	client, err := beacon.NewClient(shared.BeaconFollowerAPI)
 	if err != nil {
-		return nil, fmt.Errorf("%w: failed to dial beacon follower grpc", err)
+		return nil, fmt.Errorf("%w: failed to create beacon follower API client", err)
 	}
-	return beaconservice.NewBeaconChainClient(conn), nil
+	return client, nil
 }
 
 func NewGethNode() Service {

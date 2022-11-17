@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"math/big"
+	"os"
 	"time"
 
 	"github.com/Inphi/eip4844-interop/shared"
@@ -36,7 +37,12 @@ func main() {
 	defer cancel()
 
 	ctrl.StopDevnet()
-	env := ctrl.GetEnv()
+
+	clientName := "prysm"
+	if len(os.Args) > 1 {
+		clientName = os.Args[1]
+	}
+	env := ctrl.InitEnvForClient(clientName)
 
 	g, gctx := errgroup.WithContext(ctx)
 	g.Go(func() error {
