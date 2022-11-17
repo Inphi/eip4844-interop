@@ -1,7 +1,7 @@
 [submodule "geth/go-ethereum"]
 	path = geth/go-ethereum
 	url = https://github.com/mdehoog/go-ethereum
-	branch = devnet-v3
+	branch = eip-4844
 [submodule "prysm/prysm"]
 	path = prysm/prysm
 	url = https://github.com/Inphi/prysm
