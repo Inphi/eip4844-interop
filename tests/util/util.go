@@ -51,7 +51,7 @@ func WaitForNextSlots(ctx context.Context, client *beacon.Client, slots consensu
 }
 
 type Body struct {
-	BlobKzgs []string `json:"blob_kzgs"`
+	BlobKzgCommitments []string `json:"blob_kzg_commitments"`
 }
 
 type Message struct {
@@ -105,7 +105,7 @@ func FindBlobSlot(ctx context.Context, client *beacon.Client, startSlot consensu
 			log.Fatalf("beaconchainclient.GetBlock: %v", err)
 		}
 
-		if len(block.Data.Message.Body.BlobKzgs) != 0 {
+		if len(block.Data.Message.Body.BlobKzgCommitments) != 0 {
 			return slot
 		}
 
