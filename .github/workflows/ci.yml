@@ -6,9 +6,9 @@ env:
 
 on:
   push:
-    branches: ['master', 'devnet-v3']
+    branches: ['master']
   pull_request:
-    branches: ['master', 'devnet-v3']
+    branches: ['master']
 
 jobs:
   test-prysm:
