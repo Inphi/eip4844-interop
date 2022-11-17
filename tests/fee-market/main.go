@@ -247,7 +247,7 @@ func FindBlocksWithBlobs(ctx context.Context, client *beacon.Client, startSlot c
 			log.Fatalf("Failed to GetBlock: %v", err)
 		}
 
-		log.Println("Found block!", len(block.Data.Message.Body.BlobKzgs))
+		log.Println("Found block with KZG commitments", len(block.Data.Message.Body.BlobKzgs))
 
 		if len(block.Data.Message.Body.BlobKzgs) != 0 {
 			blocks = append(blocks, block)

@@ -5,7 +5,7 @@
 [submodule "prysm/prysm"]
 	path = prysm/prysm
 	url = https://github.com/Inphi/prysm
-	branch = devnet-v3
+	branch = eip-4844
 [submodule "lodestar/lodestar"]
 	path = lodestar/lodestar
 	url = https://github.com/dgcoffman/lodestar
@@ -13,4 +13,4 @@
 [submodule "erigon/erigon"]
 	path = erigon/erigon
 	url = https://github.com/roberto-bayardo/erigon
-	branch = devnet-v3
+	branch = eip-4844
