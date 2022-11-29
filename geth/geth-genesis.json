@@ -13,7 +13,7 @@
     "muirGlacierBlock": 0,
     "berlinBlock": 0,
     "londonBlock": 0,
-    "shardingForkBlock": 8,
+    "shardingForkBlock": 66,
     "clique": {
       "period": 5,
       "epoch": 30000
