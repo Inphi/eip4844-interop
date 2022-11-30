@@ -49,7 +49,7 @@ func WaitForShardingFork() {
 	config := GetEnv().GethChainConfig
 	eip4844ForkBlock := config.ShardingForkBlock.Uint64()
 
-	stallTimeout := 1 * time.Minute
+	stallTimeout := 60 * time.Minute
 
 	client, err := GetExecutionClient(ctx)
 	if err != nil {
