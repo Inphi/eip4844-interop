@@ -29,12 +29,11 @@ beacon-node \
     --verbosity="$VERBOSITY" \
     --datadir /chaindata \
     --force-clear-db \
-    --interop-eth1data-votes \
     --http-web3provider="$EXECUTION_NODE_URL" \
-    --deposit-contract 0x8A04d14125D0FDCDc742F4A05C051De07232EDa4 \
+    --deposit-contract 0x4242424242424242424242424242424242424242 \
     --chain-config-file=/config/chain-config.yml \
+    --genesis-state=/config/genesis.ssz \
     --contract-deployment-block 0 \
-    --interop-num-validators 4 \
     --rpc-host 0.0.0.0 \
     --rpc-port 4000 \
     --grpc-gateway-host 0.0.0.0 \
@@ -44,6 +43,7 @@ beacon-node \
     --p2p-host-ip "$EXTERNAL_IP" \
     --p2p-priv-key="$P2P_PRIV_KEY"\
     --subscribe-all-subnets \
+    --minimum-peers-per-subnet=0 \
     --enable-tracing \
     --tracing-endpoint "$TRACING_ENDPOINT" \
     --tracing-process-name "$PROCESS_NAME" $@

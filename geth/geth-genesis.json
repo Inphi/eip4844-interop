@@ -15,7 +15,7 @@
     "londonBlock": 0,
     "shardingForkBlock": 66,
     "clique": {
-      "period": 5,
+      "period": 14,
       "epoch": 30000
     },
     "terminalTotalDifficulty": 2,

@@ -5,6 +5,7 @@ volumes:
   geth_data2:
   beacon_node_data:
   beacon_node_follower_data:
+  validator_node_data:
 
 services:
   execution-node:
@@ -18,7 +19,7 @@ services:
     volumes:
       - 'geth_data:/db'
       - type: bind
-        source: ./geth/geth-genesis.json
+        source: ./testnetgen/geth-genesis.json
         target: /genesis.json
 
   execution-node-2:
@@ -35,7 +36,7 @@ services:
     volumes:
       - 'geth_data2:/db'
       - type: bind
-        source: ./geth/geth-genesis.json
+        source: ./testnetgen/geth-genesis.json
         target: /genesis.json
 
   prysm-beacon-node:
@@ -68,6 +69,9 @@ services:
       - type: bind
         source: ./prysm/prysm-priv-key
         target: /etc/prysm-priv-key
+      - type: bind
+        source: ./testnetgen/genesis.ssz
+        target: /config/genesis.ssz
 
   prysm-beacon-node-follower:
     depends_on:
@@ -103,6 +107,9 @@ services:
       - type: bind
         source: ./prysm/prysm-follower-priv-key
         target: /etc/prysm-priv-key
+      - type: bind
+        source: ./testnetgen/genesis.ssz
+        target: /config/genesis.ssz
 
   prysm-validator-node:
     depends_on:
@@ -111,27 +118,23 @@ services:
     build:
       context: ./prysm
       dockerfile: Dockerfile.prysm
-    command: >
-      validator
-      --accept-terms-of-use
-      --beacon-rpc-provider prysm-beacon-node:4000
-      --rpc
-      --grpc-gateway-host 0.0.0.0
-      --grpc-gateway-port 7500
-      --interop-num-validators=4
-      --interop-start-index=0
-      --force-clear-db
-      --chain-config-file=/config/chain-config.yml
-      --suggested-fee-recipient 0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b
-      --enable-tracing
-      --tracing-endpoint http://jaeger-tracing:14268/api/traces
-      --tracing-process-name validator-node
+    entrypoint: run_validator.sh
     ports:
       - '7500:7500'
     volumes:
+      - 'validator_node_data:/data'
       - type: bind
         source: ./shared/chain-config.yml
         target: /config/chain-config.yml
+      - type: bind
+        source: ./prysm/run_validator.sh
+        target: /usr/local/bin/run_validator.sh
+      - type: bind
+        source: ./testnetgen/keydata/keystores
+        target: /data/keystores
+      - type: bind
+        source: ./testnetgen/keydata/secrets
+        target: /data/secrets
 
   lodestar-beacon-node:
     depends_on:
