@@ -16,6 +16,7 @@ ENV CGO_CFLAGS=$CGO_CFLAGS
 
 RUN go build -o /build/beacon-node -buildvcs=false ./cmd/beacon-chain
 RUN go build -o /build/validator -buildvcs=false ./cmd/validator
+RUN go build -o /build/bootnode -buildvcs=false ./tools/bootnode
 
 FROM ubuntu:20.04
 RUN apt-get update && apt-get install -y curl jq iproute2
