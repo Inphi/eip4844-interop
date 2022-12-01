@@ -72,17 +72,20 @@ jobs:
           #       go 1.19 is incompatible with the github.com/lucas-clemente/quic-go v0.27.2 dependency
           go-version: '1.18'
 
+      - name: Build lodestar
+        run: docker-compose build lodestar-beacon-node lodestar-beacon-node-follower
+
       - name: Lodestar - Run pre-EIP4844 tests
         run: go run ./tests/pre-4844 lodestar
 
-      # - name: Lodestar - Run Blob transaction tests
-      #   run: go run ./tests/blobtx lodestar
+      - name: Lodestar - Run Blob transaction tests
+        run: go run ./tests/blobtx lodestar
 
-      # - name: Lodestar - Run Fee market spec tests
-      #   run: go run ./tests/fee-market lodestar
+      - name: Lodestar - Run Fee market spec tests
+        run: go run ./tests/fee-market lodestar
 
-      # - name: Lodestar - Run Initial sync tests
-      #   run: go run ./tests/initial-sync lodestar
+      - name: Lodestar - Run Initial sync tests
+        run: go run ./tests/initial-sync lodestar
 
       - name: Collect docker logs on failure
         if: failure()
