@@ -60,7 +60,7 @@ func main() {
 		log.Fatal("missing --eth1-genesis flag")
 	}
 
-	state := GenerateBellatrixGenesisState()
+	state := GenerateGenesisBeaconState()
 	var buf bytes.Buffer
 	if err := state.Serialize(codec.NewEncodingWriter(&buf)); err != nil {
 		log.Fatal(err)
@@ -107,7 +107,7 @@ func GenerateKeys() []*setup.KeyDetails {
 	return keys
 }
 
-func GenerateBellatrixGenesisState() common.BeaconState {
+func GenerateGenesisBeaconState() common.BeaconState {
 	eth1GenesisTime := common.Timestamp(time.Now().Unix())
 	eth2GenesisTime := eth1GenesisTime + 30
 
