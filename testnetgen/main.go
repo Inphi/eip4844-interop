@@ -22,17 +22,15 @@ import (
 )
 
 var (
-	TERMINAL_TOTAL_DIFFICULTY = big.NewInt(2)
-	ALTAIR_FORK_EPOCH         = 0
-	MERGE_FORK_EPOCH          = 0
-	//VALIDATOR_COUNT           uint64 = 64
-	VALIDATOR_COUNT uint64 = 16
-	SLOT_TIME              = 6
+	TERMINAL_TOTAL_DIFFICULTY        = big.NewInt(2)
+	ALTAIR_FORK_EPOCH                = 0
+	MERGE_FORK_EPOCH                 = 0
+	VALIDATOR_COUNT           uint64 = 16
+	SLOT_TIME                        = 6
 )
 
-var depositAddress common.Eth1Address
-
 var (
+	depositAddress     common.Eth1Address
 	fundAddress        = gethCommon.HexToAddress("a94f5374fce5edbc8e2a8697c15331677e6ebf0b")
 	fundAccountBalance *big.Int
 )
@@ -113,7 +111,6 @@ func GenerateBellatrixGenesisState() common.BeaconState {
 	eth1GenesisTime := common.Timestamp(time.Now().Unix())
 	eth2GenesisTime := eth1GenesisTime + 30
 
-	// TODO: rebuild deposit root for reduced validator set
 	// Generate genesis for execution clients
 	eth1Genesis := setup.BuildEth1Genesis(TERMINAL_TOTAL_DIFFICULTY, uint64(eth1GenesisTime), true)
 	eth1Genesis.Genesis.Config.Clique.Period = 14
@@ -128,7 +125,7 @@ func GenerateBellatrixGenesisState() common.BeaconState {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// Hack to set Config.TerminalTotalDifficultyPassed and ShardingForkBlock because the geth dep doesn't yet support that field
+	// Hack to set Config.TerminalTotalDifficultyPassed and ShardingForkBlock because the hive geth dependency doesn't yet support these fields
 	jason := make(map[string]interface{})
 	if err := json.Unmarshal(eth1GenesisJSON, &jason); err != nil {
 		log.Fatal(err)
