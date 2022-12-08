@@ -132,7 +132,7 @@ func GenerateGenesisBeaconState() common.BeaconState {
 	}
 	v := jason["config"].(map[string]interface{})
 	v["terminalTotalDifficultyPassed"] = true
-	v["shardingForkBlock"] = 18 // (EIP4844_FORK_EPOCH - BELLATRIX_FORK_EPOCH) * SLOTS_PER_EPOCH + TTD
+	v["shardingForkBlock"] = 10 // (EIP4844_FORK_EPOCH - BELLATRIX_FORK_EPOCH) * SLOTS_PER_EPOCH + TTD
 	eth1GenesisJSON, err = json.Marshal(jason)
 	if err != nil {
 		log.Fatal(err)

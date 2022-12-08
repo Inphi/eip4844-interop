@@ -5,7 +5,7 @@ BELLATRIX_FORK_EPOCH: 2
 CAPELLA_FORK_EPOCH: 3
 EIP4844_FORK_EPOCH: 4 # ensure this happens at exactly shardingForkBlock in execution
 SECONDS_PER_SLOT: 6
-SLOTS_PER_EPOCH: 8
+SLOTS_PER_EPOCH: 4
 TERMINAL_TOTAL_DIFFICULTY: 2
 
 # avoid collisions with mainnet/eip4844 config versioning
