@@ -109,7 +109,7 @@ func GenerateKeys() []*setup.KeyDetails {
 
 func GenerateGenesisBeaconState() common.BeaconState {
 	eth1GenesisTime := common.Timestamp(time.Now().Unix())
-	eth2GenesisTime := eth1GenesisTime + 30
+	eth2GenesisTime := eth1GenesisTime + 300
 
 	// Generate genesis for execution clients
 	eth1Genesis := setup.BuildEth1Genesis(TERMINAL_TOTAL_DIFFICULTY, uint64(eth1GenesisTime), true)
