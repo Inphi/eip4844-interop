@@ -24,6 +24,7 @@ func main() {
 	}
 
 	ctrl.InitE2ETest(clientName)
+	ctrl.WaitForMergeForkEpoch()
 
 	chainId := big.NewInt(1)
 	signer := types.NewDankSigner(chainId)
@@ -47,19 +48,19 @@ func main() {
 	}
 	log.Printf("Nonce: %d", nonce)
 
-	msg := ethereum.CallMsg{
-		From:  crypto.PubkeyToAddress(key.PublicKey),
-		To:    &common.Address{},
-		Gas:   21000,
-		Value: big.NewInt(10000),
-	}
-	gas, err := client.EstimateGas(ctx, msg)
+	gasTipCap, err := client.SuggestGasTipCap(ctx)
 	if err != nil {
-		log.Fatalf("EstimateGas error: %v", err)
+		log.Fatalf("SuggestGasTipCap: %v", err)
 	}
-
 	to := common.HexToAddress("ffb38a7a99e3e2335be83fc74b7faa19d5531243")
-	tx, err := types.SignTx(types.NewTransaction(nonce, to, big.NewInt(10000), params.TxGas, big.NewInt(int64(gas)), nil), signer, key)
+	unsignedTx := types.NewTx(&types.DynamicFeeTx{
+		To:        &to,
+		GasTipCap: gasTipCap,
+		GasFeeCap: gasTipCap,
+		Gas:       params.TxGas,
+		Value:     big.NewInt(10000),
+	})
+	tx, err := types.SignTx(unsignedTx, signer, key)
 	if err != nil {
 		log.Fatalf("Error signing tx: %v", err)
 	}

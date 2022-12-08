@@ -124,6 +124,18 @@ func WaitForSlotWithClient(ctx context.Context, client *beacon.Client, slot type
 	return nil
 }
 
+func WaitForMergeForkEpoch() {
+	log.Println("waiting for merge fork epoch...")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
+
+	config := GetEnv().BeaconChainConfig
+	bellatrixSlot := config.BellatrixForkEpoch * config.SlotsPerEpoch
+	if err := WaitForSlot(ctx, types.Slot(bellatrixSlot)); err != nil {
+		log.Fatal(err)
+	}
+}
+
 func WaitForEip4844ForkEpoch() {
 	log.Println("waiting for eip4844 fork epoch...")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
