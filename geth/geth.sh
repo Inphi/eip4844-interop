@@ -30,6 +30,21 @@ else
 fi
 
 if [ ! -d "$GETH_CHAINDATA_DIR" ]; then
+    # TODO: temporary solution for generating genesis, remove this before merge
+    # wait for the genesis to be updated
+    RETRIES=60
+    i=0
+    until [ $(jq .config.shanghaiTime $GENESIS_FILE_PATH) != 0 ];
+    do
+        sleep 1
+        if [ $i -eq $RETRIES ]; then
+            echo 'Timed out waiting for execution node'
+            exit 1
+        fi
+        echo 'Waiting for execution node...'
+        ((i=i+1))
+    done
+
     echo "$GETH_CHAINDATA_DIR missing, running init"
     geth --verbosity="$VERBOSITY" init \
         --datadir "$GETH_DATA_DIR" \

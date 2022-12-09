@@ -5,9 +5,12 @@ volumes:
   geth_data2:
   beacon_node_data:
   beacon_node_follower_data:
+  genesis_data:
 
 services:
   execution-node:
+    depends_on:
+      - lcli-build-genesis
     build:
       context: ./geth
       dockerfile: Dockerfile.geth
@@ -15,11 +18,13 @@ services:
       - '8545:8545'
     environment:
       GETH_VERBOSITY: 4
+      GENESIS_FILE_PATH: /genesis_data/genesis.json
     volumes:
       - 'geth_data:/db'
-      - type: bind
-        source: ./geth/geth-genesis.json
-        target: /genesis.json
+      - 'genesis_data:/genesis_data'
+      # - type: bind
+      #   source: ./geth/geth-genesis.json
+      #   target: /genesis.json
 
   execution-node-2:
     depends_on:
@@ -30,13 +35,15 @@ services:
     environment:
       PEER: execution-node:30303
       GETH_VERBOSITY: 4
+      GENESIS_FILE_PATH: /genesis_data/genesis.json
     ports:
       - '8546:8545'
     volumes:
       - 'geth_data2:/db'
-      - type: bind
-        source: ./geth/geth-genesis.json
-        target: /genesis.json
+      - 'genesis_data:/genesis_data'
+      # - type: bind
+      #   source: ./geth/geth-genesis.json
+      #   target: /genesis.json
 
   prysm-beacon-node:
     depends_on:
@@ -183,12 +190,38 @@ services:
         source: ./lodestar/run_beacon_node_peer.sh
         target: /usr/local/bin/run_beacon_node_peer.sh
 
-  lighthouse-beacon-node:
-    depends_on:
-      - execution-node
+  # TODO: temporary solution for generating genesis, remove this before merge
+  lcli-build-genesis:
     build:
       context: ./lighthouse
       dockerfile: Dockerfile.lighthouse
+    image: lighthouse-interop
+    pull_policy: never
+    environment:
+      TESTNET_DIR: /config
+    entrypoint: ["generate-genesis.sh"]
+    volumes:
+      - type: bind
+        source: ./shared/chain-config.yml
+        target: /config/config.yaml
+      - type: bind
+        source: ./lighthouse/deploy_block.txt
+        target: /config/deploy_block.txt
+      - type: bind
+        source: ./lighthouse/generate-genesis.sh
+        target: /usr/local/bin/generate-genesis.sh
+      - type: bind
+        source: ./geth/geth-genesis.json
+        target: /genesis.json
+      - "genesis_data:/genesis_data"
+
+  lighthouse-beacon-node:
+    depends_on:
+      - execution-node
+      - lcli-build-genesis
+    # build:
+    #   context: ./lighthouse
+    #   dockerfile: Dockerfile.lighthouse
     image: lighthouse-interop
     pull_policy: never
     environment:
@@ -202,6 +235,7 @@ services:
       - "9000:9000"
     volumes:
       - "beacon_node_data:/chaindata"
+      - "genesis_data:/genesis_data"
       - type: bind
         source: ./shared/chain-config.yml
         target: /config/config.yaml
