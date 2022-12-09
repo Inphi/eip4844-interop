@@ -183,6 +183,94 @@ services:
         source: ./lodestar/run_beacon_node_peer.sh
         target: /usr/local/bin/run_beacon_node_peer.sh
 
+  lighthouse-beacon-node:
+    depends_on:
+      - execution-node
+    build:
+      context: ./lighthouse
+      dockerfile: Dockerfile.lighthouse
+    image: lighthouse-interop
+    pull_policy: never
+    environment:
+      EXECUTION_NODE_URL: "http://execution-node:8545"
+      VERBOSITY: debug
+      TESTNET_DIR: /config
+      GENERATE_GENESIS: true
+    entrypoint: ["run_beacon_node.sh"]
+    ports:
+      - "5052:5052"
+      - "9000:9000"
+    volumes:
+      - "beacon_node_data:/chaindata"
+      - type: bind
+        source: ./shared/chain-config.yml
+        target: /config/config.yaml
+      - type: bind
+        source: ./lighthouse/deploy_block.txt
+        target: /config/deploy_block.txt
+      - type: bind
+        source: ./lighthouse/run_beacon_node.sh
+        target: /usr/local/bin/run_beacon_node.sh
+      - type: bind
+        source: ./shared/trusted_setup.txt
+        target: /config/trusted_setup.txt
+
+  lighthouse-beacon-node-follower:
+    image: lighthouse-interop
+    pull_policy: never
+    depends_on:
+      - execution-node-2
+      - lighthouse-beacon-node
+    environment:
+      BEACON_NODE_RPC: http://lighthouse-beacon-node:5052
+      EXECUTION_NODE_URL: "http://execution-node-2:8545"
+      VERBOSITY: debug
+      TESTNET_DIR: /config
+      GENERATE_GENESIS: false
+    entrypoint: ["run_beacon_node_peer.sh"]
+    ports:
+      - "5053:5052"
+      - "9001:9000"
+    volumes:
+      - "beacon_node_follower_data:/chaindata"
+      - type: bind
+        source: ./shared/chain-config.yml
+        target: /config/config.yaml
+      - type: bind
+        source: ./lighthouse/deploy_block.txt
+        target: /config/deploy_block.txt
+      - type: bind
+        source: ./lighthouse/run_beacon_node.sh
+        target: /usr/local/bin/run_beacon_node.sh
+      - type: bind
+        source: ./lighthouse/run_beacon_node_peer.sh
+        target: /usr/local/bin/run_beacon_node_peer.sh
+      - type: bind
+        source: ./shared/trusted_setup.txt
+        target: /config/trusted_setup.txt
+
+  lighthouse-validator-node:
+    image: lighthouse-interop
+    pull_policy: never
+    depends_on:
+      - lighthouse-beacon-node-follower
+      - lighthouse-beacon-node
+    command: >
+      lighthouse 
+      	vc 
+      	--datadir /chaindata 
+      	--testnet-dir /config 
+      	--init-slashing-protection 
+      	--beacon-nodes http://lighthouse-beacon-node-follower:5052
+    volumes:
+      - "beacon_node_data:/chaindata"
+      - type: bind
+        source: ./shared/chain-config.yml
+        target: /config/config.yaml
+      - type: bind
+        source: ./lighthouse/deploy_block.txt
+        target: /config/deploy_block.txt
+
   jaeger-tracing:
     image: jaegertracing/all-in-one:1.35
     environment:
