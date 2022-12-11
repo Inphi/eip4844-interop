@@ -11,7 +11,7 @@ VALIDATOR_COUNT=4
 
 GENESIS_TIME=`date +%s`
 
-if [ "$GENERATE_GENESIS" == "true" ]; then
+if [ "$GENERATE_GENESIS" == "true" ] && [ ! -d $DATADIR/validators ]; then
   lcli \
   	insecure-validators \
   	--count $VALIDATOR_COUNT \

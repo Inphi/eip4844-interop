@@ -38,10 +38,10 @@ if [ ! -d "$GETH_CHAINDATA_DIR" ]; then
     do
         sleep 1
         if [ $i -eq $RETRIES ]; then
-            echo 'Timed out waiting for execution node'
+            echo 'Timed out waiting for updated genesis'
             exit 1
         fi
-        echo 'Waiting for execution node...'
+        echo 'Waiting for updated genesis...'
         ((i=i+1))
     done
 

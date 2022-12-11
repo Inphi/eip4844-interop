@@ -3,19 +3,20 @@
 set -exu -o pipefail
 
 VALIDATOR_COUNT=4
-
 GENESIS_TIME=`date +%s`
+
+GENESIS_FORK_VERSION=$(yq e '.GENESIS_FORK_VERSION' /config/config.yaml)
 
 if [ ! -f "$TESTNET_DIR/genesis.ssz" ]; then
   lcli \
   	interop-genesis \
+		--genesis-fork-version $GENESIS_FORK_VERSION\
   	--genesis-time $GENESIS_TIME \
   	--spec mainnet \
   	--testnet-dir $TESTNET_DIR \
   	$VALIDATOR_COUNT
 fi
 
-yq e '.CAPELLA_FORK_EPOCH' /config/config.yaml
 CAPELLA_FORK_EPOCH=$(yq e '.CAPELLA_FORK_EPOCH' /config/config.yaml)
 EIP4844_FORK_EPOCH=$(yq e '.EIP4844_FORK_EPOCH' /config/config.yaml)
 SECONDS_PER_SLOT=$(yq e '.SECONDS_PER_SLOT' /config/config.yaml)

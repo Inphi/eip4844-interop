@@ -29,6 +29,7 @@ services:
   execution-node-2:
     depends_on:
       - execution-node
+      - lcli-build-genesis
     build:
       context: ./geth
       dockerfile: Dockerfile.geth
@@ -255,6 +256,7 @@ services:
     depends_on:
       - execution-node-2
       - lighthouse-beacon-node
+      - lcli-build-genesis
     environment:
       BEACON_NODE_RPC: http://lighthouse-beacon-node:5052
       EXECUTION_NODE_URL: "http://execution-node-2:8545"
@@ -267,6 +269,7 @@ services:
       - "9001:9000"
     volumes:
       - "beacon_node_follower_data:/chaindata"
+      - "genesis_data:/genesis_data"
       - type: bind
         source: ./shared/chain-config.yml
         target: /config/config.yaml
@@ -295,7 +298,8 @@ services:
       	--datadir /chaindata 
       	--testnet-dir /config 
       	--init-slashing-protection 
-      	--beacon-nodes http://lighthouse-beacon-node-follower:5052
+      	--beacon-nodes http://lighthouse-beacon-node-follower:5053
+        --suggested-fee-recipient 0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990
     volumes:
       - "beacon_node_data:/chaindata"
       - type: bind
