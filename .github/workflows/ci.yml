@@ -134,7 +134,7 @@ jobs:
           key: docker-cache-${{ hashFiles('.git/modules/lighthouse/*/HEAD', '.git/modules/geth/*/HEAD') }}
 
       - name: Lighthouse - Run pre-EIP4844 tests
-        timeout-minutes: 30
+        timeout-minutes: 60
         run: go run ./tests/pre-4844 lighthouse
 
       # - name: Lighthouse - Run Blob transaction tests
