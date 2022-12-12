@@ -261,7 +261,8 @@ services:
       	--datadir /chaindata 
       	--testnet-dir /config 
       	--init-slashing-protection 
-      	--beacon-nodes http://lighthouse-beacon-node-follower:5052
+      	--beacon-nodes http://lighthouse-beacon-node:5052
+        --suggested-fee-recipient 0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990
     volumes:
       - "beacon_node_data:/chaindata"
       - type: bind
