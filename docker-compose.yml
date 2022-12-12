@@ -195,7 +195,7 @@ services:
       EXECUTION_NODE_URL: "http://execution-node:8545"
       VERBOSITY: debug
       TESTNET_DIR: /config
-      GENERATE_GENESIS: true
+      GENERATE_GENESIS: "true"
     entrypoint: ["run_beacon_node.sh"]
     ports:
       - "5052:5052"
@@ -226,7 +226,7 @@ services:
       EXECUTION_NODE_URL: "http://execution-node-2:8545"
       VERBOSITY: debug
       TESTNET_DIR: /config
-      GENERATE_GENESIS: false
+      GENERATE_GENESIS: "false"
     entrypoint: ["run_beacon_node_peer.sh"]
     ports:
       - "5053:5052"
