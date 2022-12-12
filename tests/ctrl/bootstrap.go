@@ -18,9 +18,9 @@ import (
 )
 
 var consensusClientEnvironments = map[string]*TestEnvironment{
-	"prysm":    newPrysmTestEnvironment(),
-	"lodestar": newLodestarTestEnvironment(),
-	// "lighthouse": newLighthouseTestEnvironment(),
+	"prysm":      newPrysmTestEnvironment(),
+	"lodestar":   newLodestarTestEnvironment(),
+	"lighthouse": newLighthouseTestEnvironment(),
 }
 
 // Stateful. InitE2ETest sets this.
@@ -174,6 +174,19 @@ func newLodestarTestEnvironment() *TestEnvironment {
 		BeaconChainConfig:  ReadBeaconChainConfig(),
 		BeaconNode:         NewBeaconNode(clientName),
 		BeaconNodeFollower: NewBeaconNodeFollower(clientName),
+		GethChainConfig:    ReadGethChainConfig(),
+		GethNode:           NewGethNode(),
+		GethNode2:          NewGethNode2(),
+	}
+}
+
+func newLighthouseTestEnvironment() *TestEnvironment {
+	clientName := "lighthouse"
+	return &TestEnvironment{
+		BeaconChainConfig:  ReadBeaconChainConfig(),
+		BeaconNode:         NewBeaconNode(clientName),
+		BeaconNodeFollower: NewBeaconNodeFollower(clientName),
+		ValidatorNode:      NewValidatorNode(clientName),
 		GethChainConfig:    ReadGethChainConfig(),
 		GethNode:           NewGethNode(),
 		GethNode2:          NewGethNode2(),
