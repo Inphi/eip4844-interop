@@ -1,10 +1,10 @@
 PRESET_BASE: 'mainnet'
 CONFIG_NAME: 'local'
 
-ALTAIR_FORK_EPOCH: 0
-BELLATRIX_FORK_EPOCH: 0
-CAPELLA_FORK_EPOCH: 1
-EIP4844_FORK_EPOCH: 2 # ensure this happens at exactly shardingForkBlock in execution
+ALTAIR_FORK_EPOCH: 1
+BELLATRIX_FORK_EPOCH: 2
+CAPELLA_FORK_EPOCH: 3
+EIP4844_FORK_EPOCH: 4 # ensure this happens at exactly shardingForkBlock in execution
 SECONDS_PER_SLOT: 12
 SLOTS_PER_EPOCH: 32
 TERMINAL_TOTAL_DIFFICULTY: 2
