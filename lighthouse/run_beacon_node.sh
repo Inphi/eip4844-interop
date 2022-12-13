@@ -38,18 +38,7 @@ fi
 
 
 # wait for the execution node to start
-RETRIES=60
-i=0
-until curl --silent --fail "$EXECUTION_NODE_URL";
-do
-    sleep 1
-    if [ $i -eq $RETRIES ]; then
-        echo 'Timed out waiting for execution node'
-        exit 1
-    fi
-    echo 'Waiting for execution node...'
-    ((i=i+1))
-done
+sleep 20
 
 EXTERNAL_IP=$(ip addr show eth0 | grep inet | awk '{ print $2 }' | cut -d '/' -f1)
 NETWORK_PORT=9000
@@ -61,7 +50,7 @@ lighthouse \
 	--datadir "$DATADIR" \
 	--purge-db \
 	--execution-endpoint "$EXECUTION_NODE_URL"  \
-	--execution-jwt-secret-key 0x98ea6e4f216f2fb4b69fff9b3a44842c38686ca685f3f55dc48c5d3fb1107be4 \
+	--execution-jwt /secret/jwtsecret \
 	--testnet-dir $TESTNET_DIR \
 	--port $NETWORK_PORT \
 	--http \

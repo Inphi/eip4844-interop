@@ -8,7 +8,7 @@ devnet-up:
 		jaeger-tracing
 
 lighthouse-up:
-	docker compose --project-name eip4844-interop up -d\
+	docker compose --project-name eip4844-interop up -d --build\
 		execution-node\
 		execution-node-2\
 		lighthouse-beacon-node\

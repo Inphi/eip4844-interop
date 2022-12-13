@@ -25,6 +25,9 @@ services:
       # - type: bind
       #   source: ./geth/geth-genesis.json
       #   target: /genesis.json
+      - type: bind
+        source: ./shared/jwtsecret
+        target: /secret/jwtsecret
 
   execution-node-2:
     depends_on:
@@ -45,6 +48,9 @@ services:
       # - type: bind
       #   source: ./geth/geth-genesis.json
       #   target: /genesis.json
+      - type: bind
+        source: ./shared/jwtsecret
+        target: /secret/jwtsecret
 
   prysm-beacon-node:
     depends_on:
@@ -226,7 +232,7 @@ services:
     image: lighthouse-interop
     pull_policy: never
     environment:
-      EXECUTION_NODE_URL: "http://execution-node:8545"
+      EXECUTION_NODE_URL: "http://execution-node:8551"
       VERBOSITY: debug
       TESTNET_DIR: /config
       GENERATE_GENESIS: "true"
@@ -249,6 +255,9 @@ services:
       - type: bind
         source: ./shared/trusted_setup.txt
         target: /config/trusted_setup.txt
+      - type: bind
+        source: ./shared/jwtsecret
+        target: /secret/jwtsecret
 
   lighthouse-beacon-node-follower:
     image: lighthouse-interop
@@ -259,7 +268,7 @@ services:
       - lcli-build-genesis
     environment:
       BEACON_NODE_RPC: http://lighthouse-beacon-node:5052
-      EXECUTION_NODE_URL: "http://execution-node-2:8545"
+      EXECUTION_NODE_URL: "http://execution-node-2:8551"
       VERBOSITY: debug
       TESTNET_DIR: /config
       GENERATE_GENESIS: "false"
@@ -285,6 +294,9 @@ services:
       - type: bind
         source: ./shared/trusted_setup.txt
         target: /config/trusted_setup.txt
+      - type: bind
+        source: ./shared/jwtsecret
+        target: /secret/jwtsecret
 
   lighthouse-validator-node:
     image: lighthouse-interop
