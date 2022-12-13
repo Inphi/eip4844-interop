@@ -18,14 +18,21 @@ if [ "$GENERATE_GENESIS" == "true" ] && [ ! -d $DATADIR/validators ]; then
   	--base-dir $DATADIR \
 
   echo Validators generated with keystore passwords at $DATADIR.
-  # echo "Building genesis state... (this might take a while)"
 
-  # lcli \
-  # 	interop-genesis \
-  # 	--genesis-time $GENESIS_TIME \
-  # 	--spec mainnet \
-  # 	--testnet-dir $TESTNET_DIR \
-  # 	$VALIDATOR_COUNT
+	echo "Waiting for genesis state to be created... (this might take a while)"
+	RETRIES=60
+	i=0
+	until [ -f /genesis_data/genesis.ssz ];
+	do
+			sleep 1
+			if [ $i -eq $RETRIES ]; then
+					echo 'Timed out waiting for genesis state'
+					exit 1
+			fi
+			echo 'Waiting for genesis state...'
+			((i=i+1))
+	done
+
 	cp /genesis_data/genesis.ssz $TESTNET_DIR
 fi
 
