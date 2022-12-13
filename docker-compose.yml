@@ -229,7 +229,7 @@ services:
       EXECUTION_NODE_URL: "http://execution-node:8545"
       VERBOSITY: debug
       TESTNET_DIR: /config
-      GENERATE_GENESIS: true
+      GENERATE_GENESIS: "true"
     entrypoint: ["run_beacon_node.sh"]
     ports:
       - "5052:5052"
@@ -262,7 +262,7 @@ services:
       EXECUTION_NODE_URL: "http://execution-node-2:8545"
       VERBOSITY: debug
       TESTNET_DIR: /config
-      GENERATE_GENESIS: false
+      GENERATE_GENESIS: "false"
     entrypoint: ["run_beacon_node_peer.sh"]
     ports:
       - "5053:5052"
@@ -298,7 +298,7 @@ services:
       	--datadir /chaindata 
       	--testnet-dir /config 
       	--init-slashing-protection 
-      	--beacon-nodes http://lighthouse-beacon-node-follower:5053
+      	--beacon-nodes http://lighthouse-beacon-node:5052
         --suggested-fee-recipient 0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990
     volumes:
       - "beacon_node_data:/chaindata"
