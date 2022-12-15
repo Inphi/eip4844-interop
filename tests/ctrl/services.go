@@ -3,6 +3,7 @@ package ctrl
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -23,7 +24,7 @@ func NewBeaconNode(clientName string) Service {
 }
 
 func NewValidatorNode(clientName string) Service {
-	return newDockerService(fmt.Sprintf("%s-validator-node", clientName), shared.ValidatorAPI)
+	return newDockerService(fmt.Sprintf("%s-validator-node", clientName), "")
 }
 
 func NewBeaconNodeFollower(clientName string) Service {
@@ -73,6 +74,9 @@ func (s *dockerService) Start(ctx context.Context) error {
 	if err := StartServices(s.svcname); err != nil {
 		return err
 	}
+	if s.statusURL == "" {
+		return nil
+	}
 	req, err := http.NewRequestWithContext(ctx, "GET", s.statusURL, nil)
 	if err != nil {
 		return err
@@ -87,6 +91,7 @@ func (s *dockerService) Start(ctx context.Context) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-time.After(1 * time.Second):
+			log.Printf("%s: waiting for a successful status check at %s", s.svcname, s.statusURL)
 		}
 	}
 }

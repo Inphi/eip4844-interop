@@ -32,11 +32,9 @@ RUN go build \
 # Pull Geth into a second stage deploy alpine container
 FROM alpine:3.15
 
-RUN apk add --no-cache ca-certificates curl jq
+RUN apk add --no-cache ca-certificates curl jq bind-tools
 COPY --from=builder /app/go-ethereum/build/bin/geth /usr/local/bin/
 COPY --from=builder /app/go-ethereum/build/bin/bootnode /usr/local/bin/
 
 WORKDIR /usr/local/bin/
 EXPOSE 8545 8546 8547 30303/udp
-COPY ./geth.sh /geth.sh
-ENTRYPOINT ["/bin/sh", "/geth.sh"]

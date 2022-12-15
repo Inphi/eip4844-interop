@@ -6,51 +6,65 @@ volumes:
   beacon_node_data:
   beacon_node_follower_data:
   genesis_data:
+  lighthouse_shared_config:
+  lighthouse_data:
 
 services:
+  execution-bootnode:
+    build:
+      context: ./geth
+      dockerfile: Dockerfile.geth
+    command: /usr/local/bin/bootnode.sh
+    volumes:
+      - type: bind
+        source: ./geth/bootnode.sh
+        target: /usr/local/bin/bootnode.sh
+ 
   execution-node:
     depends_on:
+      #- execution-bootnode
       - lcli-build-genesis
     build:
       context: ./geth
       dockerfile: Dockerfile.geth
     ports:
       - '8545:8545'
-    environment:
-      GETH_VERBOSITY: 4
-      GENESIS_FILE_PATH: /genesis_data/genesis.json
+    entrypoint: ["geth.sh"]
     volumes:
       - 'geth_data:/db'
-      - 'genesis_data:/genesis_data'
-      # - type: bind
-      #   source: ./geth/geth-genesis.json
-      #   target: /genesis.json
+      - lighthouse_shared_config:/shared-configs
       - type: bind
         source: ./shared/jwtsecret
-        target: /secret/jwtsecret
+        target: /config/jwtsecret
+      - type: bind
+        source: ./lighthouse/vars.env
+        target: /config/vars.env
+      - type: bind
+        source: ./geth/geth.sh
+        target: /usr/local/bin/geth.sh
 
   execution-node-2:
     depends_on:
       - execution-node
-      - lcli-build-genesis
     build:
       context: ./geth
       dockerfile: Dockerfile.geth
-    environment:
-      PEER: execution-node:30303
-      GETH_VERBOSITY: 4
-      GENESIS_FILE_PATH: /genesis_data/genesis.json
     ports:
       - '8546:8545'
+    entrypoint: ["geth.sh"]
     volumes:
       - 'geth_data2:/db'
       - 'genesis_data:/genesis_data'
-      # - type: bind
-      #   source: ./geth/geth-genesis.json
-      #   target: /genesis.json
+      - lighthouse_shared_config:/shared-configs
       - type: bind
         source: ./shared/jwtsecret
-        target: /secret/jwtsecret
+        target: /config/jwtsecret
+      - type: bind
+        source: ./lighthouse/vars.env
+        target: /config/vars.env
+      - type: bind
+        source: ./geth/geth.sh
+        target: /usr/local/bin/geth.sh
 
   prysm-beacon-node:
     depends_on:
@@ -204,26 +218,43 @@ services:
       dockerfile: Dockerfile.lighthouse
     image: lighthouse-interop
     pull_policy: never
-    environment:
-      TESTNET_DIR: /config
     entrypoint: ["generate-genesis.sh"]
     volumes:
-      - type: bind
-        source: ./shared/chain-config.yml
-        target: /config/config.yaml
-      - type: bind
-        source: ./lighthouse/deploy_block.txt
-        target: /config/deploy_block.txt
+      - lighthouse_data:/data
+      - lighthouse_shared_config:/lighthouse_shared_config
+      - "./lighthouse/vars.env:/config/vars.env"
       - type: bind
         source: ./lighthouse/generate-genesis.sh
         target: /usr/local/bin/generate-genesis.sh
       - type: bind
-        source: ./geth/geth-genesis.json
-        target: /genesis.json
-      - "genesis_data:/genesis_data"
+        source: ./lighthouse/genesis.json
+        target: /config/genesis.json
+      - type: bind
+        source: ./lighthouse/generated-genesis.json
+        target: /config/generated-genesis.json
+      - type: bind
+        source: ./lighthouse/generated-config.yaml
+        target: /config/generated-config.yaml
 
+  lighthouse-bootnode:
+    depends_on:
+      - lcli-build-genesis
+    image: lighthouse-interop
+    pull_policy: never
+    command: run_bootnode.sh
+    volumes:
+      - lighthouse_data:/data
+      - lighthouse_shared_config:/lighthouse_shared_config
+      - type: bind
+        source: ./lighthouse/run_bootnode.sh
+        target: /usr/local/bin/run_bootnode.sh
+      - type: bind
+        source: ./lighthouse/vars.env
+        target: /config/vars.env
+ 
   lighthouse-beacon-node:
     depends_on:
+      - lighthouse-bootnode
       - execution-node
       - lcli-build-genesis
     # build:
@@ -231,72 +262,56 @@ services:
     #   dockerfile: Dockerfile.lighthouse
     image: lighthouse-interop
     pull_policy: never
-    environment:
-      EXECUTION_NODE_URL: "http://execution-node:8551"
-      VERBOSITY: debug
-      TESTNET_DIR: /config
-      GENERATE_GENESIS: "true"
-    entrypoint: ["run_beacon_node.sh"]
+    entrypoint: ["run_beacon_node.sh", "-d", "debug", "/data/node_1", "http://execution-node:8551"]
     ports:
       - "5052:5052"
+      - "8000:8000"
       - "9000:9000"
     volumes:
-      - "beacon_node_data:/chaindata"
-      - "genesis_data:/genesis_data"
-      - type: bind
-        source: ./shared/chain-config.yml
-        target: /config/config.yaml
-      - type: bind
-        source: ./lighthouse/deploy_block.txt
-        target: /config/deploy_block.txt
+      - lighthouse_data:/data
+      - lighthouse_shared_config:/lighthouse_shared_config
       - type: bind
         source: ./lighthouse/run_beacon_node.sh
         target: /usr/local/bin/run_beacon_node.sh
+      - type: bind
+        source: ./lighthouse/vars.env
+        target: /config/vars.env
       - type: bind
         source: ./shared/trusted_setup.txt
         target: /config/trusted_setup.txt
       - type: bind
         source: ./shared/jwtsecret
-        target: /secret/jwtsecret
+        target: /config/jwtsecret
 
   lighthouse-beacon-node-follower:
-    image: lighthouse-interop
-    pull_policy: never
     depends_on:
       - execution-node-2
       - lighthouse-beacon-node
-      - lcli-build-genesis
-    environment:
-      BEACON_NODE_RPC: http://lighthouse-beacon-node:5052
-      EXECUTION_NODE_URL: "http://execution-node-2:8551"
-      VERBOSITY: debug
-      TESTNET_DIR: /config
-      GENERATE_GENESIS: "false"
-    entrypoint: ["run_beacon_node_peer.sh"]
+    # build:
+    #   context: ./lighthouse
+    #   dockerfile: Dockerfile.lighthouse
+    image: lighthouse-interop
+    pull_policy: never
+    entrypoint: ["run_beacon_node.sh", "-d", "debug", "/data/node_2", "http://execution-node-2:8551"]
     ports:
       - "5053:5052"
+      - "8001:8000"
       - "9001:9000"
     volumes:
-      - "beacon_node_follower_data:/chaindata"
-      - "genesis_data:/genesis_data"
-      - type: bind
-        source: ./shared/chain-config.yml
-        target: /config/config.yaml
-      - type: bind
-        source: ./lighthouse/deploy_block.txt
-        target: /config/deploy_block.txt
+      - lighthouse_data:/data
+      - lighthouse_shared_config:/lighthouse_shared_config
       - type: bind
         source: ./lighthouse/run_beacon_node.sh
         target: /usr/local/bin/run_beacon_node.sh
       - type: bind
-        source: ./lighthouse/run_beacon_node_peer.sh
-        target: /usr/local/bin/run_beacon_node_peer.sh
+        source: ./lighthouse/vars.env
+        target: /config/vars.env
       - type: bind
         source: ./shared/trusted_setup.txt
         target: /config/trusted_setup.txt
       - type: bind
         source: ./shared/jwtsecret
-        target: /secret/jwtsecret
+        target: /config/jwtsecret
 
   lighthouse-validator-node:
     image: lighthouse-interop
@@ -304,23 +319,17 @@ services:
     depends_on:
       - lighthouse-beacon-node-follower
       - lighthouse-beacon-node
-    command: >
-      lighthouse 
-      	vc 
-      	--datadir /chaindata 
-      	--testnet-dir /config 
-      	--init-slashing-protection 
-      	--beacon-nodes http://lighthouse-beacon-node:5052
-        --suggested-fee-recipient 0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990
+    entrypoint: ['run_validator.sh', 'http://lighthouse-beacon-node:8000']
     volumes:
-      - "beacon_node_data:/chaindata"
+      - lighthouse_data:/data
+      - lighthouse_shared_config:/lighthouse_shared_config
       - type: bind
-        source: ./shared/chain-config.yml
-        target: /config/config.yaml
+        source: ./lighthouse/run_validator.sh
+        target: /usr/local/bin/run_validator.sh
       - type: bind
-        source: ./lighthouse/deploy_block.txt
-        target: /config/deploy_block.txt
-
+        source: ./lighthouse/vars.env
+        target: /config/vars.env
+ 
   jaeger-tracing:
     image: jaegertracing/all-in-one:1.35
     environment:

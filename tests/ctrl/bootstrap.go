@@ -3,6 +3,7 @@ package ctrl
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"time"
@@ -17,37 +18,47 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-var consensusClientEnvironments = map[string]*TestEnvironment{
-	"prysm":      newPrysmTestEnvironment(),
-	"lodestar":   newLodestarTestEnvironment(),
-	"lighthouse": newLighthouseTestEnvironment(),
-}
+var consensusClientEnvironment *TestEnvironment
 
 // Stateful. InitE2ETest sets this.
 var client string
 
 func GetEnv() *TestEnvironment {
-	return consensusClientEnvironments[client]
+	return consensusClientEnvironment
 }
 
 func InitEnvForClient(clientName string) *TestEnvironment {
 	client = clientName
-	return consensusClientEnvironments[clientName]
+	switch client {
+	case "prysm":
+		consensusClientEnvironment = newPrysmTestEnvironment()
+	case "lodestar":
+		consensusClientEnvironment = newLodestarTestEnvironment()
+	case "lighthouse":
+		consensusClientEnvironment = newLighthouseTestEnvironment()
+	default:
+		log.Fatalf("unknown client %s", clientName)
+	}
+	return consensusClientEnvironment
 }
 
 func InitE2ETest(clientName string) {
+	env := InitEnvForClient(clientName)
+
 	ctx := context.Background()
 	if err := StopDevnet(); err != nil {
 		log.Fatalf("unable to stop devnet: %v", err)
 	}
-	InitEnvForClient(clientName).StartAll(ctx)
+	if err := env.StartAll(ctx); err != nil {
+		log.Fatalf("unable to start environment: %v", err)
+	}
 }
 
 func WaitForShardingFork() {
 	ctx := context.Background()
 
 	config := GetEnv().GethChainConfig
-	eip4844ForkBlock := config.ShardingForkBlock.Uint64()
+	eip4844ForkTime := config.ShardingForkTime
 
 	stallTimeout := 60 * time.Minute
 
@@ -56,31 +67,33 @@ func WaitForShardingFork() {
 		log.Fatalf("unable to retrive beacon node client: %v", err)
 	}
 
-	log.Printf("waiting for sharding fork block...")
+	log.Printf("waiting for sharding fork time...")
 	var lastBn uint64
-	var lastUpdate time.Time
+	lastUpdate := time.Now()
 	for {
-		bn, err := client.BlockNumber(ctx)
+		b, err := client.BlockByNumber(ctx, nil)
 		if err != nil {
-			log.Fatalf("ethclient.BlockNumber: %v", err)
+			log.Fatalf("ethclient.BlockByNumber: %v", err)
 		}
-
-		if bn >= eip4844ForkBlock {
+		if b.Time() >= *eip4844ForkTime {
 			break
 		}
 		// Chain stall detection
-		if bn != lastBn {
-			lastBn = bn
+		if b.NumberU64() != lastBn {
+			lastBn = b.NumberU64()
 			lastUpdate = time.Now()
 		} else if time.Since(lastUpdate) > stallTimeout {
-			log.Fatalf("Chain is stalled on block %v", bn)
+			log.Fatalf("Chain is stalled on block %v", b.NumberU64())
 		}
 		time.Sleep(time.Second * 1)
 	}
 }
 
 func ReadGethChainConfig() *params.ChainConfig {
-	path := shared.GethChainConfigFilepath()
+	return ReadGethChainConfigFromPath(shared.GethChainConfigFilepath())
+}
+
+func ReadGethChainConfigFromPath(path string) *params.ChainConfig {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		log.Fatalf("unable to read geth chain config file at %v: %v", path, err)
@@ -93,7 +106,10 @@ func ReadGethChainConfig() *params.ChainConfig {
 }
 
 func ReadBeaconChainConfig() *BeaconChainConfig {
-	path := shared.BeaconChainConfigFilepath()
+	return ReadBeaconChainConfigFromPath(shared.BeaconChainConfigFilepath())
+}
+
+func ReadBeaconChainConfigFromPath(path string) *BeaconChainConfig {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		log.Fatalf("unable to read beacon chain config file at %v: %v", path, err)
@@ -130,7 +146,8 @@ func WaitForEip4844ForkEpoch() {
 	defer cancel()
 
 	config := GetEnv().BeaconChainConfig
-	eip4844Slot := config.Eip4844ForkEpoch * config.SlotsPerEpoch
+	// TODO: query /eth/v1/config/spec for time parameters
+	eip4844Slot := config.Eip4844ForkEpoch * 32
 	if err := WaitForSlot(ctx, types.Slot(eip4844Slot)); err != nil {
 		log.Fatal(err)
 	}
@@ -141,7 +158,6 @@ type BeaconChainConfig struct {
 	BellatrixForkEpoch      uint64 `yaml:"BELLATRIX_FORK_EPOCH"`
 	Eip4844ForkEpoch        uint64 `yaml:"EIP4844_FORK_EPOCH"`
 	SecondsPerSlot          uint64 `yaml:"SECONDS_PER_SLOT"`
-	SlotsPerEpoch           uint64 `yaml:"SLOTS_PER_EPOCH"`
 	TerminalTotalDifficulty uint64 `yaml:"TERMINAL_TOTAL_DIFFICULTY"`
 }
 
@@ -182,12 +198,28 @@ func newLodestarTestEnvironment() *TestEnvironment {
 
 func newLighthouseTestEnvironment() *TestEnvironment {
 	clientName := "lighthouse"
+	// lcli-build-genesis expects these files to be present
+	if err := ioutil.WriteFile("./lighthouse/generated-genesis.json", nil, 0666); err != nil {
+		log.Fatal(err)
+	}
+	if err := ioutil.WriteFile("./lighthouse/generated-config.yaml", nil, 0666); err != nil {
+		log.Fatal(err)
+	}
+
+	// Generate configs
+	if err := StartServices("lcli-build-genesis"); err != nil {
+		log.Fatalf("failed to setup lighthouse test environment: %v", err)
+	}
+	// TODO: it takes a moment for the docker daemon to synchronize files
+	time.Sleep(time.Second * 3)
+
 	return &TestEnvironment{
-		BeaconChainConfig:  ReadBeaconChainConfig(),
+		// TODO: read the generated genesis from the container
+		BeaconChainConfig:  ReadBeaconChainConfigFromPath(fmt.Sprintf("%s/lighthouse/generated-config.yaml", shared.GetBaseDir())),
 		BeaconNode:         NewBeaconNode(clientName),
 		BeaconNodeFollower: NewBeaconNodeFollower(clientName),
 		ValidatorNode:      NewValidatorNode(clientName),
-		GethChainConfig:    ReadGethChainConfig(),
+		GethChainConfig:    ReadGethChainConfigFromPath(fmt.Sprintf("%s/lighthouse/generated-genesis.json", shared.GetBaseDir())),
 		GethNode:           NewGethNode(),
 		GethNode2:          NewGethNode2(),
 	}

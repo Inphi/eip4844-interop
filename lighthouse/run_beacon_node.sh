@@ -1,67 +1,60 @@
 #!/bin/env bash
 
-set -exu -o pipefail
+set -Eeuo pipefail
 
-: "${EXECUTION_NODE_URL:-}"
-: "${VERBOSITY:-info}"
-: "${GENERATE_GENESIS:-false}"
+source /config/vars.env
 
-DATADIR=/chaindata
-VALIDATOR_COUNT=4
-
-GENESIS_TIME=`date +%s`
-
-if [ "$GENERATE_GENESIS" == "true" ] && [ ! -d $DATADIR/validators ]; then
-  lcli \
-  	insecure-validators \
-  	--count $VALIDATOR_COUNT \
-  	--base-dir $DATADIR \
-
-  echo Validators generated with keystore passwords at $DATADIR.
-
-	echo "Waiting for genesis state to be created... (this might take a while)"
-	RETRIES=60
-	i=0
-	until [ -f /genesis_data/genesis.ssz ];
-	do
-			sleep 1
-			if [ $i -eq $RETRIES ]; then
-					echo 'Timed out waiting for genesis state'
-					exit 1
-			fi
-			echo 'Waiting for genesis state...'
-			((i=i+1))
-	done
-
-	cp /genesis_data/genesis.ssz $TESTNET_DIR
-fi
-
-
-# wait for the execution node to start
-sleep 20
-
+SUBSCRIBE_ALL_SUBNETS=
+DEBUG_LEVEL=${DEBUG_LEVEL:-debug}
 EXTERNAL_IP=$(ip addr show eth0 | grep inet | awk '{ print $2 }' | cut -d '/' -f1)
-NETWORK_PORT=9000
-HTTP_PORT=5052
 
-lighthouse \
-	beacon_node \
-	--debug-level info \
-	--datadir "$DATADIR" \
-	--purge-db \
-	--execution-endpoint "$EXECUTION_NODE_URL"  \
-	--execution-jwt /secret/jwtsecret \
-	--testnet-dir $TESTNET_DIR \
-	--port $NETWORK_PORT \
-	--http \
-	--http-port $HTTP_PORT \
+# Get options
+while getopts "d:sh" flag; do
+  case "${flag}" in
+    d) DEBUG_LEVEL=${OPTARG};;
+    s) SUBSCRIBE_ALL_SUBNETS="--subscribe-all-subnets";;
+    h)
+       echo "Start a beacon node"
+       echo
+       echo "usage: $0 <Options> <DATADIR> <EXECUTION_ENDPOINT>"
+       echo
+       echo "Options:"
+       echo "   -s: pass --subscribe-all-subnets to 'lighthouse bn ...', default is not passed"
+       echo "   -d: DEBUG_LEVEL, default info"
+       echo "   -h: this help"
+       echo
+       echo "Positional arguments:"
+       echo "  DATADIR             Value for --datadir parameter"
+       echo "  EXECUTION_ENDPOINT  Value for --execution-endpoint parameter"
+       exit
+       ;;
+  esac
+done
+
+set -x
+
+# Get positional arguments
+data_dir=${@:$OPTIND+0:1}
+execution_endpoint=${@:$OPTIND+1:1}
+network_port=9000
+http_port=8000
+
+exec lighthouse \
+    --debug-level $DEBUG_LEVEL \
+    bn \
+    $SUBSCRIBE_ALL_SUBNETS \
+    --datadir $data_dir \
+    --testnet-dir $TESTNET_DIR \
+    --enable-private-discovery \
+    --staking \
+    --enr-address $EXTERNAL_IP \
+    --enr-udp-port $network_port \
+    --enr-tcp-port $network_port \
+    --port $network_port \
 	--http-address 0.0.0.0 \
-	--http-allow-sync-stalled \
-	--enable-private-discovery \
-	--enr-address $EXTERNAL_IP \
-	--enr-udp-port $NETWORK_PORT \
-	--enr-tcp-port $NETWORK_PORT \
-	--disable-enr-auto-update \
-	--subscribe-all-subnets \
-	--trusted-setup-file $TESTNET_DIR/trusted_setup.txt \
-	--disable-packet-filter $@
+    --http-port $http_port \
+    --disable-packet-filter \
+    --target-peers $((BN_COUNT - 1)) \
+    --execution-endpoint $execution_endpoint \
+    --trusted-setup-file /config/trusted_setup.txt \
+    --execution-jwt /config/jwtsecret
