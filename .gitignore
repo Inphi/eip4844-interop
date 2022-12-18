@@ -1,2 +1,4 @@
 /.idea/
 node_modules/
+lighthouse/generated-genesis.json
+lighthouse/generated-config.yaml

@@ -7,7 +7,6 @@ import (
 	"math/big"
 	"os"
 	"sort"
-	"strconv"
 	"sync"
 	"time"
 
@@ -74,9 +73,13 @@ func main() {
 	blocks := FindBlocksWithBlobs(ctx, beaconClient, startSlot)
 
 	log.Printf("checking blob from beacon node")
+	ma, err := shared.GetBeaconMultiAddress()
+	if err != nil {
+		log.Fatalf("unable to get beacon multiaddr: %v", err)
+	}
 	var downloadedData []byte
 	for _, b := range blocks {
-		data := util.DownloadBlobs(ctx, SlotForBlock(b), 1, shared.BeaconMultiAddress)
+		data := util.DownloadBlobs(ctx, b.Data.Message.Slot, 1, ma)
 		downloadedData = append(downloadedData, data...)
 	}
 
@@ -90,18 +93,17 @@ func main() {
 	time.Sleep(time.Second * 2 * time.Duration(env.BeaconChainConfig.SecondsPerSlot)) // wait a bit for sync
 
 	downloadedData = nil
+	maFollower, err := shared.GetBeaconFollowerMultiAddress()
+	if err != nil {
+		log.Fatalf("unable to get beacon multiaddr: %v", err)
+	}
 	for _, b := range blocks {
-		data := util.DownloadBlobs(ctx, SlotForBlock(b), 1, shared.BeaconFollowerMultiAddress)
+		data := util.DownloadBlobs(ctx, b.Data.Message.Slot, 1, maFollower)
 		downloadedData = append(downloadedData, data...)
 	}
 	if !bytes.Equal(flatBlobs, downloadedData) {
 		log.Fatalf("mismatch %d %v", len(flatBlobs), len(downloadedData))
 	}
-}
-
-func SlotForBlock(block util.Block) consensustypes.Slot {
-	slot, _ := strconv.ParseUint(block.Data.Message.Slot, 10, 64)
-	return consensustypes.Slot(slot)
 }
 
 func FlattenBlobs(blobsData []types.Blobs) []byte {
@@ -232,11 +234,11 @@ func UploadBlobsAndCheckBlockHeader(ctx context.Context, client *ethclient.Clien
 	}
 }
 
-func FindBlocksWithBlobs(ctx context.Context, client *beacon.Client, startSlot consensustypes.Slot) []util.Block {
+func FindBlocksWithBlobs(ctx context.Context, client *beacon.Client, startSlot consensustypes.Slot) []*util.Block {
 	slot := startSlot
 	endSlot := util.GetHeadSlot(ctx, client)
 
-	var blocks []util.Block
+	var blocks []*util.Block
 	for {
 		if slot == endSlot {
 			break
