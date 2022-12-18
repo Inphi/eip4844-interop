@@ -2,7 +2,7 @@
 
 set -exu -o pipefail
 
-VERBOSITY=${GETH_VERBOSITY:-4}
+VERBOSITY=${GETH_VERBOSITY:-5}
 GETH_DATA_DIR=/db
 GETH_KEYSTORE_DIR="$GETH_DATA_DIR/keystore"
 GETH_CHAINDATA_DIR="$GETH_DATA_DIR/geth/chaindata"
@@ -11,11 +11,26 @@ BLOCK_SIGNER_PRIVATE_KEY="45a915e4d060149eb4365960e6a7a45f334393093061116b197e32
 #BLOCK_SIGNER_ADDRESS="0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b"
 RPC_PORT="${RPC_PORT:-8545}"
 WS_PORT="${WS_PORT:-8546}"
+AUTH_PORT="${AUTH_PORT:-8551}"
 BOOTNODE_KEY_HEX=${BOOTNODE_KEY_HEX:-65f77f40c167b52b5cc70fb33582aecbdcd81062dc1438df00a3099a07079204}
 NETWORKID=69
 ENABLE_MINING=true
-
 PEER=${PEER:-}
+
+
+# synchronize genesis.json with CL fork schedule
+# Do this only on the master node
+if [ -z "$PEER" ]; then
+    GENESIS=$(($(date +%s) + 30))
+    # epoch duration = 4 * 8 = 32
+    SHANGHAI=$(($GENESIS + 96)) # 32 * CAPELLA_FORK_EPOCH
+    EIP4844=$(($GENESIS + 126)) # 32 * EIP4844_FORK_EPOCH
+    cp $GENESIS_FILE_PATH /config/base-geth-genesis.json
+    jq ". | .config.shanghaiTime = $SHANGHAI" < /config/base-geth-genesis.json |
+        jq ". | .config.shardingForkTime = $EIP4844" > $GENESIS_FILE_PATH
+    echo $GENESIS > /config/genesis.txt
+fi
+
 
 if [ ! -d "$GETH_KEYSTORE_DIR" ]; then
     echo "$GETH_KEYSTORE_DIR missing, running account import"
@@ -71,7 +86,10 @@ exec geth \
     --ws.origins="*" \
     --ws.api=debug,eth,txpool,net,engine \
     --maxpeers=2 ${ADDITIONAL_FLAGS} \
-    --authrpc.jwtsecret=0x98ea6e4f216f2fb4b69fff9b3a44842c38686ca685f3f55dc48c5d3fb1107be4 \
+    --authrpc.addr=0.0.0.0 \
+    --authrpc.vhosts="*" \
+    --authrpc.port=$AUTH_PORT \
+    --authrpc.jwtsecret=/config/jwtsecret \
     --allow-insecure-unlock \
     --password "${GETH_DATA_DIR}/password" \
     --syncmode=full \

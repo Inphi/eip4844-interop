@@ -1,10 +1,11 @@
-version: '3.4'
+version: '3.9'
 
 volumes:
   geth_data:
   geth_data2:
   beacon_node_data:
   beacon_node_follower_data:
+  shared_config:
 
 services:
   execution-node:
@@ -17,9 +18,13 @@ services:
       GETH_VERBOSITY: 4
     volumes:
       - 'geth_data:/db'
+      - 'shared_config:/config'
       - type: bind
         source: ./geth/geth-genesis.json
         target: /genesis.json
+      - type: bind
+        source: ./shared/jwtsecret
+        target: /config/jwtsecret
 
   execution-node-2:
     depends_on:
@@ -37,6 +42,9 @@ services:
       - type: bind
         source: ./geth/geth-genesis.json
         target: /genesis.json
+      - type: bind
+        source: ./shared/jwtsecret
+        target: /config/jwtsecret
 
   prysm-beacon-node:
     depends_on:
@@ -46,11 +54,12 @@ services:
       context: ./prysm
       dockerfile: Dockerfile.prysm
     environment:
-      EXECUTION_NODE_URL: http://execution-node:8545
+      EXECUTION_NODE_URL: http://execution-node:8551
       TRACING_ENDPOINT: http://jaeger-tracing:14268/api/traces
       PROCESS_NAME: beacon-node
       VERBOSITY: debug
       P2P_PRIV_KEY: /etc/prysm-priv-key
+      P2P_TCP_PORT: 13000
     entrypoint:
       ['run_beacon_node.sh', '--min-sync-peers=0', '--bootstrap-node=']
     ports:
@@ -59,6 +68,7 @@ services:
       - '13000:13000'
     volumes:
       - 'beacon_node_data:/chaindata'
+      - 'shared_config:/config'
       - type: bind
         source: ./shared/chain-config.yml
         target: /config/chain-config.yml
@@ -68,6 +78,12 @@ services:
       - type: bind
         source: ./prysm/prysm-priv-key
         target: /etc/prysm-priv-key
+      - type: bind
+        source: ./geth/geth-genesis.json
+        target: /config/geth-genesis.json
+      - type: bind
+        source: ./shared/jwtsecret
+        target: /config/jwtsecret
 
   prysm-beacon-node-follower:
     depends_on:
@@ -78,19 +94,21 @@ services:
       context: ./prysm
       dockerfile: Dockerfile.prysm
     environment:
-      EXECUTION_NODE_URL: http://execution-node-2:8545
+      EXECUTION_NODE_URL: http://execution-node-2:8551
       TRACING_ENDPOINT: http://jaeger-tracing:14268/api/traces
       PROCESS_NAME: beacon-node-follower
       BEACON_NODE_RPC: http://prysm-beacon-node:3500
       VERBOSITY: debug
       P2P_PRIV_KEY: /etc/prysm-priv-key
+      P2P_TCP_PORT: 13001
     entrypoint: run_beacon_node_peer.sh
     ports:
       - '3501:3500'
       - '4001:4000'
-      - '13001:13000'
+      - '13001:13001'
     volumes:
       - 'beacon_node_follower_data:/chaindata'
+      - 'shared_config:/config'
       - type: bind
         source: ./shared/chain-config.yml
         target: /config/chain-config.yml
@@ -103,6 +121,9 @@ services:
       - type: bind
         source: ./prysm/prysm-follower-priv-key
         target: /etc/prysm-priv-key
+      - type: bind
+        source: ./shared/jwtsecret
+        target: /config/jwtsecret
 
   prysm-validator-node:
     depends_on:

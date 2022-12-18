@@ -4,8 +4,9 @@
 	branch = eip-4844
 [submodule "prysm/prysm"]
 	path = prysm/prysm
-	url = https://github.com/Inphi/prysm
-	branch = eip-4844
+	# TODO: replace with upstream eip4844 branch once 4844 is integrated to the beacon API
+	url = https://github.com/inphi/prysm
+	branch = eip4844-dev
 [submodule "lodestar/lodestar"]
 	path = lodestar/lodestar
 	url = https://github.com/dgcoffman/lodestar
