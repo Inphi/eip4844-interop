@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"log"
-	"math/big"
 	"os"
 	"time"
 
@@ -34,14 +33,17 @@ func main() {
 		log.Fatalf("Error reading file: %v", err)
 	}
 
-	chainId := big.NewInt(1)
-	signer := types.NewDankSigner(chainId)
-
 	ctx := context.Background()
 	client, err := ethclient.DialContext(ctx, addr)
 	if err != nil {
 		log.Fatalf("Failed to connect to the Ethereum client: %v", err)
 	}
+
+	chainId, err := client.ChainID(ctx)
+	if err != nil {
+		log.Fatalf("failed to retrieve chain id: %v", err)
+	}
+	signer := types.NewDankSigner(chainId)
 
 	key, err := crypto.HexToECDSA(prv)
 	if err != nil {
