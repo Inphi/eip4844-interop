@@ -3,6 +3,7 @@ package ctrl
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"log"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/Inphi/eip4844-interop/tests/util"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/fsnotify/fsnotify"
 	"github.com/prysmaticlabs/prysm/v3/api/client/beacon"
 	types "github.com/prysmaticlabs/prysm/v3/consensus-types/primitives"
 	"golang.org/x/sync/errgroup"
@@ -181,12 +183,26 @@ func newLodestarTestEnvironment() *TestEnvironment {
 }
 
 func (env *TestEnvironment) StartAll(ctx context.Context) error {
+	// HACK: the execution-node service generates a genesis.json. We start it early so we can reload the geth chain config
+	genesisUpdate := make(chan struct{})
+	if err := setupFileWatcher(shared.GethChainConfigFilepath(), genesisUpdate); err != nil {
+		return err
+	}
+	err := env.GethNode.Start(ctx)
+	if err != nil {
+		return err
+	}
+	select {
+	case <-ctx.Done():
+		return errors.New("timeout waiting for generated genesis.json")
+	case <-genesisUpdate:
+		break
+	}
+	env.GethChainConfig = ReadGethChainConfig()
+
 	g, ctx := errgroup.WithContext(ctx)
 	g.Go(func() error {
 		return env.BeaconNode.Start(ctx)
-	})
-	g.Go(func() error {
-		return env.GethNode.Start(ctx)
 	})
 	g.Go(func() error {
 		if env.ValidatorNode != nil {
@@ -207,4 +223,36 @@ func (env *TestEnvironment) StartAll(ctx context.Context) error {
 		return nil
 	})
 	return g.Wait()
+}
+
+func setupFileWatcher(file string, done chan struct{}) error {
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		close(done)
+		return err
+	}
+	defer watcher.Close()
+	watcher.Add(file)
+	go func() {
+		for {
+			select {
+			case event, ok := <-watcher.Events:
+				if !ok {
+					close(done) // we're done
+					return
+				}
+				if event.Op&fsnotify.Write == fsnotify.Write {
+					close(done)
+					return
+				}
+			case err, ok := <-watcher.Errors:
+				if !ok {
+					close(done) // we're done
+					return
+				}
+				log.Println("inotify error:", err)
+			}
+		}
+	}()
+	return nil
 }

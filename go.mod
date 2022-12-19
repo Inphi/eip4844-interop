@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/ethereum/go-ethereum v1.10.26
+	github.com/fsnotify/fsnotify v1.6.0
 	github.com/holiman/uint256 v1.2.1
 	github.com/libp2p/go-libp2p v0.24.0
 	github.com/libp2p/go-libp2p-core v0.17.0
@@ -44,7 +45,6 @@ require (
 	github.com/fjl/memsize v0.0.1 // indirect
 	github.com/flynn/noise v1.0.0 // indirect
 	github.com/francoispqt/gojay v1.2.13 // indirect
-	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
