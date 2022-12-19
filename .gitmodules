@@ -14,3 +14,11 @@
 	path = erigon/erigon
 	url = https://github.com/roberto-bayardo/erigon
 	branch = eip-4844
+[submodule "erigon/erigon-lib"]
+	path = erigon/erigon-lib
+	url = https://github.com/roberto-bayardo/erigon-lib
+	branch = eip-4844
+[submodule "erigon/interfaces"]
+	path = erigon/interfaces
+	url = https://github.com/roberto-bayardo/interfaces
+	branch = eip-4844
