@@ -46,7 +46,7 @@ func GetBeaconMultiAddress() (string, error) {
 }
 
 func GetBeaconFollowerMultiAddress() (string, error) {
-	return getMultiaddress("http//:" + BeaconFollowerAPI)
+	return getMultiaddress("http://" + BeaconFollowerAPI)
 }
 
 func getMultiaddress(beaconAPI string) (string, error) {
