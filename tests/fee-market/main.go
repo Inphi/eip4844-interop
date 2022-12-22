@@ -63,7 +63,8 @@ func main() {
 	startSlot := util.GetHeadSlot(ctx, beaconClient)
 
 	// Send multiple transactions at the same time to induce non-zero excess_blobs
-	UploadBlobsAndCheckBlockHeader(ctx, ethClient, blobsData)
+	chainID := env.GethChainConfig.ChainID
+	UploadBlobsAndCheckBlockHeader(ctx, ethClient, chainID, blobsData)
 
 	util.WaitForNextSlots(ctx, beaconClient, 1)
 	util.WaitForNextSlots(ctx, beaconClient, 1)
@@ -121,8 +122,7 @@ func FlattenBlobs(blobsData []types.Blobs) []byte {
 	return out
 }
 
-func UploadBlobsAndCheckBlockHeader(ctx context.Context, client *ethclient.Client, blobsData []types.Blobs) {
-	chainId := big.NewInt(1)
+func UploadBlobsAndCheckBlockHeader(ctx context.Context, client *ethclient.Client, chainId *big.Int, blobsData []types.Blobs) {
 	signer := types.NewDankSigner(chainId)
 
 	key, err := crypto.HexToECDSA(shared.PrivateKey)
