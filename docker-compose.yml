@@ -5,7 +5,6 @@ volumes:
   geth_data2:
   beacon_node_data:
   beacon_node_follower_data:
-  genesis_data:
   lighthouse_shared_config:
   lighthouse_data:
 
