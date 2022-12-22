@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"reflect"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -19,13 +21,19 @@ import (
 	"github.com/libp2p/go-libp2p/p2p/protocol/identify"
 	"github.com/libp2p/go-libp2p/p2p/transport/tcp"
 	ma "github.com/multiformats/go-multiaddr"
+	ssz "github.com/prysmaticlabs/fastssz"
+	"github.com/prysmaticlabs/go-bitfield"
 	"github.com/prysmaticlabs/prysm/v3/beacon-chain/p2p"
 	"github.com/prysmaticlabs/prysm/v3/beacon-chain/p2p/encoder"
 	p2ptypes "github.com/prysmaticlabs/prysm/v3/beacon-chain/p2p/types"
 	"github.com/prysmaticlabs/prysm/v3/beacon-chain/sync"
 	consensustypes "github.com/prysmaticlabs/prysm/v3/consensus-types/primitives"
+	"github.com/prysmaticlabs/prysm/v3/consensus-types/wrapper"
 	ethpb "github.com/prysmaticlabs/prysm/v3/proto/prysm/v1alpha1"
+	"github.com/prysmaticlabs/prysm/v3/proto/prysm/v1alpha1/metadata"
 )
+
+var responseCodeSuccess = byte(0x00)
 
 func SendBlobsSidecarsByRangeRequest(ctx context.Context, h host.Host, encoding encoder.NetworkEncoding, pid peer.ID, req *ethpb.BlobsSidecarsByRangeRequest) ([]*ethpb.BlobsSidecar, error) {
 	topic := fmt.Sprintf("%s%s", p2p.RPCBlobsSidecarsByRangeTopicV1, encoding.ProtocolSuffix())
@@ -107,8 +115,6 @@ func readStatusCodeNoDeadline(stream network.Stream, encoding encoder.NetworkEnc
 	return b[0], string(*msg), nil
 }
 
-var responseCodeSuccess = byte(0x00)
-
 // Using p2p RPC
 func DownloadBlobs(ctx context.Context, startSlot consensustypes.Slot, count uint64, beaconMA string) []byte {
 	log.Print("downloading blobs...")
@@ -126,7 +132,19 @@ func DownloadBlobs(ctx context.Context, startSlot consensustypes.Slot, count uin
 		_ = h.Close()
 	}()
 	h.RemoveStreamHandler(identify.IDDelta)
-	// TODO: setup some handlers to avoid being penalized
+	// setup enough handlers so lighthouse thinks it's dealing with a beacon peer
+	setHandler(h, p2p.RPCPingTopicV1, pingHandler)
+	setHandler(h, p2p.RPCGoodByeTopicV1, pingHandler)
+	setHandler(h, p2p.RPCMetaDataTopicV1, pingHandler)
+	setHandler(h, p2p.RPCMetaDataTopicV2, pingHandler)
+
+	nilHandler := func(ctx context.Context, i interface{}, stream network.Stream) error {
+		log.Printf("received request for %s", stream.Protocol())
+		return nil
+	}
+	setHandler(h, p2p.RPCBlocksByRangeTopicV1, nilHandler)
+	setHandler(h, p2p.RPCBlocksByRangeTopicV2, nilHandler)
+	setHandler(h, p2p.RPCBlobsSidecarsByRangeTopicV1, nilHandler)
 
 	maddr, err := ma.NewMultiaddr(beaconMA)
 	if err != nil {
@@ -142,21 +160,9 @@ func DownloadBlobs(ctx context.Context, startSlot consensustypes.Slot, count uin
 		log.Fatalf("libp2p host connect: %v", err)
 	}
 
-	// temporary hack to workaround lighthouse disconnect issue
-	var sidecars []*ethpb.BlobsSidecar
-	var attempts, maxRetry int = 0, 10
-	for {
-		sidecars, err = SendBlobsSidecarsByRangeRequest(ctx, h, encoder.SszNetworkEncoder{}, addrInfo.ID, req)
-		if err == nil {
-			break
-		} else if attempts < maxRetry {
-			attempts++
-			log.Printf("%d of %d attempts to send blobs p2p request failed: %v", attempts, maxRetry, err)
-			time.Sleep(time.Second * 1)
-			continue
-		} else {
-			log.Fatalf("failed to send blobs p2p request: %v", err)
-		}
+	sidecars, err := SendBlobsSidecarsByRangeRequest(ctx, h, encoder.SszNetworkEncoder{}, addrInfo.ID, req)
+	if err != nil {
+		log.Fatalf("failed to send blobs p2p request: %v", err)
 	}
 
 	anyBlobs := false
@@ -174,7 +180,6 @@ func DownloadBlobs(ctx context.Context, startSlot consensustypes.Slot, count uin
 		// stop after the first sidecar with blobs:
 		break
 	}
-
 	if !anyBlobs {
 		log.Fatalf("No blobs found in requested slots, sidecar count: %d", len(sidecars))
 	}
@@ -216,4 +221,127 @@ func retrievePeerID(ctx context.Context, h host.Host, addr string) (peer.ID, err
 		return peer.ID(split[len(split)-1]), nil
 	}
 	return "", err
+}
+
+type rpcHandler func(context.Context, interface{}, network.Stream) error
+
+// adapted from prysm's handler router
+func setHandler(h host.Host, baseTopic string, handler rpcHandler) {
+	encoding := &encoder.SszNetworkEncoder{}
+	topic := baseTopic + encoding.ProtocolSuffix()
+	h.SetStreamHandler(protocol.ID(topic), func(stream network.Stream) {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("Panic occurred: %v", r)
+				log.Printf("%s", debug.Stack())
+			}
+		}()
+
+		// Resetting after closing is a no-op so defer a reset in case something goes wrong.
+		// It's up to the handler to Close the stream (send an EOF) if
+		// it successfully writes a response. We don't blindly call
+		// Close here because we may have only written a partial
+		// response.
+		defer func() {
+			_err := stream.Reset()
+			_ = _err
+		}()
+
+		base, ok := p2p.RPCTopicMappings[baseTopic]
+		if !ok {
+			log.Printf("ERROR: Could not retrieve base message for topic %s", baseTopic)
+			return
+		}
+		bb := base
+		t := reflect.TypeOf(base)
+		// Copy Base
+		base = reflect.New(t)
+
+		if baseTopic == p2p.RPCMetaDataTopicV1 || baseTopic == p2p.RPCMetaDataTopicV2 {
+			if err := metadataHandler(context.Background(), base, stream); err != nil {
+				if err != p2ptypes.ErrWrongForkDigestVersion {
+					log.Printf("ERROR: Could not handle p2p RPC: %v", err)
+				}
+			}
+			return
+		}
+
+		// Given we have an input argument that can be pointer or the actual object, this gives us
+		// a way to check for its reflect.Kind and based on the result, we can decode
+		// accordingly.
+		if t.Kind() == reflect.Ptr {
+			msg, ok := reflect.New(t.Elem()).Interface().(ssz.Unmarshaler)
+			if !ok {
+				log.Printf("ERROR: message of %T ptr does not support marshaller interface. topic=%s", bb, baseTopic)
+				return
+			}
+			if err := encoding.DecodeWithMaxLength(stream, msg); err != nil {
+				log.Printf("ERROR: could not decode stream message: %v", err)
+				return
+			}
+			if err := handler(context.Background(), msg, stream); err != nil {
+				if err != p2ptypes.ErrWrongForkDigestVersion {
+					log.Printf("ERROR: Could not handle p2p RPC: %v", err)
+				}
+			}
+		} else {
+			nTyp := reflect.New(t)
+			msg, ok := nTyp.Interface().(ssz.Unmarshaler)
+			if !ok {
+				log.Printf("ERROR: message of %T does not support marshaller interface", msg)
+				return
+			}
+			if err := handler(context.Background(), msg, stream); err != nil {
+				if err != p2ptypes.ErrWrongForkDigestVersion {
+					log.Printf("ERROR: Could not handle p2p RPC: %v", err)
+				}
+			}
+		}
+	})
+}
+
+func dummyMetadata() metadata.Metadata {
+	metaData := &ethpb.MetaDataV1{
+		SeqNumber: 0,
+		Attnets:   bitfield.NewBitvector64(),
+		Syncnets:  bitfield.Bitvector4{byte(0x00)},
+	}
+	return wrapper.WrappedMetadataV1(metaData)
+}
+
+// pingHandler reads the incoming ping rpc message from the peer.
+func pingHandler(_ context.Context, _ interface{}, stream network.Stream) error {
+	encoding := &encoder.SszNetworkEncoder{}
+	defer closeStream(stream)
+	if _, err := stream.Write([]byte{responseCodeSuccess}); err != nil {
+		return err
+	}
+	m := dummyMetadata()
+	sq := consensustypes.SSZUint64(m.SequenceNumber())
+	if _, err := encoding.EncodeWithMaxLength(stream, &sq); err != nil {
+		return fmt.Errorf("%w: pingHandler stream write", err)
+	}
+	return nil
+}
+
+// metadataHandler spoofs a valid looking metadata message
+func metadataHandler(_ context.Context, _ interface{}, stream network.Stream) error {
+	encoding := &encoder.SszNetworkEncoder{}
+	defer closeStream(stream)
+	if _, err := stream.Write([]byte{responseCodeSuccess}); err != nil {
+		return err
+	}
+
+	// write a dummy metadata message to satify the client handshake
+	m := dummyMetadata()
+	if _, err := encoding.EncodeWithMaxLength(stream, m); err != nil {
+		return fmt.Errorf("%w: metadata stream write", err)
+	}
+	return nil
+}
+
+func closeStream(stream network.Stream) {
+	if err := stream.Close(); err != nil {
+		log.Println(err)
+	}
 }
