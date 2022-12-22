@@ -32,6 +32,5 @@ curl --header "Accept: application/octet-stream" --output $TESTNET_DIR/genesis.s
 echo "Genesis state saved to $TESTNET_DIR/genesis.ssz"
 
 run_beacon_node.sh \
-    --target-peers=1 \
     --boot-nodes "$PEER" \
     --libp2p-addresses "$P2P_ADDRESS" $@
