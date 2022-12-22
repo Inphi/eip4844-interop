@@ -63,7 +63,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("unable to get beacon multiaddr: %v", err)
 	}
-	followerMultiaddr, err := shared.GetBeaconMultiAddress()
+	followerMultiaddr, err := shared.GetBeaconFollowerMultiAddress()
 	if err != nil {
 		log.Fatalf("unable to get beacon multiaddr: %v", err)
 	}
@@ -74,7 +74,7 @@ func main() {
 	util.AssertBlobsEquals(blobs, downloadedBlobs)
 
 	log.Printf("checking blob from beacon node follower")
-	time.Sleep(time.Second * 10 * time.Duration(env.BeaconChainConfig.SecondsPerSlot)) // wait a bit for sync
+	time.Sleep(time.Second * 2 * time.Duration(env.BeaconChainConfig.SecondsPerSlot)) // wait a bit for sync
 	downloadedData = util.DownloadBlobs(ctx, slot, 1, followerMultiaddr)
 	downloadedBlobs = shared.EncodeBlobs(downloadedData)
 	util.AssertBlobsEquals(blobs, downloadedBlobs)
