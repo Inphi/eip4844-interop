@@ -54,7 +54,6 @@ services:
     entrypoint: ["geth.sh"]
     volumes:
       - 'geth_data2:/db'
-      - 'genesis_data:/genesis_data'
       - lighthouse_shared_config:/shared-configs
       - type: bind
         source: ./shared/jwtsecret
