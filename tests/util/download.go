@@ -12,7 +12,6 @@ import (
 
 	"github.com/Inphi/eip4844-interop/shared"
 	"github.com/libp2p/go-libp2p"
-	libp2pcore "github.com/libp2p/go-libp2p/core"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
@@ -92,7 +91,7 @@ func readChunkedBlobsSidecar(stream network.Stream, encoding encoder.NetworkEnco
 	return sidecar, err
 }
 
-func readStatusCodeNoDeadline(stream libp2pcore.Stream, encoding encoder.NetworkEncoding) (uint8, string, error) {
+func readStatusCodeNoDeadline(stream network.Stream, encoding encoder.NetworkEncoding) (uint8, string, error) {
 	b := make([]byte, 1)
 	_, err := stream.Read(b)
 	if err != nil {
@@ -143,9 +142,21 @@ func DownloadBlobs(ctx context.Context, startSlot consensustypes.Slot, count uin
 		log.Fatalf("libp2p host connect: %v", err)
 	}
 
-	sidecars, err := SendBlobsSidecarsByRangeRequest(ctx, h, encoder.SszNetworkEncoder{}, addrInfo.ID, req)
-	if err != nil {
-		log.Fatalf("failed to send blobs p2p request: %v", err)
+	// temporary hack to workaround lighthouse disconnect issue
+	var sidecars []*ethpb.BlobsSidecar
+	var attempts, maxRetry int = 0, 10
+	for {
+		sidecars, err = SendBlobsSidecarsByRangeRequest(ctx, h, encoder.SszNetworkEncoder{}, addrInfo.ID, req)
+		if err == nil {
+			break
+		} else if attempts < maxRetry {
+			attempts++
+			log.Printf("%d of %d attempts to send blobs p2p request failed: %v", attempts, maxRetry, err)
+			time.Sleep(time.Second * 1)
+			continue
+		} else {
+			log.Fatalf("failed to send blobs p2p request: %v", err)
+		}
 	}
 
 	anyBlobs := false

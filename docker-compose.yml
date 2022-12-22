@@ -319,7 +319,6 @@ services:
     image: lighthouse-interop
     pull_policy: never
     depends_on:
-      - lighthouse-beacon-node-follower
       - lighthouse-beacon-node
     entrypoint: ['run_validator.sh', 'http://lighthouse-beacon-node:8000']
     volumes:

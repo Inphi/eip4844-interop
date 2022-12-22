@@ -54,7 +54,7 @@ exec lighthouse \
     --http-address 0.0.0.0 \
     --http-port $http_port \
     --disable-packet-filter \
-    --target-peers $((BN_COUNT+1)) \
+    --target-peers $((BN_COUNT)) \
     --execution-endpoint $execution_endpoint \
     --trusted-setup-file /config/trusted_setup.txt \
     --execution-jwt /config/jwtsecret
