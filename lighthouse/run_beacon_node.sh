@@ -36,7 +36,7 @@ set -x
 # Get positional arguments
 data_dir=${@:$OPTIND+0:1}
 execution_endpoint=${@:$OPTIND+1:1}
-network_port=9000
+network_port=$P2P_PORT
 http_port=8000
 
 exec lighthouse \
@@ -54,7 +54,7 @@ exec lighthouse \
     --http-address 0.0.0.0 \
     --http-port $http_port \
     --disable-packet-filter \
-    --target-peers $((BN_COUNT)) \
+    --target-peers $((BN_COUNT+1)) \
     --execution-endpoint $execution_endpoint \
     --trusted-setup-file /config/trusted_setup.txt \
     --execution-jwt /config/jwtsecret

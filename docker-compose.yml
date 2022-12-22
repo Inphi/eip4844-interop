@@ -261,6 +261,8 @@ services:
     image: lighthouse-interop
     pull_policy: never
     entrypoint: ["run_beacon_node.sh", "-d", "debug", "/data/node_1", "http://execution-node:8551"]
+    environment:
+      - P2P_PORT=9000
     ports:
       - "5052:5052"
       - "8000:8000"
@@ -291,10 +293,12 @@ services:
     image: lighthouse-interop
     pull_policy: never
     entrypoint: ["run_beacon_node.sh", "-d", "debug", "/data/node_2", "http://execution-node-2:8551"]
+    environment:
+      - P2P_PORT=9001
     ports:
       - "5053:5052"
       - "8001:8000"
-      - "9001:9000"
+      - "9001:9001"
     volumes:
       - lighthouse_data:/data
       - lighthouse_shared_config:/lighthouse_shared_config
