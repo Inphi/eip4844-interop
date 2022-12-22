@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/Inphi/eip4844-interop/shared"
 	"github.com/libp2p/go-libp2p"
@@ -48,7 +49,8 @@ func SendBlobsSidecarsByRangeRequest(ctx context.Context, h host.Host, encoding 
 
 	var blobsSidecars []*ethpb.BlobsSidecar
 	for {
-		blobs, err := readChunkedBlobsSidecar(stream, encoding)
+		isFirstChunk := len(blobSidecars) == 0
+		blobs, err := readChunkedBlobsSidecar(stream, encoding, isFirstChunk)
 		if errors.Is(err, io.EOF) {
 			break
 		}
@@ -60,8 +62,18 @@ func SendBlobsSidecarsByRangeRequest(ctx context.Context, h host.Host, encoding 
 	return blobsSidecars, nil
 }
 
-func readChunkedBlobsSidecar(stream network.Stream, encoding encoder.NetworkEncoding) (*ethpb.BlobsSidecar, error) {
-	code, errMsg, err := sync.ReadStatusCode(stream, encoding)
+func readChunkedBlobsSidecar(stream network.Stream, encoding encoder.NetworkEncoding, isFirstChunk bool) (*ethpb.BlobsSidecar, error) {
+	var (
+		code   uint8
+		errMsg string
+		err    error
+	)
+	if isFirstChunk {
+		code, errMsg, err = sync.ReadStatusCode(stream, encoding)
+	} else {
+		sync.SetStreamReadDeadline(stream, time.Second*10)
+		code, errMsg, err = readStatusCodeNoDeadline(stream, encoding)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -77,6 +89,24 @@ func readChunkedBlobsSidecar(stream network.Stream, encoding encoder.NetworkEnco
 	err = encoding.DecodeWithMaxLength(stream, sidecar)
 	return sidecar, err
 }
+
+func readStatusCodeNoDeadline(stream libp2pcore.Stream, encoding encoder.NetworkEncoding) (uint8, string, error) {
+	b := make([]byte, 1)
+	_, err := stream.Read(b)
+	if err != nil {
+		return 0, "", err
+	}
+	if b[0] == responseCodeSuccess {
+		return 0, "", nil
+	}
+	msg := &p2ptypes.ErrorMessage{}
+	if err := encoding.DecodeWithMaxLength(stream, msg); err != nil {
+		return 0, "", err
+	}
+	return b[0], string(*msg), nil
+}
+
+var responseCodeSuccess = byte(0x00)
 
 // Using p2p RPC
 func DownloadBlobs(ctx context.Context, startSlot consensustypes.Slot, count uint64, beaconMA string) []byte {
