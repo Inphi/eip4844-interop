@@ -12,6 +12,7 @@ import (
 
 	"github.com/Inphi/eip4844-interop/shared"
 	"github.com/libp2p/go-libp2p"
+	libp2pcore "github.com/libp2p/go-libp2p/core"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
@@ -21,6 +22,7 @@ import (
 	ma "github.com/multiformats/go-multiaddr"
 	"github.com/prysmaticlabs/prysm/v3/beacon-chain/p2p"
 	"github.com/prysmaticlabs/prysm/v3/beacon-chain/p2p/encoder"
+	p2ptypes "github.com/prysmaticlabs/prysm/v3/beacon-chain/p2p/types"
 	"github.com/prysmaticlabs/prysm/v3/beacon-chain/sync"
 	consensustypes "github.com/prysmaticlabs/prysm/v3/consensus-types/primitives"
 	ethpb "github.com/prysmaticlabs/prysm/v3/proto/prysm/v1alpha1"
@@ -49,7 +51,7 @@ func SendBlobsSidecarsByRangeRequest(ctx context.Context, h host.Host, encoding 
 
 	var blobsSidecars []*ethpb.BlobsSidecar
 	for {
-		isFirstChunk := len(blobSidecars) == 0
+		isFirstChunk := len(blobsSidecars) == 0
 		blobs, err := readChunkedBlobsSidecar(stream, encoding, isFirstChunk)
 		if errors.Is(err, io.EOF) {
 			break
