@@ -1,18 +1,20 @@
+PRESET_BASE: 'mainnet'
 CONFIG_NAME: 'local'
 
-ALTAIR_FORK_EPOCH: 1
-BELLATRIX_FORK_EPOCH: 2
-CAPELLA_FORK_EPOCH: 3
-EIP4844_FORK_EPOCH: 4 # ensure this happens at exactly shardingForkBlock in execution
-SECONDS_PER_SLOT: 12
+ALTAIR_FORK_EPOCH: 0
+BELLATRIX_FORK_EPOCH: 0
+CAPELLA_FORK_EPOCH: 1
+EIP4844_FORK_EPOCH: 2
+SECONDS_PER_SLOT: 3
 SLOTS_PER_EPOCH: 32
-TERMINAL_TOTAL_DIFFICULTY: 2
+TERMINAL_TOTAL_DIFFICULTY: 0
 
 # avoid collisions with mainnet/eip4844 config versioning
 GENESIS_FORK_VERSION: 0x00000ffe
 ALTAIR_FORK_VERSION: 0x01000ffe
 BELLATRIX_FORK_VERSION: 0x02000ffe
-EIP4844_FORK_VERSION: 0x03000ffe
+CAPELLA_FORK_VERSION: 0x03000ffe
+EIP4844_FORK_VERSION: 0x04000ffe
 
 DOMAIN_BLOBS_SIDECAR: 0x0a000000
 
@@ -21,22 +23,22 @@ DOMAIN_BLOBS_SIDECAR: 0x0a000000
 # Genesis
 # ---------------------------------------------------------------
 # `2**14` (= 16,384)
-MIN_GENESIS_ACTIVE_VALIDATOR_COUNT: 16384
+MIN_GENESIS_ACTIVE_VALIDATOR_COUNT: 4
 # Dec 1, 2020, 12pm UTC
 MIN_GENESIS_TIME: 1606824000
 # 604800 seconds (7 days)
-GENESIS_DELAY: 604800
+GENESIS_DELAY: 0
 
 # Time parameters
 # ---------------------------------------------------------------
 # 14 (estimate from Eth1 mainnet)
-SECONDS_PER_ETH1_BLOCK: 14
+SECONDS_PER_ETH1_BLOCK: 1
 # 2**8 (= 256) epochs ~27 hours
 MIN_VALIDATOR_WITHDRAWABILITY_DELAY: 256
 # 2**8 (= 256) epochs ~27 hours
 SHARD_COMMITTEE_PERIOD: 256
 # 2**11 (= 2,048) Eth1 blocks ~8 hours
-ETH1_FOLLOW_DISTANCE: 2048
+ETH1_FOLLOW_DISTANCE: 1
 
 # Validator cycle
 # ---------------------------------------------------------------

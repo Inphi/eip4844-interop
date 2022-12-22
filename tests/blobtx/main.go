@@ -54,25 +54,34 @@ func main() {
 	// Retrieve the current slot to being our blobs search on the beacon chain
 	startSlot := util.GetHeadSlot(ctx, beaconClient)
 
-	UploadBlobs(ctx, ethClient, blobs)
+	chainID := env.GethChainConfig.ChainID
+	UploadBlobs(ctx, ethClient, chainID, blobs)
 	util.WaitForNextSlots(ctx, beaconClient, 1)
 	slot := util.FindBlobSlot(ctx, beaconClient, startSlot)
 
+	multiaddr, err := shared.GetBeaconMultiAddress()
+	if err != nil {
+		log.Fatalf("unable to get beacon multiaddr: %v", err)
+	}
+	followerMultiaddr, err := shared.GetBeaconFollowerMultiAddress()
+	if err != nil {
+		log.Fatalf("unable to get beacon multiaddr: %v", err)
+	}
+
 	log.Printf("checking blob from beacon node")
-	downloadedData := util.DownloadBlobs(ctx, slot, 1, shared.BeaconMultiAddress)
+	downloadedData := util.DownloadBlobs(ctx, slot, 1, multiaddr)
 	downloadedBlobs := shared.EncodeBlobs(downloadedData)
 	util.AssertBlobsEquals(blobs, downloadedBlobs)
 
 	log.Printf("checking blob from beacon node follower")
 	time.Sleep(time.Second * 2 * time.Duration(env.BeaconChainConfig.SecondsPerSlot)) // wait a bit for sync
-	downloadedData = util.DownloadBlobs(ctx, slot, 1, shared.BeaconFollowerMultiAddress)
+	downloadedData = util.DownloadBlobs(ctx, slot, 1, followerMultiaddr)
 	downloadedBlobs = shared.EncodeBlobs(downloadedData)
 	util.AssertBlobsEquals(blobs, downloadedBlobs)
 }
 
-func UploadBlobs(ctx context.Context, client *ethclient.Client, blobs types.Blobs) {
-	chainId := big.NewInt(1)
-	signer := types.NewDankSigner(chainId)
+func UploadBlobs(ctx context.Context, client *ethclient.Client, chainID *big.Int, blobs types.Blobs) {
+	signer := types.NewDankSigner(chainID)
 
 	key, err := crypto.HexToECDSA(shared.PrivateKey)
 	if err != nil {
@@ -90,7 +99,7 @@ func UploadBlobs(ctx context.Context, client *ethclient.Client, blobs types.Blob
 	to := common.HexToAddress("ffb38a7a99e3e2335be83fc74b7faa19d5531243")
 	txData := types.SignedBlobTx{
 		Message: types.BlobTxMessage{
-			ChainID:             view.Uint256View(*uint256.NewInt(chainId.Uint64())),
+			ChainID:             view.Uint256View(*uint256.NewInt(chainID.Uint64())),
 			Nonce:               view.Uint64View(nonce),
 			Gas:                 210000,
 			GasFeeCap:           view.Uint256View(*uint256.NewInt(5000000000)),

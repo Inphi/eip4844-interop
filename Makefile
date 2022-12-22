@@ -7,6 +7,16 @@ devnet-up:
 		prysm-validator-node\
 		jaeger-tracing
 
+lighthouse-up:
+	touch ./lighthouse/generated-genesis.json
+	touch ./lighthouse/generated-config.yaml
+	docker compose --project-name eip4844-interop up -d --build\
+		execution-node\
+		execution-node-2\
+		lighthouse-beacon-node\
+		lighthouse-beacon-node-follower\
+		lighthouse-validator-node
+
 lodestar-up:
 	docker compose --project-name eip4844-interop up -d\
 		execution-node\
