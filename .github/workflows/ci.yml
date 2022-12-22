@@ -141,12 +141,12 @@ jobs:
         timeout-minutes: 60
         run: go run ./tests/blobtx lighthouse
 
-      # - name: Lighthouse - Run Fee market spec tests
-      #   timeout-minutes: 30
-      #   run: go run ./tests/fee-market lighthouse
+      - name: Lighthouse - Run Fee market spec tests
+        timeout-minutes: 60
+        run: go run ./tests/fee-market lighthouse
 
       - name: Lighthouse - Run Initial sync tests
-        timeout-minutes: 30
+        timeout-minutes: 60
         run: go run ./tests/initial-sync lighthouse
 
       - name: Collect docker logs on failure
