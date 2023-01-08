@@ -75,7 +75,7 @@ func getMultiaddress(beaconAPI string) (string, error) {
 var (
 	GethRPC           = "http://localhost:8545"
 	PrivateKey        = "45a915e4d060149eb4365960e6a7a45f334393093061116b197e3240065ff2d8"
-	BeaconAPI         = "localhost:8000"
-	BeaconFollowerAPI = "localhost:8001"
+	BeaconAPI         = "localhost:4000"
+	BeaconFollowerAPI = "localhost:4001"
 	//ValidatorAPI               = "http://localhost:7500"
 )

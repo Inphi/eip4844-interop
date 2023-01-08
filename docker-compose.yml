@@ -8,6 +8,7 @@ volumes:
   lighthouse_shared_config:
   lighthouse_data:
 
+
 services:
   execution-bootnode:
     build:
@@ -18,7 +19,7 @@ services:
       - type: bind
         source: ./geth/bootnode.sh
         target: /usr/local/bin/bootnode.sh
- 
+
   execution-node:
     depends_on:
       #- execution-bootnode
@@ -28,7 +29,7 @@ services:
       dockerfile: Dockerfile.geth
     ports:
       - '8545:8545'
-    entrypoint: ["geth.sh"]
+    entrypoint: [ "geth.sh" ]
     volumes:
       - 'geth_data:/db'
       - lighthouse_shared_config:/shared-configs
@@ -50,7 +51,7 @@ services:
       dockerfile: Dockerfile.geth
     ports:
       - '8546:8545'
-    entrypoint: ["geth.sh"]
+    entrypoint: [ "geth.sh" ]
     volumes:
       - 'geth_data2:/db'
       - lighthouse_shared_config:/shared-configs
@@ -78,7 +79,11 @@ services:
       VERBOSITY: debug
       P2P_PRIV_KEY: /etc/prysm-priv-key
     entrypoint:
-      ['run_beacon_node.sh', '--min-sync-peers=0', '--bootstrap-node=']
+      [
+        'run_beacon_node.sh',
+        '--min-sync-peers=0',
+        '--bootstrap-node='
+      ]
     ports:
       - '3500:3500'
       - '4000:4000'
@@ -138,20 +143,7 @@ services:
       context: ./prysm
       dockerfile: Dockerfile.prysm
     command: >
-      validator
-      --accept-terms-of-use
-      --beacon-rpc-provider prysm-beacon-node:4000
-      --rpc
-      --grpc-gateway-host 0.0.0.0
-      --grpc-gateway-port 7500
-      --interop-num-validators=4
-      --interop-start-index=0
-      --force-clear-db
-      --chain-config-file=/config/chain-config.yml
-      --suggested-fee-recipient 0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b
-      --enable-tracing
-      --tracing-endpoint http://jaeger-tracing:14268/api/traces
-      --tracing-process-name validator-node
+      validator --accept-terms-of-use --beacon-rpc-provider prysm-beacon-node:4000 --rpc --grpc-gateway-host 0.0.0.0 --grpc-gateway-port 7500 --interop-num-validators=4 --interop-start-index=0 --force-clear-db --chain-config-file=/config/chain-config.yml --suggested-fee-recipient 0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b --enable-tracing --tracing-endpoint http://jaeger-tracing:14268/api/traces --tracing-process-name validator-node
     ports:
       - '7500:7500'
     volumes:
@@ -168,7 +160,7 @@ services:
     environment:
       EXECUTION_NODE_URL: http://execution-node:8545
       PROCESS_NAME: lodestar-beacon-node
-    entrypoint: ['run_beacon_node.sh']
+    entrypoint: [ 'run_beacon_node.sh' ]
     ports:
       - '3500:3500'
       - '13000:13000'
@@ -216,7 +208,7 @@ services:
       dockerfile: Dockerfile.lighthouse
     image: lighthouse-interop
     pull_policy: never
-    entrypoint: ["generate-genesis.sh"]
+    entrypoint: [ "generate-genesis.sh" ]
     volumes:
       - lighthouse_data:/data
       - lighthouse_shared_config:/lighthouse_shared_config
@@ -249,7 +241,7 @@ services:
       - type: bind
         source: ./lighthouse/vars.env
         target: /config/vars.env
- 
+
   lighthouse-beacon-node:
     depends_on:
       - lighthouse-bootnode
@@ -260,7 +252,14 @@ services:
     #   dockerfile: Dockerfile.lighthouse
     image: lighthouse-interop
     pull_policy: never
-    entrypoint: ["run_beacon_node.sh", "-d", "debug", "/data/node_1", "http://execution-node:8551"]
+    entrypoint:
+      [
+        "run_beacon_node.sh",
+        "-d",
+        "debug",
+        "/data/node_1",
+        "http://execution-node:8551"
+      ]
     environment:
       - P2P_PORT=9000
     ports:
@@ -292,7 +291,14 @@ services:
     #   dockerfile: Dockerfile.lighthouse
     image: lighthouse-interop
     pull_policy: never
-    entrypoint: ["run_beacon_node.sh", "-d", "debug", "/data/node_2", "http://execution-node-2:8551"]
+    entrypoint:
+      [
+        "run_beacon_node.sh",
+        "-d",
+        "debug",
+        "/data/node_2",
+        "http://execution-node-2:8551"
+      ]
     environment:
       - P2P_PORT=9001
     ports:
@@ -320,7 +326,11 @@ services:
     pull_policy: never
     depends_on:
       - lighthouse-beacon-node
-    entrypoint: ['run_validator.sh', 'http://lighthouse-beacon-node:8000']
+    entrypoint:
+      [
+        'run_validator.sh',
+        'http://lighthouse-beacon-node:8000'
+      ]
     volumes:
       - lighthouse_data:/data
       - lighthouse_shared_config:/lighthouse_shared_config
@@ -330,7 +340,7 @@ services:
       - type: bind
         source: ./lighthouse/vars.env
         target: /config/vars.env
- 
+
   jaeger-tracing:
     image: jaegertracing/all-in-one:1.35
     environment:

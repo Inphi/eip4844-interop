@@ -86,6 +86,8 @@ func (s *dockerService) Start(ctx context.Context) error {
 		if _, err := http.DefaultClient.Do(req); err == nil {
 			close(s.started)
 			return nil
+		} else {
+			log.Printf("error: %s", err.Error())
 		}
 		select {
 		case <-ctx.Done():
