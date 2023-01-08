@@ -46,4 +46,5 @@ beacon-node \
     --subscribe-all-subnets \
     --enable-tracing \
     --tracing-endpoint "$TRACING_ENDPOINT" \
+    --log-file=execution.log \
     --tracing-process-name "$PROCESS_NAME" $@

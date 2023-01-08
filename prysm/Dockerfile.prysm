@@ -19,7 +19,7 @@ RUN go build -o /build/validator -buildvcs=false ./cmd/validator
 RUN go build -o /build/bootnode -buildvcs=false ./tools/bootnode
 
 FROM ubuntu:20.04
-RUN apt-get update && apt-get install -y curl jq iproute2
+RUN apt-get update && apt-get install -y curl jq iproute2 vim
 
 COPY --from=builder /build/beacon-node /usr/local/bin/
 COPY --from=builder /build/validator /usr/local/bin/
