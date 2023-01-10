@@ -35,10 +35,10 @@ exec geth \
     --http.addr=0.0.0.0 \
     --http.port="$RPC_PORT" \
     --http.api=web3,debug,engine,eth,net,txpool \
-    --authrpc.addr=0.0.0.0 \
-    --authrpc.vhosts="*" \
-    --authrpc.jwtsecret=/config/jwtsecret \
-    --authrpc.port=${AUTH_PORT} \
+    --authrpc.addr 0.0.0.0 \
+    --authrpc.vhosts "*" \
+    --authrpc.jwtsecret /config/jwtsecret \
+    --authrpc.port ${AUTH_PORT} \
     --ws \
     --ws.addr=0.0.0.0 \
     --ws.port="$WS_PORT" \

@@ -30,8 +30,9 @@ beacon-node \
     --datadir /chaindata \
     --force-clear-db \
     --interop-eth1data-votes \
-    --http-web3provider="$EXECUTION_NODE_URL" \
-    --deposit-contract 0x8A04d14125D0FDCDc742F4A05C051De07232EDa4 \
+    --execution-endpoint="$EXECUTION_NODE_URL" \
+    --jwt-secret=/config/jwtsecret \
+    --deposit-contract 0x4242424242424242424242424242424242424242 \
     --chain-config-file=/config/chain-config.yml \
     --contract-deployment-block 0 \
     --interop-num-validators 4 \

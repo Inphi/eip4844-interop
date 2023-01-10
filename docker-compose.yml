@@ -29,6 +29,7 @@ services:
       dockerfile: Dockerfile.geth
     ports:
       - '8545:8545'
+      - '8551:8551'
     entrypoint: [ "geth.sh" ]
     volumes:
       - 'geth_data:/db'
@@ -51,6 +52,7 @@ services:
       dockerfile: Dockerfile.geth
     ports:
       - '8546:8545'
+      - '8552:8551'
     entrypoint: [ "geth.sh" ]
     volumes:
       - 'geth_data2:/db'
@@ -73,7 +75,7 @@ services:
       context: ./prysm
       dockerfile: Dockerfile.prysm
     environment:
-      EXECUTION_NODE_URL: http://execution-node:8545
+      EXECUTION_NODE_URL: http://execution-node:8551
       TRACING_ENDPOINT: http://jaeger-tracing:14268/api/traces
       PROCESS_NAME: beacon-node
       VERBOSITY: debug
@@ -99,6 +101,9 @@ services:
       - type: bind
         source: ./prysm/prysm-priv-key
         target: /etc/prysm-priv-key
+      - type: bind
+        source: ./shared/jwtsecret
+        target: /config/jwtsecret
 
   prysm-beacon-node-follower:
     depends_on:
@@ -109,7 +114,7 @@ services:
       context: ./prysm
       dockerfile: Dockerfile.prysm
     environment:
-      EXECUTION_NODE_URL: http://execution-node-2:8545
+      EXECUTION_NODE_URL: http://execution-node-2:8551
       TRACING_ENDPOINT: http://jaeger-tracing:14268/api/traces
       PROCESS_NAME: beacon-node-follower
       BEACON_NODE_RPC: http://prysm-beacon-node:3500
@@ -134,6 +139,9 @@ services:
       - type: bind
         source: ./prysm/prysm-follower-priv-key
         target: /etc/prysm-priv-key
+      - type: bind
+        source: ./shared/jwtsecret
+        target: /config/jwtsecret
 
   prysm-validator-node:
     depends_on:
