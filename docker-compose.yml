@@ -1,12 +1,21 @@
 version: '3.4'
 
 volumes:
+  shared:
   geth_data:
   geth_data2:
   beacon_node_data:
   beacon_node_follower_data:
 
+
 services:
+  build-shared-states:
+    build:
+      context: ./shared
+      dockerfile: Dockerfile.shared
+    volumes:
+      - shared:/shared
+
   execution-node:
     build:
       context: ./geth
@@ -23,7 +32,10 @@ services:
 
   execution-node-2:
     depends_on:
-      - execution-node
+      build-shared-states:
+        condition: service_completed_successfully
+      execution-node:
+        condition: service_started
     build:
       context: ./geth
       dockerfile: Dockerfile.geth
@@ -52,7 +64,11 @@ services:
       VERBOSITY: debug
       P2P_PRIV_KEY: /etc/prysm-priv-key
     entrypoint:
-      ['run_beacon_node.sh', '--min-sync-peers=0', '--bootstrap-node=']
+      [
+        'run_beacon_node.sh',
+        '--min-sync-peers=0',
+        '--bootstrap-node='
+      ]
     ports:
       - '3500:3500'
       - '4000:4000'
@@ -112,20 +128,7 @@ services:
       context: ./prysm
       dockerfile: Dockerfile.prysm
     command: >
-      validator
-      --accept-terms-of-use
-      --beacon-rpc-provider prysm-beacon-node:4000
-      --rpc
-      --grpc-gateway-host 0.0.0.0
-      --grpc-gateway-port 7500
-      --interop-num-validators=4
-      --interop-start-index=0
-      --force-clear-db
-      --chain-config-file=/config/chain-config.yml
-      --suggested-fee-recipient 0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b
-      --enable-tracing
-      --tracing-endpoint http://jaeger-tracing:14268/api/traces
-      --tracing-process-name validator-node
+      validator --accept-terms-of-use --beacon-rpc-provider prysm-beacon-node:4000 --rpc --grpc-gateway-host 0.0.0.0 --grpc-gateway-port 7500 --interop-num-validators=4 --interop-start-index=0 --force-clear-db --chain-config-file=/config/chain-config.yml --suggested-fee-recipient 0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b --enable-tracing --tracing-endpoint http://jaeger-tracing:14268/api/traces --tracing-process-name validator-node
     ports:
       - '7500:7500'
     volumes:
@@ -142,7 +145,7 @@ services:
     environment:
       EXECUTION_NODE_URL: http://execution-node:8545
       PROCESS_NAME: lodestar-beacon-node
-    entrypoint: ['run_beacon_node.sh']
+    entrypoint: [ 'run_beacon_node.sh' ]
     ports:
       - '3500:3500'
       - '13000:13000'
