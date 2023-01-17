@@ -9,6 +9,7 @@ volumes:
 
 services:
   build-shared-states:
+    restart: no
     build:
       context: ./
       dockerfile: ./shared/Dockerfile.shared

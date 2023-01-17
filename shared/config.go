@@ -23,7 +23,7 @@ func GetBaseDir() string {
 }
 
 func GethChainConfigFilepath() string {
-	return fmt.Sprintf("%s/shared/genesis.json", GetBaseDir())
+	return fmt.Sprintf("%s/shared/generated-genesis.json", GetBaseDir())
 }
 
 func BeaconChainConfigFilepath() string {

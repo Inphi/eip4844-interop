@@ -9,9 +9,11 @@ GENESIS=$(($(date +%s) + 60))   # 60s till genesis
 SHANGHAI=$(($GENESIS + 108))    # 108s till shanghai
 CANCUN=$(($GENESIS + 144))      # 144s till cancun
 
-sed -i -e 's/CHAIN_ID/'$CHAIN_ID'/'         /shared/genesis.json
-sed -i -e 's/SHANGHAI_TIME/'$SHANGHAI'/'    /shared/genesis.json
-sed -i -e 's/SHARDING_FORK_TIME/'$CANCUN'/' /shared/genesis.json
+# generate new genesis with updated time
+cp genesis.json generated-genesis.json
+sed -i -e 's/CHAIN_ID/'$CHAIN_ID'/'         /shared/generated-genesis.json
+sed -i -e 's/SHANGHAI_TIME/'$SHANGHAI'/'    /shared/generated-genesis.json
+sed -i -e 's/SHARDING_FORK_TIME/'$CANCUN'/' /shared/generated-genesis.json
 
 # prysmctl is built by Dockerfile.shared, if you want to execute this locally, do build it yourself
 /usr/local/bin/prysmctl \

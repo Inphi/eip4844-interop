@@ -2,13 +2,13 @@
 
 set -exu -o pipefail
 
-source /shared/shared.env
+source /shared/generated-shared.env
 
 VERBOSITY=${GETH_VERBOSITY:-4}
 GETH_DATA_DIR=/db
 GETH_KEYSTORE_DIR="$GETH_DATA_DIR/keystore"
 GETH_CHAINDATA_DIR="$GETH_DATA_DIR/geth/chaindata"
-GETH_GENESIS=/shared/genesis.json
+GETH_GENESIS=/shared/generated-genesis.json
 BLOCK_SIGNER_PRIVATE_KEY="45a915e4d060149eb4365960e6a7a45f334393093061116b197e3240065ff2d8"
 RPC_PORT=8545
 AUTH_PORT=8551

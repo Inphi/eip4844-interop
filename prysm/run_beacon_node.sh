@@ -2,7 +2,7 @@
 
 set -exu -o pipefail
 
-source /shared/shared.env
+source /shared/generated-shared.env
 
 : "${EXECUTION_NODE_URL:-}"
 : "${PROCESS_NAME:-beacon-node}"
@@ -19,7 +19,7 @@ beacon-node \
     --datadir /chaindata \
     --force-clear-db \
     --interop-eth1data-votes \
-    --interop-genesis-state /shared/genesis.ssz \
+    --interop-genesis-state /shared/generated-genesis.ssz \
     --interop-genesis-time ${GENESIS} \
     --interop-num-validators 4 \
     --execution-endpoint="$EXECUTION_NODE_URL" \
