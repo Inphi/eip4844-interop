@@ -1,2 +1,5 @@
 /.idea/
 node_modules/
+generated-genesis.json
+generated-genesis.ssz
+generated-shared.env

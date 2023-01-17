@@ -9,6 +9,5 @@ COPY ./prysm/prysm /prysm/.
 WORKDIR /prysm
 RUN go build -o /usr/local/bin -buildvcs=false ./cmd/prysmctl
 
-COPY ./shared /shared
 WORKDIR /shared
-RUN ./setup.sh
+ENTRYPOINT [ "./setup.sh" ]

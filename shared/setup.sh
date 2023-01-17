@@ -17,10 +17,11 @@ sed -i -e 's/SHARDING_FORK_TIME/'$CANCUN'/' /shared/genesis.json
 /usr/local/bin/prysmctl \
     testnet \
     generate-genesis \
-    --num-validators 64 \
-    --output-ssz=/shared/genesis.ssz \
+    --num-validators 4 \
+    --output-ssz=/shared/generated-genesis.ssz \
     --chain-config-file=/shared/chain-config.yml \
     --genesis-time=$GENESIS
 
 # append genesis time to shared env vars for CL / EL to reference during startup
-echo GENESIS=$GENESIS >> shared.env
+cp shared.env generated-shared.env # start from clean
+echo GENESIS=$GENESIS >> generated-shared.env

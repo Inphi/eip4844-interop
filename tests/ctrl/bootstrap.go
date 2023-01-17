@@ -47,9 +47,9 @@ func WaitForShardingFork() {
 	ctx := context.Background()
 
 	config := GetEnv().GethChainConfig
-	eip4844ForkBlock := config.ShardingForkBlock.Uint64()
+	eip4844ForkTime := config.ShardingForkTime
 
-	stallTimeout := 1 * time.Minute
+	stallTimeout := 60 * time.Minute
 
 	client, err := GetExecutionClient(ctx)
 	if err != nil {
@@ -58,24 +58,22 @@ func WaitForShardingFork() {
 
 	log.Printf("waiting for sharding fork block...")
 	var lastBn uint64
-	var lastUpdate time.Time
+	lastUpdate := time.Now()
 	for {
-		bn, err := client.BlockNumber(ctx)
+		b, err := client.BlockByNumber(ctx, nil)
 		if err != nil {
-			log.Fatalf("ethclient.BlockNumber: %v", err)
+			log.Fatalf("ethclient.BlockByNumber: %v", err)
 		}
 
-		if bn >= eip4844ForkBlock {
+		if b.Time() >= *eip4844ForkTime {
 			break
 		}
 		// Chain stall detection
-		if bn != lastBn {
-			lastBn = bn
+		if b.NumberU64() != lastBn {
+			lastBn = b.NumberU64()
 			lastUpdate = time.Now()
 		} else if time.Since(lastUpdate) > stallTimeout {
-			log.Printf("lastBn %v", lastBn)
-			log.Printf("eip4844ForkBlock %v", eip4844ForkBlock)
-			log.Fatalf("Chain is stalled on block %v, lastUpdate %v", bn, lastUpdate)
+			log.Fatalf("Chain is stalled on block %v", b.NumberU64())
 		}
 		time.Sleep(time.Second * 1)
 	}
