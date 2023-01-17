@@ -16,9 +16,9 @@ services:
       - ./shared:/shared
 
   execution-node:
-    depends_on:
-      build-shared-states:
-        condition: service_completed_successfully
+    # depends_on:
+    #   build-shared-states:
+    #     condition: service_completed_successfully
     build:
       context: ./geth
       dockerfile: Dockerfile.geth
@@ -33,8 +33,6 @@ services:
 
   execution-node-2:
     depends_on:
-      build-shared-states:
-        condition: service_completed_successfully
       execution-node:
         condition: service_started
     build:
@@ -78,9 +76,6 @@ services:
       - 'beacon_node_data:/chaindata'
       - './shared:/shared'
       - type: bind
-        source: ./shared/chain-config.yml
-        target: /config/chain-config.yml
-      - type: bind
         source: ./prysm/run_beacon_node.sh
         target: /usr/local/bin/run_beacon_node.sh
       - type: bind
@@ -112,9 +107,6 @@ services:
       - 'beacon_node_follower_data:/chaindata'
       - './shared:/shared'
       - type: bind
-        source: ./shared/chain-config.yml
-        target: /config/chain-config.yml
-      - type: bind
         source: ./prysm/run_beacon_node.sh
         target: /usr/local/bin/run_beacon_node.sh
       - type: bind
@@ -132,13 +124,11 @@ services:
       context: ./prysm
       dockerfile: Dockerfile.prysm
     command: >
-      validator --accept-terms-of-use --beacon-rpc-provider prysm-beacon-node:4000 --rpc --grpc-gateway-host 0.0.0.0 --grpc-gateway-port 7500 --interop-num-validators=4 --interop-start-index=0 --force-clear-db --chain-config-file=/config/chain-config.yml --suggested-fee-recipient 0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b --enable-tracing --tracing-endpoint http://jaeger-tracing:14268/api/traces --tracing-process-name validator-node
+      validator --accept-terms-of-use --beacon-rpc-provider prysm-beacon-node:4000 --rpc --grpc-gateway-host 0.0.0.0 --grpc-gateway-port 7500 --interop-num-validators=4 --interop-start-index=0 --force-clear-db --chain-config-file=/shared/chain-config.yml --suggested-fee-recipient 0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b --enable-tracing --tracing-endpoint http://jaeger-tracing:14268/api/traces --tracing-process-name validator-node
     ports:
       - '7500:7500'
     volumes:
-      - type: bind
-        source: ./shared/chain-config.yml
-        target: /config/chain-config.yml
+      - './shared:/shared'
 
   lodestar-beacon-node:
     depends_on:

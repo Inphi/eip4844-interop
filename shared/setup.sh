@@ -11,7 +11,6 @@ CANCUN=$(($GENESIS + 144))      # 144s till cancun
 
 # generate new genesis with updated time
 cp genesis.json generated-genesis.json
-sed -i -e 's/CHAIN_ID/'$CHAIN_ID'/'         /shared/generated-genesis.json
 sed -i -e 's/SHANGHAI_TIME/'$SHANGHAI'/'    /shared/generated-genesis.json
 sed -i -e 's/SHARDING_FORK_TIME/'$CANCUN'/' /shared/generated-genesis.json
 

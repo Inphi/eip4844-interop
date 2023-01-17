@@ -15,6 +15,7 @@ AUTH_PORT=8551
 WS_PORT=8546
 BOOTNODE_KEY_HEX=${BOOTNODE_KEY_HEX:-65f77f40c167b52b5cc70fb33582aecbdcd81062dc1438df00a3099a07079204}
 EXTERNAL_IP=$(ip addr show eth0 | grep inet | awk '{ print $2 }' | cut -d '/' -f1)
+ADDITIONAL_FLAGS="--nodiscover --nodekeyhex ${BOOTNODE_KEY_HEX} --nat extip:${EXTERNAL_IP}"
 
 if [ ! -d "$GETH_KEYSTORE_DIR" ]; then
     echo "$GETH_KEYSTORE_DIR missing, running account import"
@@ -52,10 +53,9 @@ exec geth \
     --ws.port="$WS_PORT" \
     --ws.origins="*" \
     --ws.api=debug,eth,txpool,net,engine \
-    --nat extip:${EXTERNAL_IP} \
+    ${ADDITIONAL_FLAGS} \
     --allow-insecure-unlock \
-    --unlock "0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b" \
     --password "${GETH_DATA_DIR}/password" \
     --syncmode=full \
-    --mine
+    --unlock "0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b" --mine
 

@@ -1,7 +1,7 @@
 {
     "config": {
         "ChainName": "l1_chain",
-        "chainId": CHAIN_ID,
+        "chainId": 1,
         "consensus": "clique",
         "homesteadBlock": 0,
         "daoForkSupport": true,
@@ -16,7 +16,6 @@
         "muirGlacierBlock": 0,
         "berlinBlock": 0,
         "londonBlock": 0,
-        "terminalBlockHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
         "arrowGlacierBlock": 0,
         "grayGlacierBlock": 0,
         "shanghaiTime": SHANGHAI_TIME,
@@ -25,9 +24,10 @@
             "period": 5,
             "epoch": 30000
         },
-        "terminalTotalDifficulty": 25
+        "terminalTotalDifficulty": 2,
+        "terminalTotalDifficultyPassed": true
     },
-    "difficulty": "1",
+    "difficulty": "0x0",
     "gasLimit": "30000000",
     "extradata": "0x0000000000000000000000000000000000000000000000000000000000000000123463a4B065722E99115D6c222f267d9cABb5240000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
     "alloc": {

@@ -10,15 +10,12 @@ import (
 	"strings"
 
 	"github.com/Inphi/eip4844-interop/shared"
-
-	ma "github.com/multiformats/go-multiaddr"
-
 	"github.com/libp2p/go-libp2p"
 	libp2pcore "github.com/libp2p/go-libp2p-core"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/protocol"
-
+	ma "github.com/multiformats/go-multiaddr"
 	"github.com/prysmaticlabs/prysm/v3/beacon-chain/p2p"
 	"github.com/prysmaticlabs/prysm/v3/beacon-chain/p2p/encoder"
 	"github.com/prysmaticlabs/prysm/v3/beacon-chain/sync"
@@ -84,7 +81,7 @@ func main() {
 		}
 		anyBlobs = true
 		for _, blob := range sidecar.Blobs {
-			data := shared.DecodeBlob(blob.Blob)
+			data := shared.DecodeFlatBlob(blob.Data)
 			_, _ = os.Stdout.Write(data)
 		}
 
