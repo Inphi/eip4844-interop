@@ -24,4 +24,8 @@ devnet-clean:
 	docker image ls 'eip4844-interop*' --format='{{.Repository}}' | xargs -r docker rmi
 	docker volume ls --filter name=eip4844-interop --format='{{.Name}}' | xargs -r docker volume rm
 
+prysm-blobtx-test: devnet-clean
+	docker-compose up build-shared-states
+	go run ./tests/blobtx prysm
+
 .PHONY: devnet-clean

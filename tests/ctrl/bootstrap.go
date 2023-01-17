@@ -67,7 +67,7 @@ func WaitForShardingFork() {
 		}
 
 		blockTime := new(big.Int).SetUint64(b.Time())
-		log.Printf("BlockByNumber: %v, %v, %v", b.Number(), blockTime, eip4844ForkTime)
+		log.Printf("BlockByNumber: %v, %v, %v, %v, %v", b.Number(), blockTime, eip4844ForkTime, b.NumberU64(), lastBn)
 		if blockTime.Cmp(eip4844ForkTime) >= 0 {
 			break
 		}
