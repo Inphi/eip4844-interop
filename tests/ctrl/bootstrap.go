@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
+	"math/big"
 	"time"
 
 	"github.com/Inphi/eip4844-interop/shared"
@@ -65,7 +66,8 @@ func WaitForShardingFork() {
 			log.Fatalf("ethclient.BlockByNumber: %v", err)
 		}
 
-		if b.Time() >= *eip4844ForkTime {
+		blockTime := new(big.Int).SetUint64(b.Time())
+		if blockTime.Cmp(eip4844ForkTime) >= 0 {
 			break
 		}
 		// Chain stall detection
