@@ -1,6 +1,14 @@
-FROM ubuntu:20.04
+FROM golang:1.18
 
-COPY ./ /shared/
+COPY ./prysm/prysm/go.mod ./prysm/prysm/go.sum /prysm/
+WORKDIR /prysm
+RUN go mod download
+
+
+COPY ./prysm/prysm /prysm/.
+WORKDIR /prysm
+RUN go build -o /usr/local/bin -buildvcs=false ./cmd/prysmctl
+
+COPY ./shared /shared
 WORKDIR /shared
-
-ENTRYPOINT ["./generate_genesis.sh"]
+RUN ./setup.sh

@@ -73,7 +73,9 @@ func WaitForShardingFork() {
 			lastBn = bn
 			lastUpdate = time.Now()
 		} else if time.Since(lastUpdate) > stallTimeout {
-			log.Fatalf("Chain is stalled on block %v", bn)
+			log.Printf("lastBn %v", lastBn)
+			log.Printf("eip4844ForkBlock %v", eip4844ForkBlock)
+			log.Fatalf("Chain is stalled on block %v, lastUpdate %v", bn, lastUpdate)
 		}
 		time.Sleep(time.Second * 1)
 	}

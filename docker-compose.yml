@@ -11,24 +11,26 @@ volumes:
 services:
   build-shared-states:
     build:
-      context: ./shared
-      dockerfile: Dockerfile.shared
+      context: ./
+      dockerfile: ./shared/Dockerfile.shared
     volumes:
       - shared:/shared
 
   execution-node:
+    depends_on:
+      build-shared-states:
+        condition: service_completed_successfully
     build:
       context: ./geth
       dockerfile: Dockerfile.geth
     ports:
       - '8545:8545'
+      - '8551:8551'
     environment:
       GETH_VERBOSITY: 4
     volumes:
       - 'geth_data:/db'
-      - type: bind
-        source: ./geth/geth-genesis.json
-        target: /genesis.json
+      - 'shared:/shared'
 
   execution-node-2:
     depends_on:
@@ -44,11 +46,10 @@ services:
       GETH_VERBOSITY: 4
     ports:
       - '8546:8545'
+      - '8552:8551'
     volumes:
       - 'geth_data2:/db'
-      - type: bind
-        source: ./geth/geth-genesis.json
-        target: /genesis.json
+      - 'shared:/shared'
 
   prysm-beacon-node:
     depends_on:
@@ -58,7 +59,7 @@ services:
       context: ./prysm
       dockerfile: Dockerfile.prysm
     environment:
-      EXECUTION_NODE_URL: http://execution-node:8545
+      EXECUTION_NODE_URL: http://execution-node:8551
       TRACING_ENDPOINT: http://jaeger-tracing:14268/api/traces
       PROCESS_NAME: beacon-node
       VERBOSITY: debug
@@ -94,7 +95,7 @@ services:
       context: ./prysm
       dockerfile: Dockerfile.prysm
     environment:
-      EXECUTION_NODE_URL: http://execution-node-2:8545
+      EXECUTION_NODE_URL: http://execution-node-2:8551
       TRACING_ENDPOINT: http://jaeger-tracing:14268/api/traces
       PROCESS_NAME: beacon-node-follower
       BEACON_NODE_RPC: http://prysm-beacon-node:3500
