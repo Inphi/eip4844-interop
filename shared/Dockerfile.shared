@@ -1,0 +1,13 @@
+FROM golang:1.18
+
+COPY ./prysm/prysm/go.mod ./prysm/prysm/go.sum /prysm/
+WORKDIR /prysm
+RUN go mod download
+
+
+COPY ./prysm/prysm /prysm/.
+WORKDIR /prysm
+RUN go build -o /usr/local/bin -buildvcs=false ./cmd/prysmctl
+
+WORKDIR /shared
+ENTRYPOINT [ "./setup.sh" ]
