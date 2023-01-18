@@ -60,9 +60,9 @@ type Block struct {
 
 var (
 	// Hardcoded versions for now
-	BellatrixVersion = [4]byte{0x02, 0x00, 0x00, 0x00}
-	CapellaVersion   = [4]byte{0x03, 0x00, 0x00, 0x00}
-	EIP4844Version   = [4]byte{0x04, 0x00, 0x00, 0x00}
+	BellatrixVersion = [4]byte{0x30, 0x00, 0x00, 0x40}
+	CapellaVersion   = [4]byte{0x40, 0x00, 0x00, 0x40}
+	EIP4844Version   = [4]byte{0x50, 0x00, 0x00, 0x40}
 )
 
 func GetBlock(ctx context.Context, client *beacon.Client, blockId beacon.StateOrBlockId) (*Block, error) {
@@ -84,7 +84,7 @@ func GetBlock(ctx context.Context, client *beacon.Client, blockId beacon.StateOr
 	case EIP4844Version:
 		m = &ethpb.SignedBeaconBlock4844{}
 	default:
-		return nil, fmt.Errorf("unable to initialized beacon block for fork version=%x at blockId=%s", version, blockId)
+		return nil, fmt.Errorf("unable to initialize beacon block for fork version=%x at blockId=%s", version, blockId)
 	}
 
 	marshaled, err := client.GetBlock(ctx, blockId)

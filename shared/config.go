@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/params"
 )
@@ -25,11 +26,11 @@ func GetBaseDir() string {
 }
 
 func GethChainConfigFilepath() string {
-	return fmt.Sprintf("%s/geth/geth-genesis.json", GetBaseDir())
+	return fmt.Sprintf("%s/shared/generated-configs/custom_config_data/genesis.json", GetBaseDir())
 }
 
 func BeaconChainConfigFilepath() string {
-	return fmt.Sprintf("%s/shared/chain-config.yml", GetBaseDir())
+	return fmt.Sprintf("%s/shared/generated-configs/custom_config_data/config.yaml", GetBaseDir())
 }
 
 func UpdateChainConfig(config *params.ChainConfig) error {
@@ -68,6 +69,12 @@ func getMultiaddress(beaconAPI string) (string, error) {
 	}
 	if len(data.Data.P2PAddresses) == 0 {
 		return "", errors.New("no multiaddresses found")
+	}
+	for _, a := range data.Data.P2PAddresses {
+		// prefer localhost address as the others are inaccessible outside the docker container
+		if strings.HasPrefix(a, "/ip4/127.0.0.1") {
+			return a, nil
+		}
 	}
 	return data.Data.P2PAddresses[0], nil
 }

@@ -27,7 +27,4 @@ if [ "$PEER" = "null" ]; then
     exit 1
 fi
 
-run_beacon_node.sh \
-    --min-sync-peers=1 \
-    --bootstrap-node "$PEER" \
-    --interop-genesis-time "$INTEROP_GENESIS_TIME" $@
+run_beacon_node.sh --min-sync-peers=1 --bootstrap-node "$PEER"
