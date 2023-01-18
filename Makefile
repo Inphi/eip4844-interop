@@ -1,4 +1,7 @@
-devnet-up:
+devnet-setup: devnet-clean
+	docker compose up build-shared-states
+
+devnet-up: devnet-setup
 	docker compose --project-name eip4844-interop up -d\
 		execution-node\
 		execution-node-2\
@@ -34,8 +37,7 @@ devnet-clean:
 	docker image ls 'eip4844-interop*' --format='{{.Repository}}' | xargs -r docker rmi
 	docker volume ls --filter name=eip4844-interop --format='{{.Name}}' | xargs -r docker volume rm
 
-prysm-blobtx-test: devnet-clean
-	docker-compose up build-shared-states
+prysm-blobtx-test: devnet-clean devnet-setup
 	go run ./tests/blobtx prysm
 
 .PHONY: devnet-clean

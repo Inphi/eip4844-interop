@@ -28,13 +28,6 @@ services:
     volumes:
       - ./shared:/shared
       - 'geth_data:/db'
-      # - lighthouse_shared_config:/shared-configs
-      # - type: bind
-      #   source: ./shared/jwtsecret
-      #   target: /config/jwtsecret
-      # - type: bind
-      #   source: ./lighthouse/vars.env
-      #   target: /config/vars.env
       - type: bind
         source: ./geth/geth.sh
         target: /usr/local/bin/geth.sh
@@ -52,13 +45,6 @@ services:
     volumes:
       - ./shared:/shared
       - 'geth_data2:/db'
-      # - lighthouse_shared_config:/shared-configs
-      # - type: bind
-      #   source: ./shared/jwtsecret
-      #   target: /config/jwtsecret
-      # - type: bind
-      #   source: ./lighthouse/vars.env
-      #   target: /config/vars.env
       - type: bind
         source: ./geth/geth.sh
         target: /usr/local/bin/geth.sh
@@ -71,11 +57,12 @@ services:
       context: ./prysm
       dockerfile: Dockerfile.prysm
     environment:
-      EXECUTION_NODE_URL: http://execution-node:8545
+      EXECUTION_NODE_URL: http://execution-node:8551
       TRACING_ENDPOINT: http://jaeger-tracing:14268/api/traces
       PROCESS_NAME: beacon-node
       VERBOSITY: debug
       P2P_PRIV_KEY: /etc/prysm-priv-key
+      P2P_TCP_PORT: 13000
     entrypoint:
       [
         'run_beacon_node.sh',
@@ -88,9 +75,7 @@ services:
       - '13000:13000'
     volumes:
       - 'beacon_node_data:/chaindata'
-      - type: bind
-        source: ./shared/chain-config.yml
-        target: /config/chain-config.yml
+      - './shared:/shared'
       - type: bind
         source: ./prysm/run_beacon_node.sh
         target: /usr/local/bin/run_beacon_node.sh
@@ -107,12 +92,13 @@ services:
       context: ./prysm
       dockerfile: Dockerfile.prysm
     environment:
-      EXECUTION_NODE_URL: http://execution-node-2:8545
+      EXECUTION_NODE_URL: http://execution-node-2:8551
       TRACING_ENDPOINT: http://jaeger-tracing:14268/api/traces
       PROCESS_NAME: beacon-node-follower
       BEACON_NODE_RPC: http://prysm-beacon-node:3500
       VERBOSITY: debug
       P2P_PRIV_KEY: /etc/prysm-priv-key
+      P2P_TCP_PORT: 13000
     entrypoint: run_beacon_node_peer.sh
     ports:
       - '3501:3500'
@@ -120,9 +106,7 @@ services:
       - '13001:13000'
     volumes:
       - 'beacon_node_follower_data:/chaindata'
-      - type: bind
-        source: ./shared/chain-config.yml
-        target: /config/chain-config.yml
+      - './shared:/shared'
       - type: bind
         source: ./prysm/run_beacon_node.sh
         target: /usr/local/bin/run_beacon_node.sh
