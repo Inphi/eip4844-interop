@@ -5,7 +5,7 @@
 [submodule "prysm/prysm"]
 	path = prysm/prysm
 	url = https://github.com/prysmaticlabs/prysm
-	branch = eip-4844
+	branch = eip4844
 [submodule "lodestar/lodestar"]
 	path = lodestar/lodestar
 	url = https://github.com/dgcoffman/lodestar
