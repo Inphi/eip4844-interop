@@ -17,35 +17,24 @@ services:
     volumes:
       - ./shared:/shared
 
-  execution-bootnode:
-    build:
-      context: ./geth
-      dockerfile: Dockerfile.geth
-    command: /usr/local/bin/bootnode.sh
-    volumes:
-      - type: bind
-        source: ./geth/bootnode.sh
-        target: /usr/local/bin/bootnode.sh
-
   execution-node:
-    depends_on:
-      #- execution-bootnode
-      - lcli-build-genesis
     build:
       context: ./geth
       dockerfile: Dockerfile.geth
     ports:
       - '8545:8545'
+      - '8551:8551'
     entrypoint: [ "geth.sh" ]
     volumes:
+      - ./shared:/shared
       - 'geth_data:/db'
-      - lighthouse_shared_config:/shared-configs
-      - type: bind
-        source: ./shared/jwtsecret
-        target: /config/jwtsecret
-      - type: bind
-        source: ./lighthouse/vars.env
-        target: /config/vars.env
+      # - lighthouse_shared_config:/shared-configs
+      # - type: bind
+      #   source: ./shared/jwtsecret
+      #   target: /config/jwtsecret
+      # - type: bind
+      #   source: ./lighthouse/vars.env
+      #   target: /config/vars.env
       - type: bind
         source: ./geth/geth.sh
         target: /usr/local/bin/geth.sh
@@ -58,16 +47,18 @@ services:
       dockerfile: Dockerfile.geth
     ports:
       - '8546:8545'
+      - '8552:8551'
     entrypoint: [ "geth.sh" ]
     volumes:
+      - ./shared:/shared
       - 'geth_data2:/db'
-      - lighthouse_shared_config:/shared-configs
-      - type: bind
-        source: ./shared/jwtsecret
-        target: /config/jwtsecret
-      - type: bind
-        source: ./lighthouse/vars.env
-        target: /config/vars.env
+      # - lighthouse_shared_config:/shared-configs
+      # - type: bind
+      #   source: ./shared/jwtsecret
+      #   target: /config/jwtsecret
+      # - type: bind
+      #   source: ./lighthouse/vars.env
+      #   target: /config/vars.env
       - type: bind
         source: ./geth/geth.sh
         target: /usr/local/bin/geth.sh
