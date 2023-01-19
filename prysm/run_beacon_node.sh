@@ -24,7 +24,7 @@ done
 
 EXTERNAL_IP=$(ip addr show eth0 | grep inet | awk '{ print $2 }' | cut -d '/' -f1)
 
-beacon-node \
+beacon-chain \
     --accept-terms-of-use \
     --verbosity="$VERBOSITY" \
     --datadir /chaindata \
