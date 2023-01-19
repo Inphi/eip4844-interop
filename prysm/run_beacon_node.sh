@@ -35,7 +35,6 @@ beacon-node \
     --interop-eth1data-votes \
     --interop-genesis-state /shared/generated-genesis.ssz \
     --interop-genesis-time ${GENESIS} \
-    --interop-num-validators 4 \
     --execution-endpoint="$EXECUTION_NODE_URL" \
     --jwt-secret=/shared/jwtsecret \
     --chain-config-file=/shared/chain-config.yml \

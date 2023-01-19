@@ -18,6 +18,9 @@ services:
       - ./shared:/shared
 
   execution-node:
+    depends_on:
+      prysm-beacon-node:
+        condition: service_started
     build:
       context: ./geth
       dockerfile: Dockerfile.geth
@@ -34,7 +37,10 @@ services:
 
   execution-node-2:
     depends_on:
-      - execution-node
+      execution-node:
+        condition: service_started
+      prysm-beacon-node-follower:
+        condition: service_started
     build:
       context: ./geth
       dockerfile: Dockerfile.geth
@@ -51,8 +57,8 @@ services:
 
   prysm-beacon-node:
     depends_on:
-      - execution-node
-      - jaeger-tracing
+      jaeger-tracing:
+        condition: service_started
     build:
       context: ./prysm
       dockerfile: Dockerfile.prysm
@@ -85,9 +91,10 @@ services:
 
   prysm-beacon-node-follower:
     depends_on:
-      - execution-node-2
-      - prysm-beacon-node
-      - jaeger-tracing
+      prysm-beacon-node:
+        condition: service_started
+      jaeger-tracing:
+        condition: service_started
     build:
       context: ./prysm
       dockerfile: Dockerfile.prysm

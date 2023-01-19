@@ -30,4 +30,5 @@ fi
 run_beacon_node.sh \
     --min-sync-peers=1 \
     --bootstrap-node "$PEER" \
+    --interop-num-validators 4 \
     --interop-genesis-time "$INTEROP_GENESIS_TIME" $@

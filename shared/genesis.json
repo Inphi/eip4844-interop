@@ -20,7 +20,7 @@
             "epoch": 30000
         },
         "terminalTotalDifficulty": 2,
-        "terminalTotalDifficultyPassed": true
+        "terminalTotalDifficultyPassed": false
     },
     "nonce": "0x1234",
     "timestamp": "GENESIS_TIME",
