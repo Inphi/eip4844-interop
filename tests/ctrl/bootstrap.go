@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math/big"
 	"time"
 
 	"github.com/Inphi/eip4844-interop/shared"
@@ -67,7 +68,7 @@ func WaitForShardingFork() {
 		log.Fatalf("unable to retrive beacon node client: %v", err)
 	}
 
-	log.Printf("waiting for sharding fork time...")
+	log.Printf("waiting for sharding fork block...")
 	var lastBn uint64
 	lastUpdate := time.Now()
 	for {
@@ -75,7 +76,10 @@ func WaitForShardingFork() {
 		if err != nil {
 			log.Fatalf("ethclient.BlockByNumber: %v", err)
 		}
-		if b.Time() >= *eip4844ForkTime {
+
+		blockTime := new(big.Int).SetUint64(b.Time())
+		log.Printf("BlockByNumber: %v, %v, %v, %v, %v", b.Number(), blockTime, eip4844ForkTime, b.NumberU64(), lastBn)
+		if blockTime.Cmp(eip4844ForkTime) >= 0 {
 			break
 		}
 		// Chain stall detection
@@ -231,9 +235,6 @@ func (env *TestEnvironment) StartAll(ctx context.Context) error {
 		return env.BeaconNode.Start(ctx)
 	})
 	g.Go(func() error {
-		return env.GethNode.Start(ctx)
-	})
-	g.Go(func() error {
 		if env.ValidatorNode != nil {
 			return env.ValidatorNode.Start(ctx)
 		}
@@ -244,6 +245,9 @@ func (env *TestEnvironment) StartAll(ctx context.Context) error {
 			return env.BeaconNodeFollower.Start(ctx)
 		}
 		return nil
+	})
+	g.Go(func() error {
+		return env.GethNode.Start(ctx)
 	})
 	g.Go(func() error {
 		if env.GethNode2 != nil {
