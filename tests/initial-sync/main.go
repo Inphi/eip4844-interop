@@ -73,7 +73,8 @@ func main() {
 	startSlot := util.GetHeadSlot(ctx, beaconClient)
 
 	blobs := GetBlobs()
-	UploadBlobs(ctx, ethClient, blobs)
+	chainID := env.GethChainConfig.ChainID
+	UploadBlobs(ctx, ethClient, chainID, blobs)
 	util.WaitForNextSlots(ctx, beaconClient, 1)
 	blobSlot := util.FindBlobSlot(ctx, beaconClient, startSlot)
 
@@ -120,8 +121,7 @@ func main() {
 	util.AssertBlobsEquals(blobs, downloadedBlobs)
 }
 
-func UploadBlobs(ctx context.Context, client *ethclient.Client, blobs types.Blobs) {
-	chainId := big.NewInt(1)
+func UploadBlobs(ctx context.Context, client *ethclient.Client, chainId *big.Int, blobs types.Blobs) {
 	signer := types.NewDankSigner(chainId)
 
 	key, err := crypto.HexToECDSA(shared.PrivateKey)

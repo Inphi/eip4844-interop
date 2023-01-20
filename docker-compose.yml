@@ -144,9 +144,6 @@ services:
     ports:
       - '7500:7500'
     volumes:
-      - type: bind
-        source: ./prysm/run_validator.sh
-        target: /usr/local/bin/run_validator.sh
       - 'config_data:/config_data'
       - 'prysm_data:/prysm_data'
 
