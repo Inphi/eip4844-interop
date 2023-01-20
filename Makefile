@@ -3,6 +3,9 @@ SERVICES=execution-node\
 	 prysm-beacon-node\
 	 prysm-beacon-node-follower\
 	 prysm-validator-node\
+	 lighthouse-beacon-node\
+	 lighthouse-beacon-node-follower\
+	 lighthouse-validator-node\
 	 jaeger-tracing
 
 devnet-setup: devnet-clean
@@ -15,9 +18,7 @@ devnet-build:
 devnet-up: devnet-build devnet-setup
 	docker compose --project-name eip4844-interop up -d ${SERVICES}
 
-lighthouse-up:
-	touch ./lighthouse/generated-genesis.json
-	touch ./lighthouse/generated-config.yaml
+lighthouse-up: devnet-build devnet-setup
 	docker compose --project-name eip4844-interop up -d --build\
 		execution-node\
 		execution-node-2\

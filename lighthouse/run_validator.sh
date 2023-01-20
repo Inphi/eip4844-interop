@@ -5,8 +5,6 @@
 
 set -Eeuo pipefail
 
-source /config/vars.env
-
 DEBUG_LEVEL=info
 
 BUILDER_PROPOSALS=
@@ -23,9 +21,9 @@ exec lighthouse \
 	--debug-level $DEBUG_LEVEL \
 	vc \
 	$BUILDER_PROPOSALS \
-	--datadir $DATADIR/node_1 \
-	--testnet-dir $TESTNET_DIR \
+    --validators-dir /data/validators \
+    --secrets-dir /data/secrets \
+    --testnet-dir /config_data/custom_config_data \
 	--init-slashing-protection \
 	--beacon-nodes ${@:$OPTIND:1} \
-	--suggested-fee-recipient 0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990 \
-	$VC_ARGS
+	--suggested-fee-recipient 0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990

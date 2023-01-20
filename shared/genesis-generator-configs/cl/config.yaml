@@ -40,7 +40,7 @@ EIP4844_FORK_EPOCH: $EIP4844_FORK_EPOCH
 # Time parameters
 # ---------------------------------------------------------------
 # 12 seconds
-SECONDS_PER_SLOT: 12
+SECONDS_PER_SLOT: $SECONDS_PER_SLOT
 SLOTS_PER_EPOCH: $SLOTS_PER_EPOCH
 # 14 (estimate from Eth1 mainnet)
 SECONDS_PER_ETH1_BLOCK: 12

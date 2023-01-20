@@ -3,7 +3,6 @@ package ctrl
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"time"
@@ -179,12 +178,12 @@ func setupGeneratedConfigs() {
 	if err := StartServices("genesis-generator"); err != nil {
 		log.Fatalf("failed to start genesis-generator service: %v", err)
 	}
+	// TODO: it takes a moment for the docker daemon to synchronize files
+	time.Sleep(time.Second * 5)
 }
 
 func newPrysmTestEnvironment() *TestEnvironment {
 	setupGeneratedConfigs()
-	// TODO: it takes a moment for the docker daemon to synchronize files
-	time.Sleep(time.Second * 5)
 
 	shared.BeaconAPI = "localhost:3500"
 	shared.BeaconFollowerAPI = "localhost:3501"
@@ -214,29 +213,15 @@ func newLodestarTestEnvironment() *TestEnvironment {
 }
 
 func newLighthouseTestEnvironment() *TestEnvironment {
+	setupGeneratedConfigs()
+
 	clientName := "lighthouse"
-	// lcli-build-genesis expects these files to be present
-	if err := ioutil.WriteFile("./lighthouse/generated-genesis.json", nil, 0666); err != nil {
-		log.Fatal(err)
-	}
-	if err := ioutil.WriteFile("./lighthouse/generated-config.yaml", nil, 0666); err != nil {
-		log.Fatal(err)
-	}
-
-	// Generate configs
-	if err := StartServices("lcli-build-genesis"); err != nil {
-		log.Fatalf("failed to setup lighthouse test environment: %v", err)
-	}
-	// TODO: it takes a moment for the docker daemon to synchronize files
-	time.Sleep(time.Second * 3)
-
 	return &TestEnvironment{
-		// TODO: read the generated genesis from the container
-		BeaconChainConfig:  ReadBeaconChainConfigFromPath(fmt.Sprintf("%s/lighthouse/generated-config.yaml", shared.GetBaseDir())),
+		BeaconChainConfig:  ReadBeaconChainConfig(),
 		BeaconNode:         NewBeaconNode(clientName),
 		BeaconNodeFollower: NewBeaconNodeFollower(clientName),
 		ValidatorNode:      NewValidatorNode(clientName),
-		GethChainConfig:    ReadGethChainConfigFromPath(fmt.Sprintf("%s/lighthouse/generated-genesis.json", shared.GetBaseDir())),
+		GethChainConfig:    ReadGethChainConfig(),
 		GethNode:           NewGethNode(),
 		GethNode2:          NewGethNode2(),
 	}

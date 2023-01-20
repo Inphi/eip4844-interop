@@ -15,3 +15,4 @@ genesis_delay: ${GENESIS_DELAY}
 capella_fork_epoch: ${CAPELLA_FORK_EPOCH}
 eip4844_fork_epoch: ${EIP4844_FORK_EPOCH}
 slots_per_epoch: ${SLOTS_PER_EPOCH}
+seconds_per_slot: ${SECONDS_PER_SLOT}

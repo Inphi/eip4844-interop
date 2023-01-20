@@ -201,55 +201,27 @@ services:
         source: ./lodestar/run_beacon_node_peer.sh
         target: /usr/local/bin/run_beacon_node_peer.sh
 
-  # TODO: temporary solution for generating genesis, remove this before merge
-  lcli-build-genesis:
+  lighthouse-bootnode:
     build:
       context: ./lighthouse
       dockerfile: Dockerfile.lighthouse
-    image: lighthouse-interop
-    pull_policy: never
-    entrypoint: ["generate-genesis.sh"]
-    volumes:
-      - lighthouse_data:/data
-      - lighthouse_shared_config:/lighthouse_shared_config
-      - "./lighthouse/vars.env:/config/vars.env"
-      - type: bind
-        source: ./lighthouse/generate-genesis.sh
-        target: /usr/local/bin/generate-genesis.sh
-      - type: bind
-        source: ./lighthouse/genesis.json
-        target: /config/genesis.json
-      - type: bind
-        source: ./lighthouse/generated-genesis.json
-        target: /config/generated-genesis.json
-      - type: bind
-        source: ./lighthouse/generated-config.yaml
-        target: /config/generated-config.yaml
-
-  lighthouse-bootnode:
-    depends_on:
-      - lcli-build-genesis
-    image: lighthouse-interop
     pull_policy: never
     command: run_bootnode.sh
     volumes:
       - lighthouse_data:/data
-      - lighthouse_shared_config:/lighthouse_shared_config
+      - config_data:/config_data
+      - ./shared/genesis-generator-configs/values.env:/config/values.env
       - type: bind
         source: ./lighthouse/run_bootnode.sh
         target: /usr/local/bin/run_bootnode.sh
-      - type: bind
-        source: ./lighthouse/vars.env
-        target: /config/vars.env
 
   lighthouse-beacon-node:
+    build:
+      context: ./lighthouse
+      dockerfile: Dockerfile.lighthouse
     depends_on:
       - lighthouse-bootnode
       - execution-node
-      - lcli-build-genesis
-    # build:
-    #   context: ./lighthouse
-    #   dockerfile: Dockerfile.lighthouse
     image: lighthouse-interop
     pull_policy: never
     entrypoint: ["run_beacon_node.sh", "-d", "debug", "/data/node_1", "http://execution-node:8551"]
@@ -261,13 +233,10 @@ services:
       - "9000:9000"
     volumes:
       - lighthouse_data:/data
-      - lighthouse_shared_config:/lighthouse_shared_config
+      - config_data:/config_data
       - type: bind
         source: ./lighthouse/run_beacon_node.sh
         target: /usr/local/bin/run_beacon_node.sh
-      - type: bind
-        source: ./lighthouse/vars.env
-        target: /config/vars.env
       - type: bind
         source: ./shared/trusted_setup.txt
         target: /config/trusted_setup.txt
@@ -279,9 +248,9 @@ services:
     depends_on:
       - execution-node-2
       - lighthouse-beacon-node
-    # build:
-    #   context: ./lighthouse
-    #   dockerfile: Dockerfile.lighthouse
+    build:
+      context: ./lighthouse
+      dockerfile: Dockerfile.lighthouse
     image: lighthouse-interop
     pull_policy: never
     entrypoint: ["run_beacon_node.sh", "-d", "debug", "/data/node_2", "http://execution-node-2:8551"]
@@ -293,7 +262,7 @@ services:
       - "9001:9001"
     volumes:
       - lighthouse_data:/data
-      - lighthouse_shared_config:/lighthouse_shared_config
+      - config_data:/config_data
       - type: bind
         source: ./lighthouse/run_beacon_node.sh
         target: /usr/local/bin/run_beacon_node.sh
@@ -312,10 +281,13 @@ services:
     pull_policy: never
     depends_on:
       - lighthouse-beacon-node
+    build:
+      context: ./lighthouse
+      dockerfile: Dockerfile.lighthouse
     entrypoint: ['run_validator.sh', 'http://lighthouse-beacon-node:8000']
     volumes:
       - lighthouse_data:/data
-      - lighthouse_shared_config:/lighthouse_shared_config
+      - config_data:/config_data
       - type: bind
         source: ./lighthouse/run_validator.sh
         target: /usr/local/bin/run_validator.sh
