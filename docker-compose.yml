@@ -53,9 +53,25 @@ services:
         source: ./geth/geth.sh
         target: /usr/local/bin/geth.sh
 
+  # TODO: move bootnode to genesis-generator
+  bootnode:
+    build:
+      context: ./lighthouse
+      dockerfile: Dockerfile.lighthouse
+    pull_policy: never
+    command: run_bootnode.sh
+    volumes:
+      - lighthouse_data:/data
+      - config_data:/config_data
+      - ./shared/genesis-generator-configs/values.env:/config/values.env
+      - type: bind
+        source: ./lighthouse/run_bootnode.sh
+        target: /usr/local/bin/run_bootnode.sh
+
   prysm-beacon-node:
     depends_on:
       - execution-node
+      - bootnode
       - jaeger-tracing
     build:
       context: ./prysm
@@ -68,8 +84,8 @@ services:
       VERBOSITY: debug
       P2P_PRIV_KEY: /etc/prysm-priv-key
       P2P_TCP_PORT: 13000
-    entrypoint:
-      ['run_beacon_node.sh', '--min-sync-peers=0', '--bootstrap-node=']
+      MIN_SYNC_PEERS: 0
+    entrypoint: run_beacon_node.sh
     ports:
       - '3500:3500'
       - '4000:4000'
@@ -88,6 +104,7 @@ services:
     depends_on:
       - execution-node-2
       - prysm-beacon-node
+      - bootnode
       - jaeger-tracing
     build:
       context: ./prysm
@@ -97,11 +114,11 @@ services:
       EXECUTION_NODE_URL: http://execution-node-2:8551
       TRACING_ENDPOINT: http://jaeger-tracing:14268/api/traces
       PROCESS_NAME: beacon-node-follower
-      BEACON_NODE_RPC: http://prysm-beacon-node:3500
       VERBOSITY: debug
       P2P_PRIV_KEY: /etc/prysm-priv-key
       P2P_TCP_PORT: 13001
-    entrypoint: run_beacon_node_peer.sh
+      MIN_SYNC_PEERS: 1
+    entrypoint: 'run_beacon_node.sh'
     ports:
       - '3501:3500'
       - '4001:4000'
@@ -112,9 +129,6 @@ services:
       - type: bind
         source: ./prysm/run_beacon_node.sh
         target: /usr/local/bin/run_beacon_node.sh
-      - type: bind
-        source: ./prysm/run_beacon_node_peer.sh
-        target: /usr/local/bin/run_beacon_node_peer.sh
       - type: bind
         source: ./prysm/prysm-follower-priv-key
         target: /etc/prysm-priv-key
@@ -197,26 +211,12 @@ services:
         source: ./lodestar/run_beacon_node_peer.sh
         target: /usr/local/bin/run_beacon_node_peer.sh
 
-  lighthouse-bootnode:
-    build:
-      context: ./lighthouse
-      dockerfile: Dockerfile.lighthouse
-    pull_policy: never
-    command: run_bootnode.sh
-    volumes:
-      - lighthouse_data:/data
-      - config_data:/config_data
-      - ./shared/genesis-generator-configs/values.env:/config/values.env
-      - type: bind
-        source: ./lighthouse/run_bootnode.sh
-        target: /usr/local/bin/run_bootnode.sh
-
   lighthouse-beacon-node:
     build:
       context: ./lighthouse
       dockerfile: Dockerfile.lighthouse
     depends_on:
-      - lighthouse-bootnode
+      - bootnode
       - execution-node
     image: lighthouse-interop
     pull_policy: never
@@ -243,6 +243,7 @@ services:
   lighthouse-beacon-node-follower:
     depends_on:
       - execution-node-2
+      - bootnode
       - lighthouse-beacon-node
     build:
       context: ./lighthouse

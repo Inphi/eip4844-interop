@@ -9,6 +9,7 @@ set -exu -o pipefail
 : "${VERBOSITY:-info}"
 : "${P2P_PRIV_KEY:-}"
 : "${P2P_TCP_PORT:-13000}"
+: "${MIN_SYNC_PEERS:-0}"
 
 # wait for the execution node to start
 RETRIES=60
@@ -26,11 +27,14 @@ done
 
 EXTERNAL_IP=$(ip addr show eth0 | grep inet | awk '{ print $2 }' | cut -d '/' -f1)
 
+BOOTNODE=$(cat /config_data/custom_config_data/boot_enr.yaml | sed 's/- //')
+
 beacon-chain\
     --accept-terms-of-use \
     --verbosity="$VERBOSITY" \
     --datadir /chaindata \
     --force-clear-db \
+    --bootstrap-node $BOOTNODE \
     --genesis-state=/config_data/custom_config_data/genesis.ssz \
     --execution-endpoint="$EXECUTION_NODE_URL" \
     --jwt-secret=/config_data/cl/jwtsecret \
@@ -42,6 +46,7 @@ beacon-chain\
     --grpc-gateway-host 0.0.0.0 \
     --grpc-gateway-port 3500 \
     --enable-debug-rpc-endpoints \
+    --min-sync-peers "$MIN_SYNC_PEERS" \
     --p2p-local-ip 0.0.0.0 \
     --p2p-host-ip "$EXTERNAL_IP" \
     --p2p-tcp-port $P2P_TCP_PORT \

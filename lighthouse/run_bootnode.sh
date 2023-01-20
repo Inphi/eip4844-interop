@@ -24,8 +24,10 @@ lcli \
 
 bootnode_enr=`cat /data/bootnode/enr.dat`
 echo "- $bootnode_enr" > /config_data/custom_config_data/boot_enr.yaml
+# overwrite the static bootnode file too
+echo "- $bootnode_enr" > /config_data/custom_config_data/boot_enr.txt
 
-echo "Generated bootnode enr"
+echo "Generated bootnode enr - $bootnode_enr"
 
 DEBUG_LEVEL=${1:-info}
 

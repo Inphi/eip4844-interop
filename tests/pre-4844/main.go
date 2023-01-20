@@ -25,7 +25,8 @@ func main() {
 
 	ctrl.InitE2ETest(clientName)
 
-	chainId := big.NewInt(1)
+	env := ctrl.GetEnv()
+	chainId := env.GethChainConfig.ChainID
 	signer := types.NewDankSigner(chainId)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*20)
