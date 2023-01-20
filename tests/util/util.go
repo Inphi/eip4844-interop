@@ -7,10 +7,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/pkg/errors"
-
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/pkg/errors"
 	ssz "github.com/prysmaticlabs/fastssz"
 	"github.com/prysmaticlabs/prysm/v3/api/client/beacon"
 	"github.com/prysmaticlabs/prysm/v3/beacon-chain/p2p/encoder"
@@ -27,6 +26,7 @@ func init() {
 func WaitForSlot(ctx context.Context, client *beacon.Client, slot consensustypes.Slot) error {
 	for {
 		headSlot := GetHeadSlot(ctx, client)
+		log.Printf("slot: %v, headSlot: %v", slot, headSlot)
 		if headSlot >= slot {
 			break
 		}
@@ -60,9 +60,9 @@ type Block struct {
 
 var (
 	// Hardcoded versions for now
-	BellatrixVersion = [4]byte{0x02, 0x00, 0x00, 0x00}
-	CapellaVersion   = [4]byte{0x03, 0x00, 0x00, 0x00}
-	EIP4844Version   = [4]byte{0x04, 0x00, 0x00, 0x00}
+	BellatrixVersion = [4]byte{0x20, 0x00, 0x00, 0x91}
+	CapellaVersion   = [4]byte{0x20, 0x00, 0x00, 0x92}
+	EIP4844Version   = [4]byte{0x20, 0x00, 0x00, 0x93}
 )
 
 func GetBlock(ctx context.Context, client *beacon.Client, blockId beacon.StateOrBlockId) (*Block, error) {

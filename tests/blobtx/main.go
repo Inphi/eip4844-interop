@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"math/big"
 	"os"
@@ -52,12 +53,17 @@ func main() {
 	blobs := GetBlobs()
 
 	// Retrieve the current slot to being our blobs search on the beacon chain
+	fmt.Printf("retrieving slots")
 	startSlot := util.GetHeadSlot(ctx, beaconClient)
+	fmt.Printf("startSlot is: %v", startSlot)
 
 	chainID := env.GethChainConfig.ChainID
 	UploadBlobs(ctx, ethClient, chainID, blobs)
+	fmt.Println("blob uploaded")
 	util.WaitForNextSlots(ctx, beaconClient, 1)
+	fmt.Println("got next slot")
 	slot := util.FindBlobSlot(ctx, beaconClient, startSlot)
+	fmt.Printf("slot is %v", slot)
 
 	multiaddr, err := shared.GetBeaconMultiAddress()
 	if err != nil {

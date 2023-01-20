@@ -122,6 +122,7 @@ func ReadBeaconChainConfigFromPath(path string) *BeaconChainConfig {
 	if err := yaml.Unmarshal(data, &config); err != nil {
 		log.Fatalf("invalid beacon chain config file at %v: %v", path, err)
 	}
+	log.Println(config.Eip4844ForkEpoch)
 	return &config
 }
 
@@ -151,7 +152,7 @@ func WaitForEip4844ForkEpoch() {
 
 	config := GetEnv().BeaconChainConfig
 	// TODO: query /eth/v1/config/spec for time parameters
-	eip4844Slot := config.Eip4844ForkEpoch * 32
+	eip4844Slot := config.Eip4844ForkEpoch * 6 // TODO: change this to config.SlotsPerEpoch once it's defined
 	if err := WaitForSlot(ctx, types.Slot(eip4844Slot)); err != nil {
 		log.Fatal(err)
 	}

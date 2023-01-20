@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/params"
 )
@@ -69,6 +70,14 @@ func getMultiaddress(beaconAPI string) (string, error) {
 	if len(data.Data.P2PAddresses) == 0 {
 		return "", errors.New("no multiaddresses found")
 	}
+
+	// There might be multiple addresses and we need the one with 127.0.0.1 to work
+	for _, addr := range data.Data.P2PAddresses {
+		if strings.Contains(addr, "127.0.0.1") {
+			return addr, nil
+		}
+	}
+
 	return data.Data.P2PAddresses[0], nil
 }
 

@@ -1,13 +1,24 @@
-FROM golang:1.18
+FROM golang:1.18 as builder
 
-COPY ./prysm/prysm/go.mod ./prysm/prysm/go.sum /prysm/
-WORKDIR /prysm
-RUN go mod download
+RUN apt-get update
+RUN go install github.com/bazelbuild/bazelisk@latest
+
+WORKDIR /app/prysm
+COPY ./prysm/prysm /app/prysm
 
 
-COPY ./prysm/prysm /prysm/.
-WORKDIR /prysm
-RUN go build -o /usr/local/bin -buildvcs=false ./cmd/prysmctl
+# The flag below may be needed if blst throws SIGILL, which happens with certain (older) CPUs
+# ENV CGO_CFLAGS="-O -D__BLST_PORTABLE__"
+ENV CGO_CFLAGS=$CGO_CFLAGS
+
+RUN apt-get install patch
+RUN bazelisk build //cmd/prysmctl
+
+FROM ubuntu:20.04
+
+# * represents any architecture depending on the hardware config, but there will be only one arch without specific configuration
+# on mac m1, it's aarch64, on some others it might be x86_64, etc
+COPY --from=builder /app/prysm/bazel-out/*/bin/cmd/prysmctl/prysmctl_/prysmctl   /usr/local/bin/
 
 WORKDIR /shared
 ENTRYPOINT [ "./setup.sh" ]
