@@ -48,19 +48,24 @@ func main() {
 	}
 	log.Printf("Nonce: %d", nonce)
 
-	msg := ethereum.CallMsg{
-		From:  crypto.PubkeyToAddress(key.PublicKey),
-		To:    &common.Address{},
-		Gas:   21000,
-		Value: big.NewInt(10000),
-	}
-	gas, err := client.EstimateGas(ctx, msg)
+	gasTipCap, err := client.SuggestGasTipCap(ctx)
 	if err != nil {
-		log.Fatalf("EstimateGas error: %v", err)
+		log.Fatalf("Suggest gas tip cap: %v", err)
+	}
+	gasFeeCap, err := client.SuggestGasPrice(ctx)
+	if err != nil {
+		log.Fatalf("Suggest gas fee price: %v", err)
 	}
 
 	to := common.HexToAddress("ffb38a7a99e3e2335be83fc74b7faa19d5531243")
-	tx, err := types.SignTx(types.NewTransaction(nonce, to, big.NewInt(10000), params.TxGas, big.NewInt(int64(gas)), nil), signer, key)
+	tx, err := types.SignTx(types.NewTx(&types.DynamicFeeTx{
+		Nonce:     nonce,
+		To:        &to,
+		Value:     big.NewInt(10000),
+		Gas:       params.TxGas,
+		GasTipCap: gasTipCap,
+		GasFeeCap: gasFeeCap,
+	}), signer, key)
 	if err != nil {
 		log.Fatalf("Error signing tx: %v", err)
 	}
