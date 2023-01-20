@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"math/big"
 	"time"
 
 	"github.com/Inphi/eip4844-interop/shared"
@@ -68,7 +67,7 @@ func WaitForShardingFork() {
 		log.Fatalf("unable to retrive beacon node client: %v", err)
 	}
 
-	log.Printf("waiting for sharding fork block...")
+	log.Printf("waiting for sharding fork time...")
 	var lastBn uint64
 	lastUpdate := time.Now()
 	for {
@@ -77,11 +76,10 @@ func WaitForShardingFork() {
 			log.Fatalf("ethclient.BlockByNumber: %v", err)
 		}
 
-		blockTime := new(big.Int).SetUint64(b.Time())
-		log.Printf("BlockByNumber: %v, %v, %v, %v, %v", b.Number(), blockTime, eip4844ForkTime, b.NumberU64(), lastBn)
-		if blockTime.Cmp(eip4844ForkTime) >= 0 {
+		if b.Time() >= eip4844ForkTime.Uint64() {
 			break
 		}
+
 		// Chain stall detection
 		if b.NumberU64() != lastBn {
 			lastBn = b.NumberU64()
@@ -122,7 +120,6 @@ func ReadBeaconChainConfigFromPath(path string) *BeaconChainConfig {
 	if err := yaml.Unmarshal(data, &config); err != nil {
 		log.Fatalf("invalid beacon chain config file at %v: %v", path, err)
 	}
-	log.Println(config.Eip4844ForkEpoch)
 	return &config
 }
 

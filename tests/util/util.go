@@ -26,7 +26,6 @@ func init() {
 func WaitForSlot(ctx context.Context, client *beacon.Client, slot consensustypes.Slot) error {
 	for {
 		headSlot := GetHeadSlot(ctx, client)
-		log.Printf("slot: %v, headSlot: %v", slot, headSlot)
 		if headSlot >= slot {
 			break
 		}

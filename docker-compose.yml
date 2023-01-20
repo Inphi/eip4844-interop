@@ -105,12 +105,12 @@ services:
       BEACON_NODE_RPC: http://prysm-beacon-node:3500
       VERBOSITY: debug
       P2P_PRIV_KEY: /etc/prysm-priv-key
-      P2P_TCP_PORT: 13000
+      P2P_TCP_PORT: 13001
     entrypoint: run_beacon_node_peer.sh
     ports:
       - '3501:3500'
       - '4001:4000'
-      - '13001:13000'
+      - '13001:13001'
     volumes:
       - 'beacon_node_follower_data:/chaindata'
       - './shared:/shared'

@@ -5,6 +5,8 @@ set -e
 # setup shared env vars
 . ./shared.env
 
+# These values should correspond to the CAPELLA_FORK_EPOCH and EIP4844_FORK_EPOCH in the chain config. 
+# So they should be 108 for capella (CapellaForkEpoch * SecondsPerSlot * SlotsPerEpoch) and 144 for EIP-4844.
 GENESIS=$(($(date +%s) + 60))   # 60s till genesis
 SHANGHAI=$(($GENESIS + 108))    # 108s till shanghai
 CANCUN=$(($GENESIS + 144))      # 144s till cancun
