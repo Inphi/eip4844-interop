@@ -201,7 +201,7 @@ require (
 
 replace github.com/ethereum/go-ethereum => ./geth/go-ethereum
 
-//replace github.com/prysmaticlabs/prysm/v3 => ./prysm/prysm
+// replace github.com/prysmaticlabs/prysm/v3 => ./prysm/prysm
 
 // See https://github.com/prysmaticlabs/grpc-gateway/issues/2
 replace github.com/grpc-ecosystem/grpc-gateway/v2 => github.com/prysmaticlabs/grpc-gateway/v2 v2.3.1-0.20220721162526-0d1c40b5f064

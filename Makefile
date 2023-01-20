@@ -40,4 +40,13 @@ devnet-clean:
 prysm-blobtx-test: devnet-setup
 	go run ./tests/blobtx prysm
 
+prysm-pre4844-test: devnet-setup
+	go run ./tests/pre-4844 prysm
+
+prysm-initial-sync-test: devnet-setup
+	go run ./tests/initial-sync prysm
+
+prysm-fee-market-test: devnet-setup
+	go run ./tests/fee-market prysm
+
 .PHONY: devnet-clean
