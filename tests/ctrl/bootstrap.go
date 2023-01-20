@@ -76,6 +76,7 @@ func WaitForShardingFork() {
 			log.Fatalf("ethclient.BlockByNumber: %v", err)
 		}
 
+		log.Printf("BlockByNumber: %v, lastBlockNumber: %v, blockTime: %v, eip4844BlockTime: %v", b.Number(), lastBn, b.Time(), eip4844ForkTime)
 		if b.Time() >= eip4844ForkTime.Uint64() {
 			break
 		}
