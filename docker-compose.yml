@@ -163,12 +163,14 @@ services:
 
   lodestar-beacon-node:
     depends_on:
+      - bootnode
       - execution-node
     build:
       context: ./lodestar
       dockerfile: Dockerfile.lodestar
     environment:
-      EXECUTION_NODE_URL: http://execution-node:8545
+      EXECUTION_NODE_URL: http://execution-node:8551
+      EXECUTION_RPC: http://execution-node:8545
       PROCESS_NAME: lodestar-beacon-node
     entrypoint: ['run_beacon_node.sh']
     ports:
@@ -176,6 +178,7 @@ services:
       - '13000:13000'
     volumes:
       - 'beacon_node_data:/chaindata'
+      - 'config_data:/config_data'
       - type: bind
         source: ./shared/chain-config.yml
         target: /config/chain-config.yml
@@ -185,13 +188,14 @@ services:
 
   lodestar-beacon-node-follower:
     depends_on:
+      - bootnode
       - execution-node-2
       - lodestar-beacon-node
     build:
       context: ./lodestar
       dockerfile: Dockerfile.lodestar
     environment:
-      EXECUTION_NODE_URL: http://execution-node-2:8545
+      EXECUTION_NODE_URL: http://execution-node-2:8551
       BEACON_NODE_RPC: http://lodestar-beacon-node:3500
       PROCESS_NAME: lodestar-beacon-node-follower
       VERBOSITY: debug

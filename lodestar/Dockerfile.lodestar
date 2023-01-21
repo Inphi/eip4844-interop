@@ -1,73 +1,29 @@
-FROM node:16
+# --platform=$BUILDPLATFORM is used build javascript source with host arch
+# Otherwise TS builds on emulated archs and can be extremely slow (+1h)
+FROM --platform=${BUILDPLATFORM:-amd64} node:18-alpine as build_src
+WORKDIR /usr/app
+RUN apk update && apk add --no-cache g++ make python3 && rm -rf /var/cache/apk/*
 
-RUN apt-get update && \
-    apt-get install -y jq
+COPY ./lodestar .
 
-COPY ./lodestar/package.json /app/lodestar/package.json
-COPY ./lodestar/yarn.lock /app/lodestar/yarn.lock
-COPY ./lodestar/trusted_setup.txt /app/lodestar/trusted_setup.txt
+RUN yarn install --non-interactive --frozen-lockfile && \
+  yarn build && \
+  yarn install --non-interactive --frozen-lockfile --production
 
-COPY ./lodestar/packages/api/package.json /app/lodestar/packages/api/package.json
-COPY ./lodestar/packages/beacon-node/package.json /app/lodestar/packages/beacon-node/package.json
-COPY ./lodestar/packages/cli/package.json /app/lodestar/packages/cli/package.json
-COPY ./lodestar/packages/config/package.json /app/lodestar/packages/config/package.json
-COPY ./lodestar/packages/db/package.json /app/lodestar/packages/db/package.json
-COPY ./lodestar/packages/flare/package.json /app/lodestar/packages/flare/package.json
-COPY ./lodestar/packages/fork-choice/package.json /app/lodestar/packages/fork-choice/package.json
-COPY ./lodestar/packages/light-client/package.json /app/lodestar/packages/light-client/package.json
-COPY ./lodestar/packages/params/package.json /app/lodestar/packages/params/package.json
-COPY ./lodestar/packages/spec-test-util/package.json /app/lodestar/packages/spec-test-util/package.json
-COPY ./lodestar/packages/state-transition/package.json /app/lodestar/packages/state-transition/package.json
-COPY ./lodestar/packages/types/package.json /app/lodestar/packages/types/package.json
-COPY ./lodestar/packages/utils/package.json /app/lodestar/packages/utils/package.json
-COPY ./lodestar/packages/validator/package.json /app/lodestar/packages/validator/package.json
+# Copy built src + node_modules to a new layer to prune unnecessary fs
+# Previous layer weights 7.25GB, while this final 488MB (as of Oct 2020)
+FROM node:18-alpine
 
-WORKDIR /app/lodestar
+RUN apk update && apk add curl sed
 
-RUN yarn install --ignore-optional
+WORKDIR /usr/app
+COPY --from=build_src /usr/app .
 
-COPY ./lodestar/lodestar /app/lodestar/lodestar
-COPY ./lodestar/lerna.json /app/lodestar/lerna.json
-COPY ./lodestar/tsconfig.build.json /app/lodestar/tsconfig.build.json
-COPY ./lodestar/tsconfig.json /app/lodestar/tsconfig.json
-COPY ./lodestar/types /app/lodestar/types
+# NodeJS applications have a default memory limit of 2.5GB.
+# This limit is bit tight for a Prater node, it is recommended to raise the limit
+# since memory may spike during certain network conditions.
+ENV NODE_OPTIONS=--max-old-space-size=4096
 
-# Copy and build each package independently to allow Docker to cache their builds in layers
-
-COPY ./lodestar/packages/params /app/lodestar/packages/params
-RUN yarn lerna run --scope @lodestar/params build
-
-COPY ./lodestar/packages/types /app/lodestar/packages/types
-RUN yarn lerna run --scope @lodestar/types build
-
-COPY ./lodestar/packages/utils /app/lodestar/packages/utils
-RUN yarn lerna run --scope @lodestar/utils build
-
-COPY ./lodestar/packages/config /app/lodestar/packages/config
-RUN yarn lerna run --scope @lodestar/config build
-
-COPY ./lodestar/packages/state-transition /app/lodestar/packages/state-transition
-RUN yarn lerna run --scope @lodestar/state-transition build
-
-COPY ./lodestar/packages/fork-choice /app/lodestar/packages/fork-choice
-RUN yarn lerna run --scope @lodestar/fork-choice build
-
-COPY ./lodestar/packages/db /app/lodestar/packages/db
-RUN yarn lerna run --scope @lodestar/db build
-
-COPY ./lodestar/packages/api /app/lodestar/packages/api
-RUN yarn lerna run --scope @lodestar/api build
-
-COPY ./lodestar/packages/light-client /app/lodestar/packages/light-client
-RUN yarn lerna run --scope @lodestar/light-client build
-
-COPY ./lodestar/packages/validator /app/lodestar/packages/validator
-RUN yarn lerna run --scope @lodestar/validator build
-
-COPY ./lodestar/packages/beacon-node /app/lodestar/packages/beacon-node
-RUN yarn lerna run --scope @lodestar/beacon-node build
-
-COPY ./lodestar/packages/cli /app/lodestar/packages/cli
-RUN yarn lerna run --scope @chainsafe/lodestar build
+ENTRYPOINT ["node", "./packages/cli/bin/lodestar"]
 
 EXPOSE 3500 4000 7500 13000 12000 8080

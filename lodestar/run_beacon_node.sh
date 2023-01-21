@@ -1,13 +1,14 @@
 #!/bin/sh
 
 : "${EXECUTION_NODE_URL:-}"
+: "${EXECUTION_RPC:-}"
 : "${PROCESS_NAME:-beacon-node}"
 : "${VERBOSITY:-info}"
 
 # wait for the execution node to start
 RETRIES=60
 i=0
-until curl --silent --fail "$EXECUTION_NODE_URL";
+until curl --silent --fail "$EXECUTION_RPC";
 do
     sleep 1
     if [ $i -eq $RETRIES ]; then
@@ -20,19 +21,20 @@ done
 
 echo 'Execution client running. Starting Lodestar beacon node.'
 
+BOOTNODE=$(cat /config_data/custom_config_data/boot_enr.yaml | sed 's/- //')
+
 # https://chainsafe.github.io/lodestar/usage/local/
-./lodestar dev \
+node ./packages/cli/bin/lodestar beacon \
     --logLevel verbose \
-    --paramsFile /config/chain-config.yml \
-    --genesisValidators 1 \
-    --startValidators 0..1 \
-    --enr.ip 127.0.0.1 \
-    --server http://localhost:3500 \
-    --reset \
-    --eth1 \
-    --eth1.providerUrls="$EXECUTION_NODE_URL" \
-    --execution.urls="$EXECUTION_NODE_URL" \
+    --paramsFile /config_data/custom_config_data/config.yaml \
+    --genesisStateFile /config_data/custom_config_data/genesis.ssz \
     --dataDir /chaindata \
+    --jwt-secret /config_data/cl/jwtsecret \
+    --execution.urls "$EXECUTION_NODE_URL" \
+    --network.connectToDiscv5Bootnodes \
+    --bootnodes "$BOOTNODE" \
+    --enr.ip 127.0.0.1 \
+    --eth1.providerUrls="$EXECUTION_NODE_URL" \
     --rest \
     --rest.address 0.0.0.0 \
     --rest.port 3500 \

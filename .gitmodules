@@ -8,8 +8,8 @@
 	branch = eip4844
 [submodule "lodestar/lodestar"]
 	path = lodestar/lodestar
-	url = https://github.com/dgcoffman/lodestar
-	branch = dgc/eip-4844
+	url = https://github.com/chainsafe/lodestar
+	branch = unstable
 [submodule "erigon/erigon"]
 	path = erigon/erigon
 	url = https://github.com/roberto-bayardo/erigon
