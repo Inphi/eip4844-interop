@@ -1,4 +1,4 @@
-devnet-setup: devnet-clean
+devnet-setup: 
 	docker compose up build-shared-states
 
 devnet-up: devnet-setup

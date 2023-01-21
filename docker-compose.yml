@@ -60,8 +60,8 @@ services:
       jaeger-tracing:
         condition: service_started
     build:
-      context: ./prysm
-      dockerfile: Dockerfile.prysm
+      context: ./
+      dockerfile: ./prysm/Dockerfile.prysm
     environment:
       EXECUTION_NODE_URL: http://execution-node:8551
       TRACING_ENDPOINT: http://jaeger-tracing:14268/api/traces
@@ -96,8 +96,8 @@ services:
       jaeger-tracing:
         condition: service_started
     build:
-      context: ./prysm
-      dockerfile: Dockerfile.prysm
+      context: ./
+      dockerfile: ./prysm/Dockerfile.prysm
     environment:
       EXECUTION_NODE_URL: http://execution-node-2:8551
       TRACING_ENDPOINT: http://jaeger-tracing:14268/api/traces
@@ -129,8 +129,8 @@ services:
       - prysm-beacon-node
       - jaeger-tracing
     build:
-      context: ./prysm
-      dockerfile: Dockerfile.prysm
+      context: ./
+      dockerfile: ./prysm/Dockerfile.prysm
     command: >
       validator --accept-terms-of-use --beacon-rpc-provider prysm-beacon-node:4000 --rpc --grpc-gateway-host 0.0.0.0 --grpc-gateway-port 7500 --interop-num-validators=4 --interop-start-index=0 --force-clear-db --chain-config-file=/shared/chain-config.yml --suggested-fee-recipient 0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b --enable-tracing --tracing-endpoint http://jaeger-tracing:14268/api/traces --tracing-process-name validator-node
     ports:
