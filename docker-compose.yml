@@ -29,6 +29,12 @@ services:
       - '8545:8545'
       - '8551:8551'
     entrypoint: ["geth.sh"]
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "localhost:8545"]
+      interval: 2s
+      timeout: 2s
+      retries: 20
+      start_period: 1s
     volumes:
       - 'config_data:/config_data'
       - 'geth_data:/db'
@@ -42,6 +48,12 @@ services:
     build:
       context: ./geth
       dockerfile: Dockerfile.geth
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "localhost:8545"]
+      interval: 2s
+      timeout: 2s
+      retries: 20
+      start_period: 1s
     ports:
       - '8546:8545'
       - '8552:8551'
@@ -77,7 +89,6 @@ services:
       context: ./prysm
       dockerfile: Dockerfile.prysm
     environment:
-      EXECUTION_RPC: http://execution-node:8545
       EXECUTION_NODE_URL: http://execution-node:8551
       TRACING_ENDPOINT: http://jaeger-tracing:14268/api/traces
       PROCESS_NAME: beacon-node
@@ -110,7 +121,6 @@ services:
       context: ./prysm
       dockerfile: Dockerfile.prysm
     environment:
-      EXECUTION_RPC: http://execution-node-2:8545
       EXECUTION_NODE_URL: http://execution-node-2:8551
       TRACING_ENDPOINT: http://jaeger-tracing:14268/api/traces
       PROCESS_NAME: beacon-node-follower
@@ -170,7 +180,6 @@ services:
       dockerfile: Dockerfile.lodestar
     environment:
       EXECUTION_NODE_URL: http://execution-node:8551
-      EXECUTION_RPC: http://execution-node:8545
       PROCESS_NAME: lodestar-beacon-node
     entrypoint: ['run_beacon_node.sh']
     ports:

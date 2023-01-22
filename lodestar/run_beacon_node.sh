@@ -1,25 +1,8 @@
 #!/bin/sh
 
 : "${EXECUTION_NODE_URL:-}"
-: "${EXECUTION_RPC:-}"
 : "${PROCESS_NAME:-beacon-node}"
 : "${VERBOSITY:-info}"
-
-# wait for the execution node to start
-RETRIES=60
-i=0
-until curl --silent --fail "$EXECUTION_RPC";
-do
-    sleep 1
-    if [ $i -eq $RETRIES ]; then
-        echo 'Timed out waiting for execution node'
-        exit 1
-    fi
-    echo 'Waiting for execution node...'
-    ((i=i+1))
-done
-
-echo 'Execution client running. Starting Lodestar beacon node.'
 
 BOOTNODE=$(cat /config_data/custom_config_data/boot_enr.yaml | sed 's/- //')
 

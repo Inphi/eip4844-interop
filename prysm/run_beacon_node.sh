@@ -2,7 +2,6 @@
 
 set -exu -o pipefail
 
-: "${EXECUTION_RPC:-}"
 : "${EXECUTION_NODE_URL:-}"
 : "${PROCESS_NAME:-beacon-node}"
 : "${TRACING_ENDPOINT:-}"
@@ -10,20 +9,6 @@ set -exu -o pipefail
 : "${P2P_PRIV_KEY:-}"
 : "${P2P_TCP_PORT:-13000}"
 : "${MIN_SYNC_PEERS:-0}"
-
-# wait for the execution node to start
-RETRIES=60
-i=0
-until curl --silent --fail "$EXECUTION_RPC";
-do
-    sleep 1
-    if [ $i -eq $RETRIES ]; then
-        echo 'Timed out waiting for execution node'
-        exit 1
-    fi
-    echo 'Waiting for execution node...'
-    ((i=i+1))
-done
 
 EXTERNAL_IP=$(ip addr show eth0 | grep inet | awk '{ print $2 }' | cut -d '/' -f1)
 
