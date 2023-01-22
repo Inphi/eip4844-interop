@@ -179,7 +179,7 @@ func setupGeneratedConfigs() {
 		log.Fatalf("failed to start genesis-generator service: %v", err)
 	}
 	// TODO: it takes a moment for the docker daemon to synchronize files
-	time.Sleep(time.Second * 5)
+	time.Sleep(time.Second * 10)
 }
 
 func newPrysmTestEnvironment() *TestEnvironment {
