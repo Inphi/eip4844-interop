@@ -7,11 +7,12 @@ volumes:
   beacon_node_follower_data:
   lighthouse_data:
   prysm_data:
+  lodestar_data:
   config_data:
 
 services:
   genesis-generator:
-    image: inphi/ethereum-genesis-generator:eip4844
+    image: inphi/ethereum-genesis-generator:eip4844-alpha
     entrypoint: run_genesis_generator.sh
     volumes:
       - ./shared/run_genesis_generator.sh:/usr/local/bin/run_genesis_generator.sh
@@ -19,6 +20,7 @@ services:
       - ./shared/generated-configs:/gen-configs
       - lighthouse_data:/lighthouse_data
       - prysm_data:/prysm_data
+      - lodestar_data:/lodestar_data
       - config_data:/data
 
   execution-node:
@@ -82,12 +84,21 @@ services:
 
   prysm-beacon-node:
     depends_on:
-      - execution-node
-      - bootnode
-      - jaeger-tracing
+      execution-node:
+        condition: service_healthy
+      bootnode:
+        condition: service_started
+      jaeger-tracing:
+        condition: service_started
     build:
       context: ./prysm
       dockerfile: Dockerfile.prysm
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "localhost:3500/eth/v1/node/health"]
+      interval: 2s
+      timeout: 2s
+      retries: 20
+      start_period: 1s
     environment:
       EXECUTION_NODE_URL: http://execution-node:8551
       TRACING_ENDPOINT: http://jaeger-tracing:14268/api/traces
@@ -113,10 +124,14 @@ services:
 
   prysm-beacon-node-follower:
     depends_on:
-      - execution-node-2
-      - prysm-beacon-node
-      - bootnode
-      - jaeger-tracing
+      execution-node-2:
+        condition: service_healthy
+      prysm-beacon-node:
+        condition: service_started
+      bootnode:
+        condition: service_started
+      jaeger-tracing:
+        condition: service_started
     build:
       context: ./prysm
       dockerfile: Dockerfile.prysm
@@ -171,20 +186,19 @@ services:
       - 'config_data:/config_data'
       - 'prysm_data:/prysm_data'
 
-  lodestar-beacon-node:
+  lodestar-beacon-node-peer:
     depends_on:
-      - bootnode
-      - execution-node
-    build:
-      context: ./lodestar
-      dockerfile: Dockerfile.lodestar
+      bootnode:
+        condition: service_started
+      execution-node-2:
+        condition: service_healthy
+    image: g11tech/lodestar:4844-jan23
     environment:
-      EXECUTION_NODE_URL: http://execution-node:8551
-      PROCESS_NAME: lodestar-beacon-node
+      EXECUTION_NODE_URL: http://execution-node-2:8551
     entrypoint: ['run_beacon_node.sh']
     ports:
-      - '3500:3500'
-      - '13000:13000'
+      - '3600:3500'
+      - '14000:13000'
     volumes:
       - 'beacon_node_data:/chaindata'
       - 'config_data:/config_data'
@@ -195,34 +209,25 @@ services:
         source: ./lodestar/run_beacon_node.sh
         target: /usr/local/bin/run_beacon_node.sh
 
-  lodestar-beacon-node-follower:
-    depends_on:
-      - bootnode
-      - execution-node-2
-      - lodestar-beacon-node
-    build:
-      context: ./lodestar
-      dockerfile: Dockerfile.lodestar
-    environment:
-      EXECUTION_NODE_URL: http://execution-node-2:8551
-      BEACON_NODE_RPC: http://lodestar-beacon-node:3500
-      PROCESS_NAME: lodestar-beacon-node-follower
-      VERBOSITY: debug
-    entrypoint: run_beacon_node_peer.sh
-    ports:
-      - '3501:3500'
-      - '13001:13000'
-    volumes:
-      - 'beacon_node_follower_data:/chaindata'
-      - type: bind
-        source: ./shared/chain-config.yml
-        target: /config/chain-config.yml
-      - type: bind
-        source: ./lodestar/run_beacon_node.sh
-        target: /usr/local/bin/run_beacon_node.sh
-      - type: bind
-        source: ./lodestar/run_beacon_node_peer.sh
-        target: /usr/local/bin/run_beacon_node_peer.sh
+  #lodestar-validator-node:
+  #  depends_on:
+  #    - lodestar-beacon-node
+  #  build:
+  #    context: ./lodestar
+  #    dockerfile: Dockerfile.lodestar
+  #  environment:
+  #    EXECUTION_NODE_URL: http://execution-node:8551
+  #  entrypoint: run_validator.sh
+  #  volumes:
+  #    - 'beacon_node_data:/chaindata'
+  #    - 'config_data:/config_data'
+  #    - 'lodestar_data:/lodestar_data'
+  #    - type: bind
+  #      source: ./shared/chain-config.yml
+  #      target: /config/chain-config.yml
+  #    - type: bind
+  #      source: ./lodestar/run_validator.sh
+  #      target: /usr/local/bin/run_validator.sh
 
   lighthouse-beacon-node:
     build:

@@ -29,5 +29,5 @@ echo "prysm" > /prysm_data/wallet_pass.txt
 cp -r /tmp/validator-output/prysm/direct/accounts/all-accounts.keystore.json /prysm_data/wallet/direct/accounts/all-accounts.keystore.json
 cp -r /tmp/validator-output/prysm/keymanageropts.json /prysm_data/wallet/direct/keymanageropts.json
 
-#cp -r /tmp/validator-output/keys /lodestar_data/keystores
-#cp -r /tmp/validator-output/secrets /lodestar_data/secrets
+cp -r /tmp/validator-output/keys /lodestar_data/keystores
+cp -r /tmp/validator-output/lodestar-secrets /lodestar_data/secrets

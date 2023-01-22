@@ -9,7 +9,7 @@
 [submodule "lodestar/lodestar"]
 	path = lodestar/lodestar
 	url = https://github.com/chainsafe/lodestar
-	branch = unstable
+	branch = dapplion/eip-4844
 [submodule "erigon/erigon"]
 	path = erigon/erigon
 	url = https://github.com/roberto-bayardo/erigon

@@ -1,7 +1,6 @@
 #!/bin/sh
 
 : "${EXECUTION_NODE_URL:-}"
-: "${PROCESS_NAME:-beacon-node}"
 : "${VERBOSITY:-info}"
 
 BOOTNODE=$(cat /config_data/custom_config_data/boot_enr.yaml | sed 's/- //')
@@ -23,6 +22,4 @@ node ./packages/cli/bin/lodestar beacon \
     --rest.port 3500 \
     --rest.namespace "*" \
     --metrics \
-    --logFile /logs/beacon.log \
-    --logFileLevel debug \
     --suggestedFeeRecipient 0x8A04d14125D0FDCDc742F4A05C051De07232EDa4
