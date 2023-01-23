@@ -37,16 +37,16 @@ devnet-clean:
 	docker image ls 'eip4844-interop*' --format='{{.Repository}}' | xargs -r docker rmi
 	docker volume ls --filter name=eip4844-interop --format='{{.Name}}' | xargs -r docker volume rm
 
-prysm-blobtx-test: devnet-setup
-	go run ./tests/blobtx prysm
+blobtx-test: devnet-setup
+	go run ./tests/blobtx $(el)
 
-prysm-pre4844-test: devnet-setup
-	go run ./tests/pre-4844 prysm
+pre4844-test: devnet-setup
+	go run ./tests/pre-4844 $(el)
 
-prysm-initial-sync-test: devnet-setup
-	go run ./tests/initial-sync prysm
+initial-sync-test: devnet-setup
+	go run ./tests/initial-sync $(el)
 
-prysm-fee-market-test: devnet-setup
-	go run ./tests/fee-market prysm
+fee-market-test: devnet-setup
+	go run ./tests/fee-market $(el)
 
 .PHONY: devnet-clean

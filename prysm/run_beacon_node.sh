@@ -18,6 +18,7 @@ beacon-chain \
     --verbosity="${VERBOSITY}" \
     --datadir /chaindata \
     --force-clear-db \
+    --interop-num-validators 4 \
     --interop-eth1data-votes \
     --interop-genesis-state /shared/generated-genesis.ssz \
     --interop-genesis-time ${GENESIS} \

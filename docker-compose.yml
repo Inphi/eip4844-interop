@@ -13,14 +13,14 @@ services:
   build-shared-states:
     build:
       context: ./
-      dockerfile: ./shared/Dockerfile.shared
+      dockerfile: ./prysm/Dockerfile.prysm
+    entrypoint: [ "/shared/setup.sh" ]
     volumes:
       - ./shared:/shared
 
   execution-node:
     depends_on:
-      prysm-beacon-node:
-        condition: service_started
+      - prysm-beacon-node
     build:
       context: ./geth
       dockerfile: Dockerfile.geth
@@ -37,10 +37,8 @@ services:
 
   execution-node-2:
     depends_on:
-      execution-node:
-        condition: service_started
-      prysm-beacon-node-follower:
-        condition: service_started
+      - execution-node
+      - prysm-beacon-node-follower
     build:
       context: ./geth
       dockerfile: Dockerfile.geth
@@ -57,8 +55,7 @@ services:
 
   prysm-beacon-node:
     depends_on:
-      jaeger-tracing:
-        condition: service_started
+      - jaeger-tracing
     build:
       context: ./
       dockerfile: ./prysm/Dockerfile.prysm
@@ -91,10 +88,8 @@ services:
 
   prysm-beacon-node-follower:
     depends_on:
-      prysm-beacon-node:
-        condition: service_started
-      jaeger-tracing:
-        condition: service_started
+      - prysm-beacon-node
+      - jaeger-tracing
     build:
       context: ./
       dockerfile: ./prysm/Dockerfile.prysm
@@ -132,7 +127,20 @@ services:
       context: ./
       dockerfile: ./prysm/Dockerfile.prysm
     command: >
-      validator --accept-terms-of-use --beacon-rpc-provider prysm-beacon-node:4000 --rpc --grpc-gateway-host 0.0.0.0 --grpc-gateway-port 7500 --interop-num-validators=4 --interop-start-index=0 --force-clear-db --chain-config-file=/shared/chain-config.yml --suggested-fee-recipient 0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b --enable-tracing --tracing-endpoint http://jaeger-tracing:14268/api/traces --tracing-process-name validator-node
+      validator 
+        --accept-terms-of-use 
+        --beacon-rpc-provider prysm-beacon-node:4000 
+        --rpc 
+        --grpc-gateway-host 0.0.0.0 
+        --grpc-gateway-port 7500
+        --interop-num-validators=4 
+        --interop-start-index=0 
+        --force-clear-db 
+        --chain-config-file=/shared/chain-config.yml 
+        --suggested-fee-recipient 0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b 
+        --enable-tracing 
+        --tracing-endpoint http://jaeger-tracing:14268/api/traces 
+        --tracing-process-name validator-node
     ports:
       - '7500:7500'
     volumes:
