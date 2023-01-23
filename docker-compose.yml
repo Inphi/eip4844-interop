@@ -1,8 +1,6 @@
 version: '3.4'
 
 volumes:
-  geth_data:
-  geth_data2:
   beacon_node_data:
   beacon_node_follower_data:
   lighthouse_data:
@@ -39,14 +37,11 @@ services:
       start_period: 1s
     volumes:
       - 'config_data:/config_data'
-      - 'geth_data:/db'
       - type: bind
         source: ./geth/geth.sh
         target: /usr/local/bin/geth.sh
 
   execution-node-2:
-    depends_on:
-      - execution-node
     build:
       context: ./geth
       dockerfile: Dockerfile.geth
@@ -62,10 +57,40 @@ services:
     entrypoint: ["geth.sh"]
     volumes:
       - 'config_data:/config_data'
-      - 'geth_data2:/db'
       - type: bind
         source: ./geth/geth.sh
         target: /usr/local/bin/geth.sh
+
+  execution-node-3:
+    build:
+      context: ./geth
+      dockerfile: Dockerfile.geth
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "localhost:8545"]
+      interval: 2s
+      timeout: 2s
+      retries: 20
+      start_period: 1s
+    ports:
+      - '8547:8545'
+      - '8553:8551'
+    entrypoint: ["geth.sh"]
+    volumes:
+      - 'config_data:/config_data'
+      - type: bind
+        source: ./geth/geth.sh
+        target: /usr/local/bin/geth.sh
+
+  nethermind:
+    image: nethermindeth/nethermind:eip-4844-v4
+    ports:
+      - '10545:8545'
+    entrypoint: 'nethermind.sh'
+    volumes:
+      - 'config_data:/config_data'
+      - type: bind
+        source: ./nethermind/nethermind.sh
+        target: /usr/local/bin/nethermind.sh
 
   # TODO: move bootnode to genesis-generator
   bootnode:
@@ -84,8 +109,10 @@ services:
 
   prysm-beacon-node:
     depends_on:
-      execution-node:
-        condition: service_healthy
+      nethermind:
+        condition: service_started
+      #execution-node:
+      #condition: service_healthy
       bootnode:
         condition: service_started
       jaeger-tracing:
@@ -100,7 +127,7 @@ services:
       retries: 20
       start_period: 1s
     environment:
-      EXECUTION_NODE_URL: http://execution-node:8551
+      EXECUTION_NODE_URL: http://nethermind:8551
       TRACING_ENDPOINT: http://jaeger-tracing:14268/api/traces
       PROCESS_NAME: beacon-node
       VERBOSITY: debug
@@ -186,15 +213,15 @@ services:
       - 'config_data:/config_data'
       - 'prysm_data:/prysm_data'
 
-  lodestar-beacon-node-peer:
+  lodestar-beacon-node:
     depends_on:
       bootnode:
         condition: service_started
-      execution-node-2:
+      execution-node-3:
         condition: service_healthy
     image: g11tech/lodestar:4844-jan23
     environment:
-      EXECUTION_NODE_URL: http://execution-node-2:8551
+      EXECUTION_NODE_URL: http://execution-node-3:8551
     entrypoint: ['run_beacon_node.sh']
     ports:
       - '3600:3500'
@@ -203,31 +230,29 @@ services:
       - 'beacon_node_data:/chaindata'
       - 'config_data:/config_data'
       - type: bind
-        source: ./shared/chain-config.yml
-        target: /config/chain-config.yml
-      - type: bind
         source: ./lodestar/run_beacon_node.sh
         target: /usr/local/bin/run_beacon_node.sh
 
-  #lodestar-validator-node:
-  #  depends_on:
-  #    - lodestar-beacon-node
-  #  build:
-  #    context: ./lodestar
-  #    dockerfile: Dockerfile.lodestar
-  #  environment:
-  #    EXECUTION_NODE_URL: http://execution-node:8551
-  #  entrypoint: run_validator.sh
-  #  volumes:
-  #    - 'beacon_node_data:/chaindata'
-  #    - 'config_data:/config_data'
-  #    - 'lodestar_data:/lodestar_data'
-  #    - type: bind
-  #      source: ./shared/chain-config.yml
-  #      target: /config/chain-config.yml
-  #    - type: bind
-  #      source: ./lodestar/run_validator.sh
-  #      target: /usr/local/bin/run_validator.sh
+  lodestar-validator-node:
+    depends_on:
+      - lodestar-beacon-node
+    image: g11tech/lodestar:4844-jan23
+    command: >
+      node ./packages/cli/bin/lodestar validator
+      --paramsFile /config_data/custom_config_data/config.yaml
+      --force
+      --dataDir /chaindata/validator
+      --keystoresDir /lodestar_data/keystores
+      --secretsDir /lodestar_data/secrets
+      --server http://lodestar-beacon-node:3500
+      --suggestedFeeRecipient 0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b
+    volumes:
+      - 'beacon_node_data:/chaindata'
+      - 'config_data:/config_data'
+      - 'lodestar_data:/lodestar_data'
+      - type: bind
+        source: ./lodestar/run_validator.sh
+        target: /usr/local/bin/run_validator.sh
 
   lighthouse-beacon-node:
     build:

@@ -16,6 +16,8 @@ BOOTNODE_KEY_HEX=${BOOTNODE_KEY_HEX:-65f77f40c167b52b5cc70fb33582aecbdcd81062dc1
 EXTERNAL_IP=$(ip addr show eth0 | grep inet | awk '{ print $2 }' | cut -d '/' -f1)
 ADDITIONAL_FLAGS="--nodiscover --nodekeyhex ${BOOTNODE_KEY_HEX} --nat extip:${EXTERNAL_IP}"
 
+mkdir -p ${GETH_DATA_DIR}
+
 if [ ! -d "$GETH_KEYSTORE_DIR" ]; then
     echo "$GETH_KEYSTORE_DIR missing, running account import"
     touch ${GETH_DATA_DIR}/password
