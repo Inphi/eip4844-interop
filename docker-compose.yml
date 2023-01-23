@@ -27,7 +27,6 @@ x-prysm-beacon-node-env: &prysm-bn-env
   TRACING_ENDPOINT: http://jaeger-tracing:14268/api/traces
   PROCESS_NAME: beacon-node
   VERBOSITY: debug
-  P2P_PRIV_KEY: /etc/prysm-priv-key
   P2P_TCP_PORT: 13000
   MIN_SYNC_PEERS: 0
 
@@ -52,9 +51,6 @@ x-prysm-beacon-node: &prysm-bn
     - type: bind
       source: ./prysm/run_beacon_node.sh
       target: /usr/local/bin/run_beacon_node.sh
-    - type: bind
-      source: ./prysm/prysm-priv-key
-      target: /etc/prysm-priv-key
 
 x-lighthouse-beacon-node: &lighthouse-bn
   build:
