@@ -84,13 +84,13 @@ func main() {
 	}
 
 	blockHash := receipt.BlockHash.Hex()
-	_, err = client.BlockByHash(ctx, common.HexToHash(blockHash))
+	block, err := client.BlockByHash(ctx, common.HexToHash(blockHash))
 	if err != nil {
 		log.Fatalf("Error getting block: %v", err)
 	}
 
-	eip4844Block := ctrl.GetEnv().GethChainConfig.ShardingForkBlock.Uint64()
-	if receipt.BlockNumber.Uint64() > eip4844Block {
+	eip4844ForkTime := ctrl.GetEnv().GethChainConfig.ShardingForkTime.Uint64()
+	if block.Time() > eip4844ForkTime {
 		// TODO: Avoid this issue by configuring the chain config at runtime
 		log.Fatalf("Test condition violation. Transaction must be included before eip4844 fork. Check the geth chain config")
 	}

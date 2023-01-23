@@ -1,28 +1,25 @@
 FROM golang:1.18 as builder
 
-COPY ./prysm/go.mod ./prysm/go.sum /app/prysm/
-
+COPY ./prysm/prysm/go.mod ./prysm/prysm/go.sum /app/prysm/
 WORKDIR /app/prysm
-
 RUN go mod download
 
-COPY ./prysm /app/prysm
-
-WORKDIR /app/prysm
+COPY ./prysm/prysm /app/prysm
 
 # The flag below may be needed if blst throws SIGILL, which happens with certain (older) CPUs
 # ENV CGO_CFLAGS="-O -D__BLST_PORTABLE__"
 ENV CGO_CFLAGS=$CGO_CFLAGS
 
-RUN go build -o /build/beacon-node -buildvcs=false ./cmd/beacon-chain
-RUN go build -o /build/validator -buildvcs=false ./cmd/validator
-RUN go build -o /build/bootnode -buildvcs=false ./tools/bootnode
+RUN go build -o /build/beacon-chain -buildvcs=false ./cmd/beacon-chain
+RUN go build -o /build/validator    -buildvcs=false ./cmd/validator
+RUN go build -o /build/prysmctl     -buildvcs=false ./cmd/prysmctl
 
 FROM ubuntu:20.04
 RUN apt-get update && apt-get install -y curl jq iproute2
 
-COPY --from=builder /build/beacon-node /usr/local/bin/
-COPY --from=builder /build/validator /usr/local/bin/
+COPY --from=builder /build/beacon-chain /usr/local/bin/
+COPY --from=builder /build/validator    /usr/local/bin/
+COPY --from=builder /build/prysmctl     /usr/local/bin/
 
 WORKDIR /usr/local/bin
 EXPOSE 3500 4000 7500 13000 12000 8080

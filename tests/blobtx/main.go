@@ -74,7 +74,9 @@ func main() {
 	util.AssertBlobsEquals(blobs, downloadedBlobs)
 
 	log.Printf("checking blob from beacon node follower")
-	time.Sleep(time.Second * 2 * time.Duration(env.BeaconChainConfig.SecondsPerSlot)) // wait a bit for sync
+	sleep := time.Second * 2 * time.Duration(env.BeaconChainConfig.SecondsPerSlot)
+	log.Printf("wait a bit to sync: %v", sleep)
+	time.Sleep(sleep) // wait a bit for sync
 	downloadedData = util.DownloadBlobs(ctx, slot, 1, followerMultiaddr)
 	downloadedBlobs = shared.EncodeBlobs(downloadedData)
 	util.AssertBlobsEquals(blobs, downloadedBlobs)
