@@ -1,12 +1,87 @@
 version: '3.4'
 
 volumes:
-  beacon_node_data:
-  beacon_node_follower_data:
   lighthouse_data:
   prysm_data:
   lodestar_data:
   config_data:
+
+x-geth: &geth
+  build:
+    context: ./geth
+    dockerfile: Dockerfile.geth
+  entrypoint: geth.sh
+  healthcheck:
+    test: ["CMD", "curl", "--fail", "localhost:8545"]
+    interval: 2s
+    timeout: 2s
+    retries: 20
+    start_period: 1s
+  volumes:
+    - 'config_data:/config_data'
+    - type: bind
+      source: ./geth/geth.sh
+      target: /usr/local/bin/geth.sh
+
+x-prysm-beacon-node-env: &prysm-bn-env
+  TRACING_ENDPOINT: http://jaeger-tracing:14268/api/traces
+  PROCESS_NAME: beacon-node
+  VERBOSITY: debug
+  P2P_PRIV_KEY: /etc/prysm-priv-key
+  P2P_TCP_PORT: 13000
+  MIN_SYNC_PEERS: 0
+
+x-prysm-beacon-node: &prysm-bn
+  depends_on:
+    bootnode:
+      condition: service_started
+    jaeger-tracing:
+      condition: service_started
+  build:
+    context: ./prysm
+    dockerfile: Dockerfile.prysm
+  healthcheck:
+    test: ["CMD", "curl", "--fail", "localhost:3500/eth/v1/node/health"]
+    interval: 2s
+    timeout: 2s
+    retries: 20
+    start_period: 1s
+  entrypoint: run_beacon_node.sh
+  volumes:
+    - 'config_data:/config_data'
+    - type: bind
+      source: ./prysm/run_beacon_node.sh
+      target: /usr/local/bin/run_beacon_node.sh
+    - type: bind
+      source: ./prysm/prysm-priv-key
+      target: /etc/prysm-priv-key
+
+x-lighthouse-beacon-node: &lighthouse-bn
+  build:
+    context: ./lighthouse
+    dockerfile: Dockerfile.lighthouse
+  image: lighthouse-interop
+  pull_policy: never
+  entrypoint: ["run_beacon_node.sh", "-d", "debug", "/data/node_1", "http://geth-1:8551"]
+  environment:
+    - P2P_PORT=9000
+  ports:
+    - "5052:5052"
+    - "8000:8000"
+    - "9000:9000"
+  volumes:
+    - lighthouse_data:/data
+    - config_data:/config_data
+    - type: bind
+      source: ./lighthouse/run_beacon_node.sh
+      target: /usr/local/bin/run_beacon_node.sh
+    - type: bind
+      source: ./shared/trusted_setup.txt
+      target: /config/trusted_setup.txt
+    - type: bind
+      source: ./shared/jwtsecret
+      target: /config/jwtsecret
+
 
 services:
   genesis-generator:
@@ -21,71 +96,35 @@ services:
       - lodestar_data:/lodestar_data
       - config_data:/data
 
-  execution-node:
-    build:
-      context: ./geth
-      dockerfile: Dockerfile.geth
+  geth-1:
+    <<: *geth
     ports:
       - '8545:8545'
       - '8551:8551'
-    entrypoint: ["geth.sh"]
-    healthcheck:
-      test: ["CMD", "curl", "--fail", "localhost:8545"]
-      interval: 2s
-      timeout: 2s
-      retries: 20
-      start_period: 1s
-    volumes:
-      - 'config_data:/config_data'
-      - type: bind
-        source: ./geth/geth.sh
-        target: /usr/local/bin/geth.sh
 
-  execution-node-2:
-    build:
-      context: ./geth
-      dockerfile: Dockerfile.geth
-    healthcheck:
-      test: ["CMD", "curl", "--fail", "localhost:8545"]
-      interval: 2s
-      timeout: 2s
-      retries: 20
-      start_period: 1s
+  geth-2:
+    <<: *geth
     ports:
       - '8546:8545'
       - '8552:8551'
-    entrypoint: ["geth.sh"]
-    volumes:
-      - 'config_data:/config_data'
-      - type: bind
-        source: ./geth/geth.sh
-        target: /usr/local/bin/geth.sh
 
-  execution-node-3:
-    build:
-      context: ./geth
-      dockerfile: Dockerfile.geth
-    healthcheck:
-      test: ["CMD", "curl", "--fail", "localhost:8545"]
-      interval: 2s
-      timeout: 2s
-      retries: 20
-      start_period: 1s
+  geth-3:
+    <<: *geth
     ports:
       - '8547:8545'
       - '8553:8551'
-    entrypoint: ["geth.sh"]
-    volumes:
-      - 'config_data:/config_data'
-      - type: bind
-        source: ./geth/geth.sh
-        target: /usr/local/bin/geth.sh
 
   nethermind:
     image: nethermindeth/nethermind:eip-4844-v4
     ports:
       - '10545:8545'
     entrypoint: 'nethermind.sh'
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "localhost:8545"]
+      interval: 2s
+      timeout: 2s
+      retries: 20
+      start_period: 1s
     volumes:
       - 'config_data:/config_data'
       - type: bind
@@ -108,50 +147,30 @@ services:
         target: /usr/local/bin/run_bootnode.sh
 
   prysm-beacon-node:
+    <<: *prysm-bn
     depends_on:
-      nethermind:
-        condition: service_started
-      #execution-node:
-      #condition: service_healthy
+      #nethermind:
+      #condition: service_started
+      geth-1:
+        condition: service_healthy
       bootnode:
         condition: service_started
       jaeger-tracing:
         condition: service_started
-    build:
-      context: ./prysm
-      dockerfile: Dockerfile.prysm
-    healthcheck:
-      test: ["CMD", "curl", "--fail", "localhost:3500/eth/v1/node/health"]
-      interval: 2s
-      timeout: 2s
-      retries: 20
-      start_period: 1s
     environment:
-      EXECUTION_NODE_URL: http://nethermind:8551
-      TRACING_ENDPOINT: http://jaeger-tracing:14268/api/traces
+      <<: *prysm-bn-env
+      EXECUTION_NODE_URL: http://geth-1:8551
       PROCESS_NAME: beacon-node
-      VERBOSITY: debug
-      P2P_PRIV_KEY: /etc/prysm-priv-key
-      P2P_TCP_PORT: 13000
       MIN_SYNC_PEERS: 0
-    entrypoint: run_beacon_node.sh
     ports:
       - '3500:3500'
       - '4000:4000'
       - '13000:13000'
-    volumes:
-      - 'beacon_node_data:/chaindata'
-      - 'config_data:/config_data'
-      - type: bind
-        source: ./prysm/run_beacon_node.sh
-        target: /usr/local/bin/run_beacon_node.sh
-      - type: bind
-        source: ./prysm/prysm-priv-key
-        target: /etc/prysm-priv-key
 
   prysm-beacon-node-follower:
+    <<: *prysm-bn
     depends_on:
-      execution-node-2:
+      geth-2:
         condition: service_healthy
       prysm-beacon-node:
         condition: service_started
@@ -159,31 +178,16 @@ services:
         condition: service_started
       jaeger-tracing:
         condition: service_started
-    build:
-      context: ./prysm
-      dockerfile: Dockerfile.prysm
     environment:
-      EXECUTION_NODE_URL: http://execution-node-2:8551
-      TRACING_ENDPOINT: http://jaeger-tracing:14268/api/traces
+      <<: *prysm-bn-env
+      EXECUTION_NODE_URL: http://geth-2:8551
       PROCESS_NAME: beacon-node-follower
-      VERBOSITY: debug
-      P2P_PRIV_KEY: /etc/prysm-priv-key
       P2P_TCP_PORT: 13001
       MIN_SYNC_PEERS: 1
-    entrypoint: run_beacon_node.sh
     ports:
       - '3501:3500'
       - '4001:4000'
       - '13001:13001'
-    volumes:
-      - 'beacon_node_follower_data:/chaindata'
-      - 'config_data:/config_data'
-      - type: bind
-        source: ./prysm/run_beacon_node.sh
-        target: /usr/local/bin/run_beacon_node.sh
-      - type: bind
-        source: ./prysm/prysm-follower-priv-key
-        target: /etc/prysm-priv-key
 
   prysm-validator-node:
     depends_on:
@@ -217,17 +221,16 @@ services:
     depends_on:
       bootnode:
         condition: service_started
-      execution-node-3:
+      geth-3:
         condition: service_healthy
     image: g11tech/lodestar:4844-jan23
     environment:
-      EXECUTION_NODE_URL: http://execution-node-3:8551
+      EXECUTION_NODE_URL: http://geth-3:8551
     entrypoint: ['run_beacon_node.sh']
     ports:
       - '3600:3500'
       - '14000:13000'
     volumes:
-      - 'beacon_node_data:/chaindata'
       - 'config_data:/config_data'
       - type: bind
         source: ./lodestar/run_beacon_node.sh
@@ -247,74 +250,35 @@ services:
       --server http://lodestar-beacon-node:3500
       --suggestedFeeRecipient 0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b
     volumes:
-      - 'beacon_node_data:/chaindata'
       - 'config_data:/config_data'
       - 'lodestar_data:/lodestar_data'
-      - type: bind
-        source: ./lodestar/run_validator.sh
-        target: /usr/local/bin/run_validator.sh
 
   lighthouse-beacon-node:
-    build:
-      context: ./lighthouse
-      dockerfile: Dockerfile.lighthouse
+    <<: *lighthouse-bn
     depends_on:
       - bootnode
-      - execution-node
-    image: lighthouse-interop
-    pull_policy: never
-    entrypoint: ["run_beacon_node.sh", "-d", "debug", "/data/node_1", "http://execution-node:8551"]
+      - geth-1
+    entrypoint: ["run_beacon_node.sh", "-d", "debug", "/data/node_1", "http://geth-1:8551"]
     environment:
       - P2P_PORT=9000
     ports:
       - "5052:5052"
       - "8000:8000"
       - "9000:9000"
-    volumes:
-      - lighthouse_data:/data
-      - config_data:/config_data
-      - type: bind
-        source: ./lighthouse/run_beacon_node.sh
-        target: /usr/local/bin/run_beacon_node.sh
-      - type: bind
-        source: ./shared/trusted_setup.txt
-        target: /config/trusted_setup.txt
-      - type: bind
-        source: ./shared/jwtsecret
-        target: /config/jwtsecret
 
   lighthouse-beacon-node-follower:
+    <<: *lighthouse-bn
     depends_on:
-      - execution-node-2
+      - geth-2
       - bootnode
       - lighthouse-beacon-node
-    build:
-      context: ./lighthouse
-      dockerfile: Dockerfile.lighthouse
-    image: lighthouse-interop
-    pull_policy: never
-    entrypoint: ["run_beacon_node.sh", "-d", "debug", "/data/node_2", "http://execution-node-2:8551"]
+    entrypoint: ["run_beacon_node.sh", "-d", "debug", "/data/node_2", "http://geth-2:8551"]
     environment:
       - P2P_PORT=9001
     ports:
       - "5053:5052"
       - "8001:8000"
       - "9001:9001"
-    volumes:
-      - lighthouse_data:/data
-      - config_data:/config_data
-      - type: bind
-        source: ./lighthouse/run_beacon_node.sh
-        target: /usr/local/bin/run_beacon_node.sh
-      - type: bind
-        source: ./lighthouse/vars.env
-        target: /config/vars.env
-      - type: bind
-        source: ./shared/trusted_setup.txt
-        target: /config/trusted_setup.txt
-      - type: bind
-        source: ./shared/jwtsecret
-        target: /config/jwtsecret
 
   lighthouse-validator-node:
     image: lighthouse-interop
@@ -324,16 +288,19 @@ services:
     build:
       context: ./lighthouse
       dockerfile: Dockerfile.lighthouse
-    entrypoint: ['run_validator.sh', 'http://lighthouse-beacon-node:8000']
+    command: >
+      lighthouse
+      --debug-level info
+      vc
+      --validators-dir /data/validators
+      --secrets-dir /data/secrets
+      --testnet-dir /config_data/custom_config_data
+      --init-slashing-protection
+      --beacon-nodes http://lighthouse-beacon-node:8000
+      --suggested-fee-recipient 0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990
     volumes:
       - lighthouse_data:/data
       - config_data:/config_data
-      - type: bind
-        source: ./lighthouse/run_validator.sh
-        target: /usr/local/bin/run_validator.sh
-      - type: bind
-        source: ./lighthouse/vars.env
-        target: /config/vars.env
 
   jaeger-tracing:
     image: jaegertracing/all-in-one:1.35

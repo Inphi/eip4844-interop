@@ -1,5 +1,5 @@
-SERVICES=execution-node\
-	 execution-node-2\
+SERVICES=geth-1\
+	 geth-2\
 	 prysm-beacon-node\
 	 prysm-beacon-node-follower\
 	 prysm-validator-node\
@@ -20,16 +20,16 @@ devnet-up: devnet-build devnet-setup
 
 lighthouse-up: devnet-build devnet-setup
 	docker compose --project-name eip4844-interop up -d --build\
-		execution-node\
-		execution-node-2\
+		geth-1\
+		geth-2\
 		lighthouse-beacon-node\
 		lighthouse-beacon-node-follower\
 		lighthouse-validator-node
 
 lodestar-up:
 	docker compose --project-name eip4844-interop up -d\
-		execution-node\
-		execution-node-2\
+		geth-1\
+		geth-2\
 		lodestar-beacon-node\
 		lodestar-beacon-node-follower\
 
