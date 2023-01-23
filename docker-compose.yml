@@ -21,9 +21,7 @@ services:
   execution-node:
     depends_on:
       - prysm-beacon-node
-    build:
-      context: ./geth
-      dockerfile: Dockerfile.geth
+    image: inphi/geth:eip4844-devnet4
     ports:
       - '8545:8545'
       - '8551:8551'
