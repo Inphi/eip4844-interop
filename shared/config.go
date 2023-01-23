@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/params"
 )
@@ -25,7 +26,7 @@ func GetBaseDir() string {
 }
 
 func GethChainConfigFilepath() string {
-	return fmt.Sprintf("%s/geth/geth-genesis.json", GetBaseDir())
+	return fmt.Sprintf("%s/shared/generated-genesis.json", GetBaseDir())
 }
 
 func BeaconChainConfigFilepath() string {
@@ -69,13 +70,21 @@ func getMultiaddress(beaconAPI string) (string, error) {
 	if len(data.Data.P2PAddresses) == 0 {
 		return "", errors.New("no multiaddresses found")
 	}
+
+	// There might be multiple addresses and we need the one with 127.0.0.1 to work
+	for _, addr := range data.Data.P2PAddresses {
+		if strings.Contains(addr, "127.0.0.1") {
+			return addr, nil
+		}
+	}
+
 	return data.Data.P2PAddresses[0], nil
 }
 
 var (
 	GethRPC           = "http://localhost:8545"
 	PrivateKey        = "45a915e4d060149eb4365960e6a7a45f334393093061116b197e3240065ff2d8"
-	BeaconAPI         = "localhost:8000"
-	BeaconFollowerAPI = "localhost:8001"
-	//ValidatorAPI               = "http://localhost:7500"
+	BeaconAPI         = "localhost:3500"
+	BeaconFollowerAPI = "localhost:3501"
+	ValidatorAPI      = "http://localhost:7500"
 )

@@ -30,22 +30,26 @@ jobs:
         with:
           key: docker-cache-${{ hashFiles('.git/modules/prysm/*/HEAD', '.git/modules/geth/*/HEAD') }}
 
+      # build images as a separate step to better utilize caching
+      # TODO: change to pure "docker-compose build" once we can successfully build lighthouse and lodster
+      - run: docker-compose build prysm-beacon-node prysm-beacon-node-follower prysm-validator-node build-shared-states execution-node execution-node-2 && go mod download
+
       - name: Prysm - Run pre-EIP4844 tests
         timeout-minutes: 30
-        run: go run ./tests/pre-4844 prysm
+        run: make pre4844-test el=prysm
 
       # TODO: A bit redundant. combine this test with fee-market
       - name: Prysm - Run Blob transaction tests
         timeout-minutes: 30
-        run: go run ./tests/blobtx prysm
+        run: make blobtx-test el=prysm
 
       - name: Prysm - Run Fee market spec tests
         timeout-minutes: 30
-        run: go run ./tests/fee-market prysm
+        run: make fee-market-test el=prysm
 
       - name: Prysm - Run Initial sync tests
         timeout-minutes: 30
-        run: go run ./tests/initial-sync prysm
+        run: make initial-sync-test el=prysm
 
       - name: Collect docker logs on failure
         if: failure()

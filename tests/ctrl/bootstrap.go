@@ -75,9 +75,12 @@ func WaitForShardingFork() {
 		if err != nil {
 			log.Fatalf("ethclient.BlockByNumber: %v", err)
 		}
-		if b.Time() >= *eip4844ForkTime {
+
+		log.Printf("BlockByNumber: %v, lastBlockNumber: %v, blockTime: %v, eip4844BlockTime: %v", b.Number(), lastBn, b.Time(), eip4844ForkTime)
+		if b.Time() >= eip4844ForkTime.Uint64() {
 			break
 		}
+
 		// Chain stall detection
 		if b.NumberU64() != lastBn {
 			lastBn = b.NumberU64()
@@ -147,7 +150,7 @@ func WaitForEip4844ForkEpoch() {
 
 	config := GetEnv().BeaconChainConfig
 	// TODO: query /eth/v1/config/spec for time parameters
-	eip4844Slot := config.Eip4844ForkEpoch * 32
+	eip4844Slot := config.Eip4844ForkEpoch * 6 // TODO: change this to config.SlotsPerEpoch once it's defined
 	if err := WaitForSlot(ctx, types.Slot(eip4844Slot)); err != nil {
 		log.Fatal(err)
 	}
@@ -231,9 +234,6 @@ func (env *TestEnvironment) StartAll(ctx context.Context) error {
 		return env.BeaconNode.Start(ctx)
 	})
 	g.Go(func() error {
-		return env.GethNode.Start(ctx)
-	})
-	g.Go(func() error {
 		if env.ValidatorNode != nil {
 			return env.ValidatorNode.Start(ctx)
 		}
@@ -244,6 +244,9 @@ func (env *TestEnvironment) StartAll(ctx context.Context) error {
 			return env.BeaconNodeFollower.Start(ctx)
 		}
 		return nil
+	})
+	g.Go(func() error {
+		return env.GethNode.Start(ctx)
 	})
 	g.Go(func() error {
 		if env.GethNode2 != nil {

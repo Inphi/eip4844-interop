@@ -7,10 +7,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/pkg/errors"
-
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/pkg/errors"
 	ssz "github.com/prysmaticlabs/fastssz"
 	"github.com/prysmaticlabs/prysm/v3/api/client/beacon"
 	"github.com/prysmaticlabs/prysm/v3/beacon-chain/p2p/encoder"
@@ -60,9 +59,11 @@ type Block struct {
 
 var (
 	// Hardcoded versions for now
-	BellatrixVersion = [4]byte{0x02, 0x00, 0x00, 0x00}
-	CapellaVersion   = [4]byte{0x03, 0x00, 0x00, 0x00}
-	EIP4844Version   = [4]byte{0x04, 0x00, 0x00, 0x00}
+	GenesisVersion   = [4]byte{0x20, 0x00, 0x00, 0x89}
+	AltairVersion    = [4]byte{0x20, 0x00, 0x00, 0x90}
+	BellatrixVersion = [4]byte{0x20, 0x00, 0x00, 0x91}
+	CapellaVersion   = [4]byte{0x20, 0x00, 0x00, 0x92}
+	EIP4844Version   = [4]byte{0x20, 0x00, 0x00, 0x93}
 )
 
 func GetBlock(ctx context.Context, client *beacon.Client, blockId beacon.StateOrBlockId) (*Block, error) {
@@ -77,6 +78,10 @@ func GetBlock(ctx context.Context, client *beacon.Client, blockId beacon.StateOr
 
 	var m ssz.Unmarshaler
 	switch version {
+	case GenesisVersion:
+		m = &ethpb.SignedBeaconBlock{}
+	case AltairVersion:
+		m = &ethpb.SignedBeaconBlockAltair{}
 	case BellatrixVersion:
 		m = &ethpb.SignedBeaconBlockBellatrix{}
 	case CapellaVersion:
@@ -84,7 +89,7 @@ func GetBlock(ctx context.Context, client *beacon.Client, blockId beacon.StateOr
 	case EIP4844Version:
 		m = &ethpb.SignedBeaconBlock4844{}
 	default:
-		return nil, fmt.Errorf("unable to initialized beacon block for fork version=%x at blockId=%s", version, blockId)
+		return nil, fmt.Errorf("unable to initialize beacon block for fork version=%x at blockId=%s", version, blockId)
 	}
 
 	marshaled, err := client.GetBlock(ctx, blockId)

@@ -1,4 +1,7 @@
-devnet-up:
+devnet-setup: 
+	docker compose up build-shared-states
+
+devnet-up: devnet-setup
 	docker compose --project-name eip4844-interop up -d\
 		execution-node\
 		execution-node-2\
@@ -33,5 +36,17 @@ devnet-clean:
 	docker compose --project-name eip4844-interop down --rmi local --volumes
 	docker image ls 'eip4844-interop*' --format='{{.Repository}}' | xargs -r docker rmi
 	docker volume ls --filter name=eip4844-interop --format='{{.Name}}' | xargs -r docker volume rm
+
+blobtx-test: devnet-setup
+	go run ./tests/blobtx $(el)
+
+pre4844-test: devnet-setup
+	go run ./tests/pre-4844 $(el)
+
+initial-sync-test: devnet-setup
+	go run ./tests/initial-sync $(el)
+
+fee-market-test: devnet-setup
+	go run ./tests/fee-market $(el)
 
 .PHONY: devnet-clean
