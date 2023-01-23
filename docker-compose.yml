@@ -127,6 +127,32 @@ services:
         source: ./nethermind/nethermind.sh
         target: /usr/local/bin/nethermind.sh
 
+  ethereumjs:
+    image: g11tech/ethereumjs:jan23
+    command: >
+      --dataDir=/db
+      --gethGenesis=/config_data/custom_config_data/genesis.json
+      --rpc
+      --rpcAddr=0.0.0.0
+      --rpcCors="*"
+      --rpcEngine
+      --rpcEngineAddr=0.0.0.0
+      --logLevel=debug
+      --jwt-secret=/config_data/el/jwtsecret
+    ports:
+      - '11545:8545'
+    healthcheck:
+      test: ["CMD", "curl", "localhost:8545"]
+      interval: 2s
+      timeout: 2s
+      retries: 20
+      start_period: 1s
+    volumes:
+      - 'config_data:/config_data'
+      - type: bind
+        source: ./lodestar/run_beacon_node.sh
+        target: /usr/local/bin/run_beacon_node.sh
+
   # TODO: move bootnode to genesis-generator
   bootnode:
     build:
@@ -145,8 +171,6 @@ services:
   prysm-beacon-node:
     <<: *prysm-bn
     depends_on:
-      #nethermind:
-      #condition: service_started
       geth-1:
         condition: service_healthy
       bootnode:
@@ -155,7 +179,7 @@ services:
         condition: service_started
     environment:
       <<: *prysm-bn-env
-      EXECUTION_NODE_URL: http://geth-1:8551
+      EXECUTION_NODE_URL: http://ethereumjs:8551
       PROCESS_NAME: beacon-node
       MIN_SYNC_PEERS: 0
     ports:
@@ -237,7 +261,7 @@ services:
       - lodestar-beacon-node
     image: g11tech/lodestar:4844-jan23
     command: >
-      node ./packages/cli/bin/lodestar validator
+      validator
       --paramsFile /config_data/custom_config_data/config.yaml
       --force
       --dataDir /chaindata/validator
