@@ -85,7 +85,7 @@ x-lighthouse-beacon-node: &lighthouse-bn
 
 services:
   genesis-generator:
-    image: inphi/ethereum-genesis-generator:eip4844-alpha
+    image: inphi/ethereum-genesis-generator:eip4844
     entrypoint: run_genesis_generator.sh
     volumes:
       - ./shared/run_genesis_generator.sh:/usr/local/bin/run_genesis_generator.sh
