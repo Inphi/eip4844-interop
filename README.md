@@ -44,5 +44,17 @@ The generated CL configs contain the following noteworthy settings:
 - `GENESIS_DELAY`: this is set to 60 seconds, giving clients a minute to build and run their nodes before genesis begins.
 - `SECONDS_PER_SLOT`: set to `3` to shorten test iteration.
 
-For consensus clients, you can use the existing `geth-x` docker services to build blocks. Once EIP4844 epoch has occurred, you can try sending a blob transaction locally to confirm that the blobs are sidecar'd to the beacon chain.
+### Bootnode service
+The `bootnode` docker service can be used by consensus clients to bootstrap their node. The ENR of the bootnode can be found at `/config_data/custom_config_data/boot_enr.yaml`.
 
+### Peering a new client with devnet
+Once you've configured your client for interop, you can test it by connecting it with an EL client (like `geth-2`), the peering it with a known working validator (ex: `prysm-validator-node`). For example, to peer a hypothetically added teku-node:
+```
+docker compose run genesis-generator && \
+    docker compose run prysm-validator-node teku-node -d
+```
+
+Once EIP4844 epoch has occurred, you can try sending a blob transaction locally to confirm that the blobs are sidecar'd to the beacon chain. This can be done with the following script:
+```
+go run ./upload ./eth.png
+```
