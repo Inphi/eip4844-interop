@@ -36,9 +36,7 @@ x-prysm-beacon-node: &prysm-bn
       condition: service_started
     jaeger-tracing:
       condition: service_started
-  build:
-    context: ./prysm
-    dockerfile: Dockerfile.prysm
+  image: inphi/prysm:eip4844
   healthcheck:
     test: ["CMD", "curl", "--fail", "localhost:3500/eth/v1/node/health"]
     interval: 2s
@@ -161,7 +159,7 @@ services:
   prysm-beacon-node:
     <<: *prysm-bn
     depends_on:
-      geth-1:
+      nethermind:
         condition: service_started
       bootnode:
         condition: service_started
@@ -169,7 +167,7 @@ services:
         condition: service_started
     environment:
       <<: *prysm-bn-env
-      EXECUTION_NODE_URL: http://geth-1:8551
+      EXECUTION_NODE_URL: http://nethermind:8551
       PROCESS_NAME: beacon-node
       MIN_SYNC_PEERS: 0
     ports:
