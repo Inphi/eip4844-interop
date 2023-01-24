@@ -5,6 +5,7 @@ volumes:
   prysm_data:
   lodestar_data:
   config_data:
+  teku_data:
 
 x-geth: &geth
   build:
@@ -86,6 +87,7 @@ services:
       - lighthouse_data:/lighthouse_data
       - prysm_data:/prysm_data
       - lodestar_data:/lodestar_data
+      - teku_data:/teku_data
       - config_data:/data
 
   geth-1:
