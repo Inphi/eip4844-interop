@@ -161,7 +161,7 @@ services:
   prysm-beacon-node:
     <<: *prysm-bn
     depends_on:
-      ethereumjs:
+      geth-1:
         condition: service_started
       bootnode:
         condition: service_started
@@ -169,7 +169,7 @@ services:
         condition: service_started
     environment:
       <<: *prysm-bn-env
-      EXECUTION_NODE_URL: http://ethereumjs:8551
+      EXECUTION_NODE_URL: http://geth-1:8551
       PROCESS_NAME: beacon-node
       MIN_SYNC_PEERS: 0
     ports:
@@ -182,8 +182,6 @@ services:
     depends_on:
       geth-2:
         condition: service_healthy
-      prysm-beacon-node:
-        condition: service_started
       bootnode:
         condition: service_started
       jaeger-tracing:
@@ -281,7 +279,6 @@ services:
     depends_on:
       - geth-2
       - bootnode
-      - lighthouse-beacon-node
     entrypoint: ["run_beacon_node.sh", "-d", "debug", "/data/node_2", "http://geth-2:8551"]
     environment:
       - P2P_PORT=9001
