@@ -147,6 +147,9 @@ services:
 
   # TODO: move bootnode to genesis-generator
   bootnode:
+    depends_on:
+      genesis-generator:
+        condition: service_completed_successfully
     build:
       context: ./lighthouse
       dockerfile: Dockerfile.lighthouse
@@ -169,6 +172,8 @@ services:
         condition: service_started
       jaeger-tracing:
         condition: service_started
+      genesis-generator:
+        condition: service_completed_successfully
     environment:
       <<: *prysm-bn-env
       EXECUTION_NODE_URL: http://geth-1:8551
@@ -188,6 +193,8 @@ services:
         condition: service_started
       jaeger-tracing:
         condition: service_started
+      genesis-generator:
+        condition: service_completed_successfully
     environment:
       <<: *prysm-bn-env
       EXECUTION_NODE_URL: http://geth-2:8551
@@ -233,6 +240,8 @@ services:
         condition: service_started
       geth-3:
         condition: service_healthy
+      genesis-generator:
+        condition: service_completed_successfully
     image: g11tech/lodestar:4844-jan23
     environment:
       EXECUTION_NODE_URL: http://geth-3:8551
@@ -266,8 +275,13 @@ services:
   lighthouse-beacon-node:
     <<: *lighthouse-bn
     depends_on:
-      - bootnode
-      - geth-1
+      bootnode:
+        condition: service_started
+      geth-1:
+        condition: service_started
+      genesis-generator:
+        condition: service_completed_successfully
+ 
     entrypoint: ["run_beacon_node.sh", "-d", "debug", "/data/node_1", "http://geth-1:8551"]
     environment:
       - P2P_PORT=9000
@@ -279,8 +293,12 @@ services:
   lighthouse-beacon-node-follower:
     <<: *lighthouse-bn
     depends_on:
-      - geth-2
-      - bootnode
+      bootnode:
+        condition: service_started
+      geth-2:
+        condition: service_started
+      genesis-generator:
+        condition: service_completed_successfully
     entrypoint: ["run_beacon_node.sh", "-d", "debug", "/data/node_2", "http://geth-2:8551"]
     environment:
       - P2P_PORT=9001

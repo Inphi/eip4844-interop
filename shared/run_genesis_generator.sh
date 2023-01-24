@@ -4,6 +4,11 @@ set -exu -o pipefail
 
 source /config/values.env
 
+if [ -d  /tmp/validator-output ]; then
+    echo "genesis generator already run"
+    exit 0
+fi
+
 eth2-val-tools keystores\
     --insecure --prysm-pass="prysm"\
     --out-loc=/tmp/validator-output\
