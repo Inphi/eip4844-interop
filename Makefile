@@ -33,6 +33,11 @@ lodestar-up:
 		lodestar-beacon-node\
 		lodestar-beacon-node-follower\
 
+lighthouse-prysm: devnet-setup
+	docker compose --project-name eip4844-interop up -d --build lighthouse-validator-node
+	sleep 300
+	docker compose --project-name eip4844-interop up -d --build prysm-beacon-node-follower
+
 devnet-down:
 	docker compose --project-name eip4844-interop down -v
 
