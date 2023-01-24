@@ -36,7 +36,9 @@ x-prysm-beacon-node: &prysm-bn
       condition: service_started
     jaeger-tracing:
       condition: service_started
-  image: inphi/prysm:eip4844
+  build:
+    context: ./prysm
+    dockerfile: Dockerfile.prysm
   healthcheck:
     test: ["CMD", "curl", "--fail", "localhost:3500/eth/v1/node/health"]
     interval: 2s
