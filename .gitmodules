@@ -4,11 +4,7 @@
 	branch = eip-4844
 [submodule "prysm/prysm"]
 	path = prysm/prysm
-	; current branch contains latest commit from https://github.com/prysmaticlabs/prysm
-	; with applied fixes (to be merged) to support go build
-	; TODO: change back to original repo once the fix is merged
-	url = https://github.com/0x00101010/prysm
-	; url = https://github.com/prysmaticlabs/prysm
+	url = https://github.com/prysmaticlabs/prysm
 	branch = eip4844
 [submodule "lodestar/lodestar"]
 	path = lodestar/lodestar
