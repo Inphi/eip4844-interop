@@ -53,11 +53,7 @@ x-prysm-beacon-node: &prysm-bn
       target: /usr/local/bin/run_beacon_node.sh
 
 x-lighthouse-beacon-node: &lighthouse-bn
-  build:
-    context: ./lighthouse
-    dockerfile: Dockerfile.lighthouse
-  image: lighthouse-interop
-  pull_policy: never
+  image: inphi/lighthouse:eip4844
   entrypoint: ["run_beacon_node.sh", "-d", "debug", "/data/node_1", "http://geth-1:8551"]
   environment:
     - P2P_PORT=9000
@@ -141,12 +137,6 @@ services:
       --jwt-secret=/config_data/el/jwtsecret
     ports:
       - '11545:8545'
-    healthcheck:
-      test: ["CMD", "curl", "localhost:8545"]
-      interval: 2s
-      timeout: 2s
-      retries: 20
-      start_period: 1s
     volumes:
       - 'config_data:/config_data'
       - type: bind
@@ -171,8 +161,8 @@ services:
   prysm-beacon-node:
     <<: *prysm-bn
     depends_on:
-      geth-1:
-        condition: service_healthy
+      ethereumjs:
+        condition: service_started
       bootnode:
         condition: service_started
       jaeger-tracing:
@@ -301,8 +291,7 @@ services:
       - "9001:9001"
 
   lighthouse-validator-node:
-    image: lighthouse-interop
-    pull_policy: never
+    image: inphi/lighthouse:eip4844
     depends_on:
       - lighthouse-beacon-node
     build:
