@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -x
+
 ./Nethermind.Runner \
   --datadir="/db" \
   --Init.ChainSpecPath="/config_data/custom_config_data/chainspec.json" \
@@ -16,4 +18,8 @@
   --Network.P2PPort=30303 \
   --Merge.SecondsPerSlot=3 \
   --Init.IsMining=true \
-  --JsonRpc.JwtSecretFile=/config_data/el/jwtsecret
+  --JsonRpc.JwtSecretFile=/config_data/el/jwtsecret \
+  --Sync.FastSync=false \
+  --JsonRpc.MaxBatchSize=1000 \
+  --JsonRpc.MaxBatchResponseBodySize=1000000000 \
+  --config none.cfg
