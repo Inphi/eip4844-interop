@@ -167,7 +167,7 @@ services:
     volumes:
       - lighthouse_data:/data
       - config_data:/config_data
-      - ./shared/genesis-generator-configs/values.env:/config/values.env
+      - ./shared/genesis-generator-configs:/config
       - type: bind
         source: ./lighthouse/run_bootnode.sh
         target: /usr/local/bin/run_bootnode.sh
