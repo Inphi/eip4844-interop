@@ -175,7 +175,7 @@ services:
   prysm-beacon-node:
     <<: *prysm-bn
     depends_on:
-      geth-1:
+      nethermind:
         condition: service_started
       bootnode:
         condition: service_started
@@ -185,7 +185,7 @@ services:
         condition: service_completed_successfully
     environment:
       <<: *prysm-bn-env
-      EXECUTION_NODE_URL: http://geth-1:8551
+      EXECUTION_NODE_URL: http://nethermind:8551
       PROCESS_NAME: beacon-node
       MIN_SYNC_PEERS: 0
     ports:
