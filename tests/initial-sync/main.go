@@ -73,7 +73,8 @@ func main() {
 	startSlot := util.GetHeadSlot(ctx, beaconClient)
 
 	blobs := GetBlobs()
-	UploadBlobs(ctx, ethClient, blobs)
+	chainID := env.GethChainConfig.ChainID
+	UploadBlobs(ctx, ethClient, chainID, blobs)
 	util.WaitForNextSlots(ctx, beaconClient, 1)
 	blobSlot := util.FindBlobSlot(ctx, beaconClient, startSlot)
 
@@ -100,29 +101,27 @@ func main() {
 		log.Fatalf("unable to wait for beacon follower sync: %v", err)
 	}
 
-	multiaddr, err := shared.GetBeaconMultiAddress()
-	if err != nil {
-		log.Fatalf("unable to get beacon multiaddr: %v", err)
-	}
-	followerMultiaddr, err := shared.GetBeaconFollowerMultiAddress()
-	if err != nil {
-		log.Fatalf("unable to get beacon multiaddr: %v", err)
-	}
-
 	log.Printf("checking blob from beacon node")
-	downloadedData := util.DownloadBlobs(ctx, blobSlot, 1, multiaddr)
+	beaconMA, err := shared.GetBeaconMultiAddress()
+	if err != nil {
+		log.Fatalf("Unable to get beacon mutliaddress")
+	}
+	downloadedData := util.DownloadBlobs(ctx, blobSlot, 1, beaconMA)
 	downloadedBlobs := shared.EncodeBlobs(downloadedData)
 	util.AssertBlobsEquals(blobs, downloadedBlobs)
 
 	log.Printf("checking blob from beacon node follower")
 	time.Sleep(time.Second * 2 * time.Duration(env.BeaconChainConfig.SecondsPerSlot)) // wait a bit for sync
-	downloadedData = util.DownloadBlobs(ctx, blobSlot, 1, followerMultiaddr)
+	beaconFollowerMA, err := shared.GetBeaconFollowerMultiAddress()
+	if err != nil {
+		log.Fatalf("Unable to get beacon follower mutliaddress")
+	}
+	downloadedData = util.DownloadBlobs(ctx, blobSlot, 1, beaconFollowerMA)
 	downloadedBlobs = shared.EncodeBlobs(downloadedData)
 	util.AssertBlobsEquals(blobs, downloadedBlobs)
 }
 
-func UploadBlobs(ctx context.Context, client *ethclient.Client, blobs types.Blobs) {
-	chainId := big.NewInt(1)
+func UploadBlobs(ctx context.Context, client *ethclient.Client, chainId *big.Int, blobs types.Blobs) {
 	signer := types.NewDankSigner(chainId)
 
 	key, err := crypto.HexToECDSA(shared.PrivateKey)

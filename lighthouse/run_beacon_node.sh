@@ -2,8 +2,6 @@
 
 set -Eeuo pipefail
 
-source /config/vars.env
-
 SUBSCRIBE_ALL_SUBNETS=
 DEBUG_LEVEL=${DEBUG_LEVEL:-debug}
 EXTERNAL_IP=$(ip addr show eth0 | grep inet | awk '{ print $2 }' | cut -d '/' -f1)
@@ -44,17 +42,18 @@ exec lighthouse \
     bn \
     $SUBSCRIBE_ALL_SUBNETS \
     --datadir $data_dir \
-    --testnet-dir $TESTNET_DIR \
+    --testnet-dir /config_data/custom_config_data \
     --enable-private-discovery \
-    --staking \
+    --eth1 \
     --enr-address $EXTERNAL_IP \
     --enr-udp-port $network_port \
     --enr-tcp-port $network_port \
     --port $network_port \
+    --http \
     --http-address 0.0.0.0 \
     --http-port $http_port \
     --disable-packet-filter \
-    --target-peers $((BN_COUNT)) \
+    --target-peers 5 \
+    --http-allow-sync-stalled \
     --execution-endpoint $execution_endpoint \
-    --trusted-setup-file /config/trusted_setup.txt \
-    --execution-jwt /config/jwtsecret
+    --execution-jwt /config_data/cl/jwtsecret

@@ -34,7 +34,7 @@ func StartServices(svcs ...string) error {
 
 	svcArg := strings.Join(svcs, " ")
 	log.Printf("starting services %s", svcArg)
-	err := Run(exec.Command("/bin/sh", "-c", fmt.Sprintf("docker-compose up -d %s", svcArg)))
+	err := Run(exec.Command("/bin/sh", "-c", fmt.Sprintf("docker compose up -d %s", svcArg)))
 	if err != nil && err.(*exec.ExitError).ExitCode() == 127 {
 		err = Run(exec.Command("/bin/sh", "-c", fmt.Sprintf("docker compose up -d %s", svcArg)))
 	}
@@ -42,7 +42,7 @@ func StartServices(svcs ...string) error {
 }
 
 func StopService(svc string) error {
-	err := Run(exec.Command("/bin/sh", "-c", fmt.Sprintf("docker-compose stop %s", svc)))
+	err := Run(exec.Command("/bin/sh", "-c", fmt.Sprintf("docker compose stop %s", svc)))
 	if err != nil && err.(*exec.ExitError).ExitCode() == 127 {
 		err = Run(exec.Command("/bin/sh", "-c", fmt.Sprintf("docker compose stop %s", svc)))
 	}
@@ -50,7 +50,7 @@ func StopService(svc string) error {
 }
 
 func StopDevnet() error {
-	err := Run(exec.Command("/bin/sh", "-c", "docker-compose down -v"))
+	err := Run(exec.Command("/bin/sh", "-c", "docker compose down -v"))
 	if err != nil && err.(*exec.ExitError).ExitCode() == 127 {
 		err = Run(exec.Command("/bin/sh", "-c", "docker compose down -v"))
 	}

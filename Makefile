@@ -1,31 +1,42 @@
-devnet-setup: 
-	docker compose up build-shared-states
+SERVICES=geth-1\
+	 geth-2\
+	 prysm-beacon-node\
+	 prysm-beacon-node-follower\
+	 prysm-validator-node\
+	 lighthouse-beacon-node\
+	 lighthouse-beacon-node-follower\
+	 lighthouse-validator-node\
+	 jaeger-tracing
 
-devnet-up: devnet-setup
-	docker compose --project-name eip4844-interop up -d\
-		execution-node\
-		execution-node-2\
-		prysm-beacon-node\
-		prysm-beacon-node-follower\
-		prysm-validator-node\
-		jaeger-tracing
+devnet-setup: devnet-clean
+	docker compose --project-name eip4844-interop up genesis-generator
 
-lighthouse-up:
-	touch ./lighthouse/generated-genesis.json
-	touch ./lighthouse/generated-config.yaml
+devnet-build:
+	docker compose --project-name eip4844-interop build ${SERVICES}
+
+# First build then setup so we don't start after the genesis_delay
+devnet-up: devnet-build devnet-setup
+	docker compose --project-name eip4844-interop up -d ${SERVICES}
+
+lighthouse-up: devnet-build devnet-setup
 	docker compose --project-name eip4844-interop up -d --build\
-		execution-node\
-		execution-node-2\
+		geth-1\
+		geth-2\
 		lighthouse-beacon-node\
 		lighthouse-beacon-node-follower\
 		lighthouse-validator-node
 
 lodestar-up:
 	docker compose --project-name eip4844-interop up -d\
-		execution-node\
-		execution-node-2\
+		geth-1\
+		geth-2\
 		lodestar-beacon-node\
 		lodestar-beacon-node-follower\
+
+lighthouse-prysm: devnet-setup
+	docker compose --project-name eip4844-interop up -d --build lighthouse-validator-node
+	sleep 300
+	docker compose --project-name eip4844-interop up -d --build prysm-beacon-node-follower
 
 devnet-down:
 	docker compose --project-name eip4844-interop down -v

@@ -3,7 +3,6 @@ package ctrl
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"time"
@@ -43,12 +42,12 @@ func InitEnvForClient(clientName string) *TestEnvironment {
 }
 
 func InitE2ETest(clientName string) {
-	env := InitEnvForClient(clientName)
-
 	ctx := context.Background()
 	if err := StopDevnet(); err != nil {
 		log.Fatalf("unable to stop devnet: %v", err)
 	}
+
+	env := InitEnvForClient(clientName)
 	if err := env.StartAll(ctx); err != nil {
 		log.Fatalf("unable to start environment: %v", err)
 	}
@@ -59,6 +58,9 @@ func WaitForShardingFork() {
 
 	config := GetEnv().GethChainConfig
 	eip4844ForkTime := config.ShardingForkTime
+	if eip4844ForkTime == nil {
+		log.Fatalf("shardingForkTime is not set in configuration")
+	}
 
 	stallTimeout := 60 * time.Minute
 
@@ -75,12 +77,9 @@ func WaitForShardingFork() {
 		if err != nil {
 			log.Fatalf("ethclient.BlockByNumber: %v", err)
 		}
-
-		log.Printf("BlockByNumber: %v, lastBlockNumber: %v, blockTime: %v, eip4844BlockTime: %v", b.Number(), lastBn, b.Time(), eip4844ForkTime)
-		if b.Time() >= eip4844ForkTime.Uint64() {
+		if b.Time() >= *eip4844ForkTime {
 			break
 		}
-
 		// Chain stall detection
 		if b.NumberU64() != lastBn {
 			lastBn = b.NumberU64()
@@ -150,7 +149,7 @@ func WaitForEip4844ForkEpoch() {
 
 	config := GetEnv().BeaconChainConfig
 	// TODO: query /eth/v1/config/spec for time parameters
-	eip4844Slot := config.Eip4844ForkEpoch * 6 // TODO: change this to config.SlotsPerEpoch once it's defined
+	eip4844Slot := config.Eip4844ForkEpoch * config.SlotsPerEpoch
 	if err := WaitForSlot(ctx, types.Slot(eip4844Slot)); err != nil {
 		log.Fatal(err)
 	}
@@ -160,8 +159,12 @@ type BeaconChainConfig struct {
 	AltairForkEpoch         uint64 `yaml:"ALTAIR_FORK_EPOCH"`
 	BellatrixForkEpoch      uint64 `yaml:"BELLATRIX_FORK_EPOCH"`
 	Eip4844ForkEpoch        uint64 `yaml:"EIP4844_FORK_EPOCH"`
+	SlotsPerEpoch           uint64 `yaml:"SLOTS_PER_EPOCH"`
 	SecondsPerSlot          uint64 `yaml:"SECONDS_PER_SLOT"`
 	TerminalTotalDifficulty uint64 `yaml:"TERMINAL_TOTAL_DIFFICULTY"`
+	BellatrixForkVersion    string `yaml:"BELLATRIX_FORK_VERSION"`
+	CapellaForkVersion      string `yaml:"CAPELLA_FORK_VERSION"`
+	EIP4844ForkVersion      string `yaml:"EIP4844_FORK_VERSION"`
 }
 
 type TestEnvironment struct {
@@ -174,7 +177,20 @@ type TestEnvironment struct {
 	GethNode2          Service
 }
 
+func setupGeneratedConfigs() {
+	if err := StartServices("genesis-generator"); err != nil {
+		log.Fatalf("failed to start genesis-generator service: %v", err)
+	}
+	// TODO: it takes a moment for the docker daemon to synchronize files
+	time.Sleep(time.Second * 10)
+}
+
 func newPrysmTestEnvironment() *TestEnvironment {
+	setupGeneratedConfigs()
+
+	shared.BeaconAPI = "localhost:3500"
+	shared.BeaconFollowerAPI = "localhost:3501"
+
 	clientName := "prysm"
 	return &TestEnvironment{
 		BeaconChainConfig:  ReadBeaconChainConfig(),
@@ -200,29 +216,15 @@ func newLodestarTestEnvironment() *TestEnvironment {
 }
 
 func newLighthouseTestEnvironment() *TestEnvironment {
+	setupGeneratedConfigs()
+
 	clientName := "lighthouse"
-	// lcli-build-genesis expects these files to be present
-	if err := ioutil.WriteFile("./lighthouse/generated-genesis.json", nil, 0666); err != nil {
-		log.Fatal(err)
-	}
-	if err := ioutil.WriteFile("./lighthouse/generated-config.yaml", nil, 0666); err != nil {
-		log.Fatal(err)
-	}
-
-	// Generate configs
-	if err := StartServices("lcli-build-genesis"); err != nil {
-		log.Fatalf("failed to setup lighthouse test environment: %v", err)
-	}
-	// TODO: it takes a moment for the docker daemon to synchronize files
-	time.Sleep(time.Second * 3)
-
 	return &TestEnvironment{
-		// TODO: read the generated genesis from the container
-		BeaconChainConfig:  ReadBeaconChainConfigFromPath(fmt.Sprintf("%s/lighthouse/generated-config.yaml", shared.GetBaseDir())),
+		BeaconChainConfig:  ReadBeaconChainConfig(),
 		BeaconNode:         NewBeaconNode(clientName),
 		BeaconNodeFollower: NewBeaconNodeFollower(clientName),
 		ValidatorNode:      NewValidatorNode(clientName),
-		GethChainConfig:    ReadGethChainConfigFromPath(fmt.Sprintf("%s/lighthouse/generated-genesis.json", shared.GetBaseDir())),
+		GethChainConfig:    ReadGethChainConfig(),
 		GethNode:           NewGethNode(),
 		GethNode2:          NewGethNode2(),
 	}

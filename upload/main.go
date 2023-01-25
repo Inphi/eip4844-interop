@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"log"
+	"math/big"
 	"os"
 	"time"
 
@@ -18,10 +19,10 @@ import (
 
 func main() {
 	prv := "45a915e4d060149eb4365960e6a7a45f334393093061116b197e3240065ff2d8"
-	addr := "http://localhost:8545"
 
 	before := flag.Uint64("before", 0, "Block to wait for before submitting transaction")
 	after := flag.Uint64("after", 0, "Block to wait for after submitting transaction")
+	addr := flag.String("addr", "http://localhost:8545", "JSON-RPC endpoint")
 	flag.Parse()
 
 	file := flag.Arg(0)
@@ -34,7 +35,7 @@ func main() {
 	}
 
 	ctx := context.Background()
-	client, err := ethclient.DialContext(ctx, addr)
+	client, err := ethclient.DialContext(ctx, *addr)
 	if err != nil {
 		log.Fatalf("Failed to connect to the Ethereum client: %v", err)
 	}
@@ -54,7 +55,12 @@ func main() {
 		waitForBlock(ctx, client, *before)
 	}
 
-	nonce, err := client.PendingNonceAt(ctx, crypto.PubkeyToAddress(key.PublicKey))
+	bn, err := client.BlockNumber(ctx)
+	if err != nil {
+		log.Fatalf("Error getting block number: %v", err)
+	}
+	// note: etherumjs doesn't support PendingNonceAt
+	nonce, err := client.NonceAt(ctx, crypto.PubkeyToAddress(key.PublicKey), new(big.Int).SetUint64(bn))
 	if err != nil {
 		log.Fatalf("Error getting nonce: %v", err)
 	}
