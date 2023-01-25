@@ -322,7 +322,7 @@ services:
   lighthouse-validator-node:
     image: inphi/lighthouse:eip4844
     depends_on:
-      lighthouse-becaon-node:
+      lighthouse-beacon-node:
         condition: service_started
       genesis-generator:
         condition: service_completed_successfully
