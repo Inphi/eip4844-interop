@@ -95,7 +95,11 @@ func main() {
 		log.Fatalf("Error getting block: %v", err)
 	}
 
-	eip4844ForkTime := ctrl.GetEnv().GethChainConfig.ShardingForkTime.Uint64()
+	shardingForkTime := ctrl.GetEnv().GethChainConfig.ShardingForkTime
+	if shardingForkTime == nil {
+		log.Fatalf("shardingForkTime is not set in configuration")
+	}
+	eip4844ForkTime := *shardingForkTime
 	if blk.Time() > eip4844ForkTime {
 		// TODO: Avoid this issue by configuring the chain config at runtime
 		log.Fatalf("Test condition violation. Transaction must be included before eip4844 fork. Check the geth chain config")
