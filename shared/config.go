@@ -26,11 +26,11 @@ func GetBaseDir() string {
 }
 
 func GethChainConfigFilepath() string {
-	return fmt.Sprintf("%s/shared/generated-genesis.json", GetBaseDir())
+	return fmt.Sprintf("%s/shared/generated-configs/custom_config_data/genesis.json", GetBaseDir())
 }
 
 func BeaconChainConfigFilepath() string {
-	return fmt.Sprintf("%s/shared/chain-config.yml", GetBaseDir())
+	return fmt.Sprintf("%s/shared/generated-configs/custom_config_data/config.yaml", GetBaseDir())
 }
 
 func UpdateChainConfig(config *params.ChainConfig) error {
@@ -70,21 +70,19 @@ func getMultiaddress(beaconAPI string) (string, error) {
 	if len(data.Data.P2PAddresses) == 0 {
 		return "", errors.New("no multiaddresses found")
 	}
-
-	// There might be multiple addresses and we need the one with 127.0.0.1 to work
-	for _, addr := range data.Data.P2PAddresses {
-		if strings.Contains(addr, "127.0.0.1") {
-			return addr, nil
+	for _, a := range data.Data.P2PAddresses {
+		// prefer localhost address as the others are inaccessible outside the docker container
+		if strings.HasPrefix(a, "/ip4/127.0.0.1") {
+			return a, nil
 		}
 	}
-
 	return data.Data.P2PAddresses[0], nil
 }
 
 var (
 	GethRPC           = "http://localhost:8545"
 	PrivateKey        = "45a915e4d060149eb4365960e6a7a45f334393093061116b197e3240065ff2d8"
-	BeaconAPI         = "localhost:3500"
-	BeaconFollowerAPI = "localhost:3501"
-	ValidatorAPI      = "http://localhost:7500"
+	BeaconAPI         = "localhost:8000"
+	BeaconFollowerAPI = "localhost:8001"
+	//ValidatorAPI               = "http://localhost:7500"
 )

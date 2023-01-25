@@ -1,338 +1,347 @@
 version: '3.4'
 
 volumes:
-  geth_data:
-  geth_data2:
-  beacon_node_data:
-  beacon_node_follower_data:
-  lighthouse_shared_config:
   lighthouse_data:
+  prysm_data:
+  lodestar_data:
+  config_data:
+  teku_data:
+
+x-geth: &geth
+  image: inphi/geth:eip4844-devnet4
+  depends_on:
+    genesis-generator:
+      condition: service_completed_successfully
+  entrypoint: geth.sh
+  healthcheck:
+    test: ["CMD", "curl", "--fail", "localhost:8545"]
+    interval: 2s
+    timeout: 2s
+    retries: 40
+    start_period: 1s
+  volumes:
+    - 'config_data:/config_data'
+    - type: bind
+      source: ./geth/geth.sh
+      target: /usr/local/bin/geth.sh
+
+x-prysm-beacon-node-env: &prysm-bn-env
+  TRACING_ENDPOINT: http://jaeger-tracing:14268/api/traces
+  PROCESS_NAME: beacon-node
+  VERBOSITY: debug
+  P2P_TCP_PORT: 13000
+  MIN_SYNC_PEERS: 0
+
+x-prysm-beacon-node: &prysm-bn
+  depends_on:
+    bootnode:
+      condition: service_started
+    jaeger-tracing:
+      condition: service_started
+    genesis-generator:
+      condition: service_completed_successfully
+  build:
+    context: ./prysm
+    dockerfile: Dockerfile.prysm
+  healthcheck:
+    test: ["CMD", "curl", "--fail", "localhost:3500/eth/v1/node/health"]
+    interval: 2s
+    timeout: 2s
+    retries: 40
+    start_period: 1s
+  entrypoint: run_beacon_node.sh
+  volumes:
+    - 'config_data:/config_data'
+    - type: bind
+      source: ./prysm/run_beacon_node.sh
+      target: /usr/local/bin/run_beacon_node.sh
+
+x-lighthouse-beacon-node: &lighthouse-bn
+  image: inphi/lighthouse:eip4844
+  entrypoint: ["run_beacon_node.sh", "-d", "debug", "/data/node_1", "http://geth-1:8551"]
+  environment:
+    - P2P_PORT=9000
+  ports:
+    - "5052:5052"
+    - "8000:8000"
+    - "9000:9000"
+  volumes:
+    - lighthouse_data:/data
+    - config_data:/config_data
+    - type: bind
+      source: ./lighthouse/run_beacon_node.sh
+      target: /usr/local/bin/run_beacon_node.sh
+    - type: bind
+      source: ./shared/trusted_setup.txt
+      target: /config/trusted_setup.txt
+    - type: bind
+      source: ./shared/jwtsecret
+      target: /config/jwtsecret
 
 
 services:
-  build-shared-states:
-    build:
-      context: ./
-      dockerfile: ./prysm/Dockerfile.prysm
-    entrypoint: [ "/shared/setup.sh" ]
+  genesis-generator:
+    image: inphi/ethereum-genesis-generator:eip4844
+    entrypoint: run_genesis_generator.sh
     volumes:
-      - ./shared:/shared
+      - ./shared/run_genesis_generator.sh:/usr/local/bin/run_genesis_generator.sh
+      - ./shared/genesis-generator-configs:/config
+      - ./shared/generated-configs:/gen-configs
+      - lighthouse_data:/lighthouse_data
+      - prysm_data:/prysm_data
+      - lodestar_data:/lodestar_data
+      - teku_data:/teku_data
+      - config_data:/data
 
-  execution-node:
-    depends_on:
-      - prysm-beacon-node
-    image: inphi/geth:eip4844-devnet4
+  geth-1:
+    <<: *geth
     ports:
       - '8545:8545'
       - '8551:8551'
-    entrypoint: [ "geth.sh" ]
-    volumes:
-      - ./shared:/shared
-      - 'geth_data:/db'
-      - type: bind
-        source: ./geth/geth.sh
-        target: /usr/local/bin/geth.sh
 
-  execution-node-2:
-    depends_on:
-      - execution-node
-      - prysm-beacon-node-follower
-    build:
-      context: ./geth
-      dockerfile: Dockerfile.geth
+  geth-2:
+    <<: *geth
     ports:
       - '8546:8545'
       - '8552:8551'
-    entrypoint: [ "geth.sh" ]
-    volumes:
-      - ./shared:/shared
-      - 'geth_data2:/db'
-      - type: bind
-        source: ./geth/geth.sh
-        target: /usr/local/bin/geth.sh
 
-  prysm-beacon-node:
-    depends_on:
-      - jaeger-tracing
-    build:
-      context: ./
-      dockerfile: ./prysm/Dockerfile.prysm
-    environment:
-      EXECUTION_NODE_URL: http://execution-node:8551
-      TRACING_ENDPOINT: http://jaeger-tracing:14268/api/traces
-      PROCESS_NAME: beacon-node
-      VERBOSITY: debug
-      P2P_PRIV_KEY: /etc/prysm-priv-key
-      P2P_TCP_PORT: 13000
-    entrypoint:
-      [
-        'run_beacon_node.sh',
-        '--min-sync-peers=0',
-        '--bootstrap-node='
-      ]
+  geth-3:
+    <<: *geth
     ports:
-      - '3500:3500'
-      - '4000:4000'
-      - '13000:13000'
-    volumes:
-      - 'beacon_node_data:/chaindata'
-      - './shared:/shared'
-      - type: bind
-        source: ./prysm/run_beacon_node.sh
-        target: /usr/local/bin/run_beacon_node.sh
-      - type: bind
-        source: ./prysm/prysm-priv-key
-        target: /etc/prysm-priv-key
+      - '8547:8545'
+      - '8553:8551'
 
-  prysm-beacon-node-follower:
+  nethermind:
+    image: nethermindeth/nethermind:eip-4844-v4
     depends_on:
-      - prysm-beacon-node
-      - jaeger-tracing
-    build:
-      context: ./
-      dockerfile: ./prysm/Dockerfile.prysm
-    environment:
-      EXECUTION_NODE_URL: http://execution-node-2:8551
-      TRACING_ENDPOINT: http://jaeger-tracing:14268/api/traces
-      PROCESS_NAME: beacon-node-follower
-      BEACON_NODE_RPC: http://prysm-beacon-node:3500
-      VERBOSITY: debug
-      P2P_PRIV_KEY: /etc/prysm-priv-key
-      P2P_TCP_PORT: 13001
-    entrypoint: run_beacon_node_peer.sh
+      genesis-generator:
+        condition: service_completed_successfully
     ports:
-      - '3501:3500'
-      - '4001:4000'
-      - '13001:13001'
+      - '10545:8545'
+    entrypoint: 'nethermind.sh'
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "localhost:8545"]
+      interval: 2s
+      timeout: 2s
+      retries: 40
+      start_period: 1s
     volumes:
-      - 'beacon_node_follower_data:/chaindata'
-      - './shared:/shared'
+      - 'config_data:/config_data'
       - type: bind
-        source: ./prysm/run_beacon_node.sh
-        target: /usr/local/bin/run_beacon_node.sh
-      - type: bind
-        source: ./prysm/run_beacon_node_peer.sh
-        target: /usr/local/bin/run_beacon_node_peer.sh
-      - type: bind
-        source: ./prysm/prysm-follower-priv-key
-        target: /etc/prysm-priv-key
+        source: ./nethermind/nethermind.sh
+        target: /usr/local/bin/nethermind.sh
 
-  prysm-validator-node:
+  ethereumjs:
+    image: g11tech/ethereumjs:jan23
     depends_on:
-      - prysm-beacon-node
-      - jaeger-tracing
-    build:
-      context: ./
-      dockerfile: ./prysm/Dockerfile.prysm
+      genesis-generator:
+        condition: service_completed_successfully
     command: >
-      validator 
-        --accept-terms-of-use 
-        --beacon-rpc-provider prysm-beacon-node:4000 
-        --rpc 
-        --grpc-gateway-host 0.0.0.0 
-        --grpc-gateway-port 7500
-        --interop-num-validators=4 
-        --interop-start-index=0 
-        --force-clear-db 
-        --chain-config-file=/shared/chain-config.yml 
-        --suggested-fee-recipient 0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b 
-        --enable-tracing 
-        --tracing-endpoint http://jaeger-tracing:14268/api/traces 
-        --tracing-process-name validator-node
+      --dataDir=/db
+      --gethGenesis=/config_data/custom_config_data/genesis.json
+      --rpc
+      --rpcAddr=0.0.0.0
+      --rpcCors="*"
+      --rpcEngine
+      --rpcEngineAddr=0.0.0.0
+      --logLevel=debug
+      --jwt-secret=/config_data/el/jwtsecret
     ports:
-      - '7500:7500'
+      - '11545:8545'
     volumes:
-      - './shared:/shared'
-
-  lodestar-beacon-node:
-    depends_on:
-      - execution-node
-    build:
-      context: ./lodestar
-      dockerfile: Dockerfile.lodestar
-    environment:
-      EXECUTION_NODE_URL: http://execution-node:8545
-      PROCESS_NAME: lodestar-beacon-node
-    entrypoint: [ 'run_beacon_node.sh' ]
-    ports:
-      - '3500:3500'
-      - '13000:13000'
-    volumes:
-      - 'beacon_node_data:/chaindata'
-      - type: bind
-        source: ./shared/chain-config.yml
-        target: /config/chain-config.yml
+      - 'config_data:/config_data'
       - type: bind
         source: ./lodestar/run_beacon_node.sh
         target: /usr/local/bin/run_beacon_node.sh
 
-  lodestar-beacon-node-follower:
+  # TODO: move bootnode to genesis-generator
+  bootnode:
     depends_on:
-      - execution-node-2
-      - lodestar-beacon-node
-    build:
-      context: ./lodestar
-      dockerfile: Dockerfile.lodestar
-    environment:
-      EXECUTION_NODE_URL: http://execution-node-2:8545
-      BEACON_NODE_RPC: http://lodestar-beacon-node:3500
-      PROCESS_NAME: lodestar-beacon-node-follower
-      VERBOSITY: debug
-    entrypoint: run_beacon_node_peer.sh
-    ports:
-      - '3501:3500'
-      - '13001:13000'
-    volumes:
-      - 'beacon_node_follower_data:/chaindata'
-      - type: bind
-        source: ./shared/chain-config.yml
-        target: /config/chain-config.yml
-      - type: bind
-        source: ./lodestar/run_beacon_node.sh
-        target: /usr/local/bin/run_beacon_node.sh
-      - type: bind
-        source: ./lodestar/run_beacon_node_peer.sh
-        target: /usr/local/bin/run_beacon_node_peer.sh
-
-  # TODO: temporary solution for generating genesis, remove this before merge
-  lcli-build-genesis:
+      genesis-generator:
+        condition: service_completed_successfully
     build:
       context: ./lighthouse
       dockerfile: Dockerfile.lighthouse
-    image: lighthouse-interop
-    pull_policy: never
-    entrypoint: [ "generate-genesis.sh" ]
-    volumes:
-      - lighthouse_data:/data
-      - lighthouse_shared_config:/lighthouse_shared_config
-      - "./lighthouse/vars.env:/config/vars.env"
-      - type: bind
-        source: ./lighthouse/generate-genesis.sh
-        target: /usr/local/bin/generate-genesis.sh
-      - type: bind
-        source: ./lighthouse/genesis.json
-        target: /config/genesis.json
-      - type: bind
-        source: ./lighthouse/generated-genesis.json
-        target: /config/generated-genesis.json
-      - type: bind
-        source: ./lighthouse/generated-config.yaml
-        target: /config/generated-config.yaml
-
-  lighthouse-bootnode:
-    depends_on:
-      - lcli-build-genesis
-    image: lighthouse-interop
     pull_policy: never
     command: run_bootnode.sh
     volumes:
       - lighthouse_data:/data
-      - lighthouse_shared_config:/lighthouse_shared_config
+      - config_data:/config_data
+      - ./shared/genesis-generator-configs:/config
       - type: bind
         source: ./lighthouse/run_bootnode.sh
         target: /usr/local/bin/run_bootnode.sh
+
+  prysm-beacon-node:
+    <<: *prysm-bn
+    depends_on:
+      geth-1:
+        condition: service_started
+      bootnode:
+        condition: service_started
+      jaeger-tracing:
+        condition: service_started
+      genesis-generator:
+        condition: service_completed_successfully
+    environment:
+      <<: *prysm-bn-env
+      EXECUTION_NODE_URL: http://geth-1:8551
+      PROCESS_NAME: beacon-node
+      MIN_SYNC_PEERS: 0
+    ports:
+      - '3500:3500'
+      - '4000:4000'
+      - '13000:13000'
+
+  prysm-beacon-node-follower:
+    <<: *prysm-bn
+    depends_on:
+      geth-2:
+        condition: service_started
+      bootnode:
+        condition: service_started
+      jaeger-tracing:
+        condition: service_started
+      genesis-generator:
+        condition: service_completed_successfully
+    environment:
+      <<: *prysm-bn-env
+      EXECUTION_NODE_URL: http://geth-2:8551
+      PROCESS_NAME: beacon-node-follower
+      P2P_TCP_PORT: 13001
+      MIN_SYNC_PEERS: 1
+    ports:
+      - '3501:3500'
+      - '4001:4000'
+      - '13001:13001'
+
+  prysm-validator-node:
+    depends_on:
+      prysm-beacon-node:
+        condition: service_started
+      jaeger-tracing:
+        condition: service_started
+      genesis-generator:
+        condition: service_completed_successfully
+    build:
+      context: ./prysm
+      dockerfile: Dockerfile.prysm
+    command: >
+      validator
+      --accept-terms-of-use
+      --beacon-rpc-provider prysm-beacon-node:4000
+      --rpc
+      --grpc-gateway-host 0.0.0.0
+      --grpc-gateway-port 7500
+      --force-clear-db
+      --chain-config-file=/config_data/custom_config_data/config.yaml
+      --suggested-fee-recipient 0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b
+      --wallet-password-file=/prysm_data/wallet_pass.txt
+      --wallet-dir=/prysm_data/wallet
+      --enable-tracing
+      --tracing-endpoint http://jaeger-tracing:14268/api/traces
+      --tracing-process-name validator-node
+    ports:
+      - '7500:7500'
+    volumes:
+      - 'config_data:/config_data'
+      - 'prysm_data:/prysm_data'
+
+  lodestar-beacon-node:
+    depends_on:
+      bootnode:
+        condition: service_started
+      geth-3:
+        condition: service_healthy
+      genesis-generator:
+        condition: service_completed_successfully
+    image: g11tech/lodestar:4844-jan23
+    environment:
+      EXECUTION_NODE_URL: http://geth-3:8551
+    entrypoint: ['run_beacon_node.sh']
+    ports:
+      - '3600:3500'
+      - '14000:13000'
+    volumes:
+      - 'config_data:/config_data'
       - type: bind
-        source: ./lighthouse/vars.env
-        target: /config/vars.env
+        source: ./lodestar/run_beacon_node.sh
+        target: /usr/local/bin/run_beacon_node.sh
+
+  lodestar-validator-node:
+    depends_on:
+      - lodestar-beacon-node
+    image: g11tech/lodestar:4844-jan23
+    command: >
+      validator
+      --paramsFile /config_data/custom_config_data/config.yaml
+      --force
+      --dataDir /chaindata/validator
+      --keystoresDir /lodestar_data/keystores
+      --secretsDir /lodestar_data/secrets
+      --server http://lodestar-beacon-node:3500
+      --suggestedFeeRecipient 0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b
+    volumes:
+      - 'config_data:/config_data'
+      - 'lodestar_data:/lodestar_data'
 
   lighthouse-beacon-node:
+    <<: *lighthouse-bn
     depends_on:
-      - lighthouse-bootnode
-      - execution-node
-      - lcli-build-genesis
-    # build:
-    #   context: ./lighthouse
-    #   dockerfile: Dockerfile.lighthouse
-    image: lighthouse-interop
-    pull_policy: never
-    entrypoint:
-      [
-        "run_beacon_node.sh",
-        "-d",
-        "debug",
-        "/data/node_1",
-        "http://execution-node:8551"
-      ]
+      bootnode:
+        condition: service_started
+      geth-1:
+        condition: service_started
+      genesis-generator:
+        condition: service_completed_successfully
+    entrypoint: ["run_beacon_node.sh", "-d", "debug", "/data/node_1", "http://geth-1:8551"]
     environment:
       - P2P_PORT=9000
     ports:
       - "5052:5052"
       - "8000:8000"
       - "9000:9000"
-    volumes:
-      - lighthouse_data:/data
-      - lighthouse_shared_config:/lighthouse_shared_config
-      - type: bind
-        source: ./lighthouse/run_beacon_node.sh
-        target: /usr/local/bin/run_beacon_node.sh
-      - type: bind
-        source: ./lighthouse/vars.env
-        target: /config/vars.env
-      - type: bind
-        source: ./shared/trusted_setup.txt
-        target: /config/trusted_setup.txt
-      - type: bind
-        source: ./shared/jwtsecret
-        target: /config/jwtsecret
 
   lighthouse-beacon-node-follower:
+    <<: *lighthouse-bn
     depends_on:
-      - execution-node-2
-      - lighthouse-beacon-node
-    # build:
-    #   context: ./lighthouse
-    #   dockerfile: Dockerfile.lighthouse
-    image: lighthouse-interop
-    pull_policy: never
-    entrypoint:
-      [
-        "run_beacon_node.sh",
-        "-d",
-        "debug",
-        "/data/node_2",
-        "http://execution-node-2:8551"
-      ]
+      bootnode:
+        condition: service_started
+      geth-2:
+        condition: service_started
+      genesis-generator:
+        condition: service_completed_successfully
+    entrypoint: ["run_beacon_node.sh", "-d", "debug", "/data/node_2", "http://geth-2:8551"]
     environment:
       - P2P_PORT=9001
     ports:
       - "5053:5052"
       - "8001:8000"
       - "9001:9001"
-    volumes:
-      - lighthouse_data:/data
-      - lighthouse_shared_config:/lighthouse_shared_config
-      - type: bind
-        source: ./lighthouse/run_beacon_node.sh
-        target: /usr/local/bin/run_beacon_node.sh
-      - type: bind
-        source: ./lighthouse/vars.env
-        target: /config/vars.env
-      - type: bind
-        source: ./shared/trusted_setup.txt
-        target: /config/trusted_setup.txt
-      - type: bind
-        source: ./shared/jwtsecret
-        target: /config/jwtsecret
 
   lighthouse-validator-node:
-    image: lighthouse-interop
-    pull_policy: never
+    image: inphi/lighthouse:eip4844
     depends_on:
-      - lighthouse-beacon-node
-    entrypoint:
-      [
-        'run_validator.sh',
-        'http://lighthouse-beacon-node:8000'
-      ]
+      lighthouse-beacon-node:
+        condition: service_started
+      genesis-generator:
+        condition: service_completed_successfully
+    build:
+      context: ./lighthouse
+      dockerfile: Dockerfile.lighthouse
+    command: >
+      lighthouse
+      --debug-level info
+      vc
+      --validators-dir /data/validators
+      --secrets-dir /data/secrets
+      --testnet-dir /config_data/custom_config_data
+      --init-slashing-protection
+      --beacon-nodes http://lighthouse-beacon-node:8000
+      --suggested-fee-recipient 0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990
     volumes:
       - lighthouse_data:/data
-      - lighthouse_shared_config:/lighthouse_shared_config
-      - type: bind
-        source: ./lighthouse/run_validator.sh
-        target: /usr/local/bin/run_validator.sh
-      - type: bind
-        source: ./lighthouse/vars.env
-        target: /config/vars.env
+      - config_data:/config_data
 
   jaeger-tracing:
     image: jaegertracing/all-in-one:1.35

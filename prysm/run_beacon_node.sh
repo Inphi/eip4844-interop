@@ -2,40 +2,40 @@
 
 set -exu -o pipefail
 
-source /shared/generated-shared.env
-
 : "${EXECUTION_NODE_URL:-}"
 : "${PROCESS_NAME:-beacon-node}"
 : "${TRACING_ENDPOINT:-}"
 : "${VERBOSITY:-info}"
-: "${P2P_PRIV_KEY:-}"
 : "${P2P_TCP_PORT:-13000}"
+: "${MIN_SYNC_PEERS:-0}"
 
 EXTERNAL_IP=$(ip addr show eth0 | grep inet | awk '{ print $2 }' | cut -d '/' -f1)
 
-beacon-chain \
+BOOTNODE=$(cat /config_data/custom_config_data/boot_enr.yaml | sed 's/- //')
+openssl rand -hex 32 | tr -d '\n' > /tmp/priv-key
+
+beacon-chain\
     --accept-terms-of-use \
-    --verbosity="${VERBOSITY}" \
+    --verbosity="$VERBOSITY" \
     --datadir /chaindata \
     --force-clear-db \
-    --interop-num-validators 4 \
-    --interop-eth1data-votes \
-    --interop-genesis-state /shared/generated-genesis.ssz \
-    --interop-genesis-time ${GENESIS} \
+    --bootstrap-node $BOOTNODE \
+    --genesis-state=/config_data/custom_config_data/genesis.ssz \
     --execution-endpoint="$EXECUTION_NODE_URL" \
-    --jwt-secret=/shared/jwtsecret \
-    --chain-config-file=/shared/chain-config.yml \
+    --jwt-secret=/config_data/cl/jwtsecret \
+    --chain-config-file=/config_data/custom_config_data/config.yaml \
     --contract-deployment-block 0 \
-    --deposit-contract 0x8A04d14125D0FDCDc742F4A05C051De07232EDa4 \
+    --deposit-contract 0x4242424242424242424242424242424242424242 \
     --rpc-host 0.0.0.0 \
     --rpc-port 4000 \
     --grpc-gateway-host 0.0.0.0 \
     --grpc-gateway-port 3500 \
     --enable-debug-rpc-endpoints \
+    --min-sync-peers "$MIN_SYNC_PEERS" \
     --p2p-local-ip 0.0.0.0 \
     --p2p-host-ip "$EXTERNAL_IP" \
     --p2p-tcp-port $P2P_TCP_PORT \
-    --p2p-priv-key="$P2P_PRIV_KEY" \
+    --p2p-priv-key=/tmp/priv-key \
     --suggested-fee-recipient=0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b \
     --subscribe-all-subnets \
     --enable-tracing \

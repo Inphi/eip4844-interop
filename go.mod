@@ -8,11 +8,12 @@ require (
 	github.com/libp2p/go-libp2p v0.24.0
 	github.com/libp2p/go-libp2p-core v0.17.0
 	github.com/multiformats/go-multiaddr v0.8.0
+	github.com/pkg/errors v0.9.1
 	github.com/protolambda/ztyp v0.2.1
+	github.com/prysmaticlabs/fastssz v0.0.0-20221107182844-78142813af44
+	github.com/prysmaticlabs/go-bitfield v0.0.0-20210809151128-385d8c5e3fb7
 	github.com/prysmaticlabs/prysm/v3 v3.2.0-rc.0.0.20221215090238-7866e8a1967f
-	github.com/wealdtech/go-bytesutil v1.1.1
 	golang.org/x/sync v0.1.0
-	google.golang.org/grpc v1.40.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -130,7 +131,6 @@ require (
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.14.0 // indirect
 	github.com/prometheus/client_model v0.3.0 // indirect
 	github.com/prometheus/common v0.37.0 // indirect
@@ -138,8 +138,6 @@ require (
 	github.com/prometheus/prom2json v1.3.0 // indirect
 	github.com/prometheus/tsdb v0.10.0 // indirect
 	github.com/protolambda/go-kzg v0.0.0-20221129234330-612948a21fb0 // indirect
-	github.com/prysmaticlabs/fastssz v0.0.0-20221107182844-78142813af44 // indirect
-	github.com/prysmaticlabs/go-bitfield v0.0.0-20210809151128-385d8c5e3fb7 // indirect
 	github.com/prysmaticlabs/gohashtree v0.0.2-alpha // indirect
 	github.com/prysmaticlabs/prombbolt v0.0.0-20210126082820-9b7adba6db7c // indirect
 	github.com/r3labs/sse v0.0.0-20210224172625-26fe804710bc // indirect
@@ -161,6 +159,7 @@ require (
 	github.com/trailofbits/go-mutexasserts v0.0.0-20200708152505-19999e7d3cef // indirect
 	github.com/uber/jaeger-client-go v2.25.0+incompatible // indirect
 	github.com/urfave/cli/v2 v2.23.5 // indirect
+	github.com/wealdtech/go-bytesutil v1.1.1 // indirect
 	github.com/whyrusleeping/timecache v0.0.0-20160911033111-cfcb2f1abfee // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
@@ -184,6 +183,7 @@ require (
 	google.golang.org/api v0.34.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20210426193834-eac7f76ac494 // indirect
+	google.golang.org/grpc v1.40.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/cenkalti/backoff.v1 v1.1.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
@@ -199,7 +199,7 @@ require (
 	sigs.k8s.io/yaml v1.2.0 // indirect
 )
 
-replace github.com/ethereum/go-ethereum => ./geth/go-ethereum
+replace github.com/ethereum/go-ethereum => github.com/mdehoog/go-ethereum v1.10.19-0.20230108160323-2b556dbb6624
 
 // replace github.com/prysmaticlabs/prysm/v3 => ./prysm/prysm
 

@@ -25,7 +25,8 @@ func main() {
 
 	ctrl.InitE2ETest(clientName)
 
-	chainId := big.NewInt(1)
+	env := ctrl.GetEnv()
+	chainId := env.GethChainConfig.ChainID
 	signer := types.NewDankSigner(chainId)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*20)
@@ -47,19 +48,24 @@ func main() {
 	}
 	log.Printf("Nonce: %d", nonce)
 
-	msg := ethereum.CallMsg{
-		From:  crypto.PubkeyToAddress(key.PublicKey),
-		To:    &common.Address{},
-		Gas:   21000,
-		Value: big.NewInt(10000),
-	}
-	gas, err := client.EstimateGas(ctx, msg)
+	gasTipCap, err := client.SuggestGasTipCap(ctx)
 	if err != nil {
-		log.Fatalf("EstimateGas error: %v", err)
+		log.Fatalf("Suggest gas tip cap: %v", err)
+	}
+	gasFeeCap, err := client.SuggestGasPrice(ctx)
+	if err != nil {
+		log.Fatalf("Suggest gas fee price: %v", err)
 	}
 
 	to := common.HexToAddress("ffb38a7a99e3e2335be83fc74b7faa19d5531243")
-	tx, err := types.SignTx(types.NewTransaction(nonce, to, big.NewInt(10000), params.TxGas, big.NewInt(int64(gas)), nil), signer, key)
+	tx, err := types.SignTx(types.NewTx(&types.DynamicFeeTx{
+		Nonce:     nonce,
+		To:        &to,
+		Value:     big.NewInt(10000),
+		Gas:       params.TxGas,
+		GasTipCap: gasTipCap,
+		GasFeeCap: gasFeeCap,
+	}), signer, key)
 	if err != nil {
 		log.Fatalf("Error signing tx: %v", err)
 	}
@@ -84,13 +90,17 @@ func main() {
 	}
 
 	blockHash := receipt.BlockHash.Hex()
-	block, err := client.BlockByHash(ctx, common.HexToHash(blockHash))
+	blk, err := client.BlockByHash(ctx, common.HexToHash(blockHash))
 	if err != nil {
 		log.Fatalf("Error getting block: %v", err)
 	}
 
-	eip4844ForkTime := ctrl.GetEnv().GethChainConfig.ShardingForkTime.Uint64()
-	if block.Time() > eip4844ForkTime {
+	shardingForkTime := ctrl.GetEnv().GethChainConfig.ShardingForkTime
+	if shardingForkTime == nil {
+		log.Fatalf("shardingForkTime is not set in configuration")
+	}
+	eip4844ForkTime := *shardingForkTime
+	if blk.Time() > eip4844ForkTime {
 		// TODO: Avoid this issue by configuring the chain config at runtime
 		log.Fatalf("Test condition violation. Transaction must be included before eip4844 fork. Check the geth chain config")
 	}

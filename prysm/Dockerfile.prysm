@@ -1,25 +1,29 @@
 FROM golang:1.18 as builder
 
-COPY ./prysm/prysm/go.mod ./prysm/prysm/go.sum /app/prysm/
-WORKDIR /app/prysm
-RUN go mod download
+RUN apt-get update
 
-COPY ./prysm/prysm /app/prysm
+RUN go install github.com/bazelbuild/bazelisk@latest
+
+WORKDIR /app/prysm
+
+COPY ./prysm /app/prysm
 
 # The flag below may be needed if blst throws SIGILL, which happens with certain (older) CPUs
 # ENV CGO_CFLAGS="-O -D__BLST_PORTABLE__"
 ENV CGO_CFLAGS=$CGO_CFLAGS
 
-RUN go build -o /build/beacon-chain -buildvcs=false ./cmd/beacon-chain
-RUN go build -o /build/validator    -buildvcs=false ./cmd/validator
-RUN go build -o /build/prysmctl     -buildvcs=false ./cmd/prysmctl
+RUN apt-get install patch
+RUN bazelisk build //cmd/beacon-chain //cmd/validator
+
+# We can't glob in COPY. So we cp the binaries to a known location so the next stage can easily access it
+RUN cp bazel-out/*/bin/cmd/beacon-chain/beacon-chain_/beacon-chain /usr/local/bin/
+RUN cp bazel-out/*/bin/cmd/validator/validator_/validator /usr/local/bin/
 
 FROM ubuntu:20.04
 RUN apt-get update && apt-get install -y curl jq iproute2
 
-COPY --from=builder /build/beacon-chain /usr/local/bin/
-COPY --from=builder /build/validator    /usr/local/bin/
-COPY --from=builder /build/prysmctl     /usr/local/bin/
+COPY --from=builder /usr/local/bin/beacon-chain /usr/local/bin/
+COPY --from=builder /usr/local/bin/validator /usr/local/bin/
 
 WORKDIR /usr/local/bin
 EXPOSE 3500 4000 7500 13000 12000 8080

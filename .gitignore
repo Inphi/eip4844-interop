@@ -1,9 +1,3 @@
 /.idea/
 node_modules/
-lighthouse/generated-genesis.json
-lighthouse/generated-config.yaml
-
-# these are generated gensis configuration for EL/CL
-generated-genesis.json
-generated-genesis.ssz
-generated-shared.env
+shared/generated-configs

@@ -49,11 +49,11 @@ func GetBeaconNodeFollowerClient(ctx context.Context) (*beacon.Client, error) {
 }
 
 func NewGethNode() Service {
-	return newDockerService("execution-node", shared.GethRPC)
+	return newDockerService("geth-1", shared.GethRPC)
 }
 
 func NewGethNode2() Service {
-	return newDockerService("execution-node-2", shared.GethRPC)
+	return newDockerService("geth-2", shared.GethRPC)
 }
 
 func GetExecutionClient(ctx context.Context) (*ethclient.Client, error) {

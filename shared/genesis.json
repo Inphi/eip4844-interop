@@ -15,16 +15,11 @@
         "londonBlock": 0,
         "shanghaiTime": SHANGHAI_TIME,
         "shardingForkTime": SHARDING_FORK_TIME,
-        "clique": {
-            "period": 5,
-            "epoch": 30000
-        },
-        "terminalTotalDifficulty": 2,
-        "terminalTotalDifficultyPassed": false
+        "terminalTotalDifficulty": 0,
+        "terminalTotalDifficultyPassed": true
     },
     "nonce": "0x1234",
     "timestamp": "GENESIS_TIME",
-    "extraData": "0x0000000000000000000000000000000000000000000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
     "gasLimit": "0x400000",
     "difficulty": "0x01",
     "coinbase": "0x0000000000000000000000000000000000000000",
