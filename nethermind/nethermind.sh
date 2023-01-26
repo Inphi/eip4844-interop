@@ -17,7 +17,7 @@ set -x
   --Network.DiscoveryPort=30303 \
   --Network.P2PPort=30303 \
   --Merge.SecondsPerSlot=3 \
-  --Init.IsMining=true \
+  --Init.IsMining=$IS_MINING \
   --JsonRpc.JwtSecretFile=/config_data/el/jwtsecret \
   --Sync.FastSync=false \
   --JsonRpc.MaxBatchSize=1000 \

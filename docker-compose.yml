@@ -25,6 +25,24 @@ x-geth: &geth
       source: ./geth/geth.sh
       target: /usr/local/bin/geth.sh
 
+x-nethermind: &nethermind
+  image: nethermindeth/nethermind:eip-4844-v4
+  depends_on:
+    genesis-generator:
+      condition: service_completed_successfully
+  entrypoint: 'nethermind.sh'
+  healthcheck:
+    test: ["CMD", "curl", "--fail", "localhost:8545"]
+    interval: 2s
+    timeout: 2s
+    retries: 40
+    start_period: 1s
+  volumes:
+    - 'config_data:/config_data'
+    - type: bind
+      source: ./nethermind/nethermind.sh
+      target: /usr/local/bin/nethermind.sh
+
 x-prysm-beacon-node-env: &prysm-bn-env
   TRACING_ENDPOINT: http://jaeger-tracing:14268/api/traces
   PROCESS_NAME: beacon-node
@@ -111,25 +129,19 @@ services:
       - '8547:8545'
       - '8553:8551'
 
-  nethermind:
-    image: nethermindeth/nethermind:eip-4844-v4
-    depends_on:
-      genesis-generator:
-        condition: service_completed_successfully
+  nethermind-1:
+    <<: *nethermind
     ports:
-      - '10545:8545'
-    entrypoint: 'nethermind.sh'
-    healthcheck:
-      test: ["CMD", "curl", "--fail", "localhost:8545"]
-      interval: 2s
-      timeout: 2s
-      retries: 40
-      start_period: 1s
-    volumes:
-      - 'config_data:/config_data'
-      - type: bind
-        source: ./nethermind/nethermind.sh
-        target: /usr/local/bin/nethermind.sh
+      - '8545:8545'
+    environment:
+      IS_MINING: true
+
+  nethermind-2:
+    <<: *nethermind
+    ports:
+      - '8546:8545'
+    environment:
+      IS_MINING: false
 
   ethereumjs:
     image: g11tech/ethereumjs:jan23
@@ -175,7 +187,7 @@ services:
   prysm-beacon-node:
     <<: *prysm-bn
     depends_on:
-      geth-1:
+      nethermind-1:
         condition: service_started
       bootnode:
         condition: service_started
@@ -185,7 +197,7 @@ services:
         condition: service_completed_successfully
     environment:
       <<: *prysm-bn-env
-      EXECUTION_NODE_URL: http://geth-1:8551
+      EXECUTION_NODE_URL: http://nethermind-1:8551
       PROCESS_NAME: beacon-node
       MIN_SYNC_PEERS: 0
     ports:
@@ -196,7 +208,7 @@ services:
   prysm-beacon-node-follower:
     <<: *prysm-bn
     depends_on:
-      geth-2:
+      nethermind-2:
         condition: service_started
       bootnode:
         condition: service_started
@@ -206,7 +218,7 @@ services:
         condition: service_completed_successfully
     environment:
       <<: *prysm-bn-env
-      EXECUTION_NODE_URL: http://geth-2:8551
+      EXECUTION_NODE_URL: http://nethermind-2:8551
       PROCESS_NAME: beacon-node-follower
       P2P_TCP_PORT: 13001
       MIN_SYNC_PEERS: 1
