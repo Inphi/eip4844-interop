@@ -32,7 +32,7 @@ RUN go build \
 # Pull erigon into a second stage deploy alpine container
 FROM alpine:3.15
 
-RUN apk add --no-cache ca-certificates curl jq bind-tools
+RUN apk add --no-cache ca-certificates curl jq libgcc libstdc++ bind-tools
 COPY --from=builder /app/erigon/build/bin/erigon /usr/local/bin/
 #COPY --from=builder /app/go-ethereum/build/bin/bootnode /usr/local/bin/
 
