@@ -25,6 +25,25 @@ x-geth: &geth
       source: ./geth/geth.sh
       target: /usr/local/bin/geth.sh
 
+x-nethermind: &nethermind
+  image: nethermindeth/nethermind:eip-4844-v4-workaround
+  depends_on:
+    genesis-generator:
+      condition: service_completed_successfully
+  entrypoint: 'nethermind.sh'
+  healthcheck:
+    test: ["CMD", "curl", "--fail", "localhost:8545"]
+    interval: 2s
+    timeout: 2s
+    retries: 40
+    start_period: 1s
+  volumes:
+    - 'config_data:/config_data'
+    - type: bind
+      source: ./nethermind/nethermind.sh
+      target: /usr/local/bin/nethermind.sh
+
+
 x-prysm-beacon-node-env: &prysm-bn-env
   TRACING_ENDPOINT: http://jaeger-tracing:14268/api/traces
   PROCESS_NAME: beacon-node
@@ -111,25 +130,15 @@ services:
       - '8547:8545'
       - '8553:8551'
 
-  nethermind:
-    image: nethermindeth/nethermind:eip-4844-v4
-    depends_on:
-      genesis-generator:
-        condition: service_completed_successfully
+  nethermind-1:
+    <<: *nethermind
     ports:
-      - '10545:8545'
-    entrypoint: 'nethermind.sh'
-    healthcheck:
-      test: ["CMD", "curl", "--fail", "localhost:8545"]
-      interval: 2s
-      timeout: 2s
-      retries: 40
-      start_period: 1s
-    volumes:
-      - 'config_data:/config_data'
-      - type: bind
-        source: ./nethermind/nethermind.sh
-        target: /usr/local/bin/nethermind.sh
+      - '9545:8545'
+
+  nethermind-2:
+    <<: *nethermind
+    ports:
+      - '9546:8545'
 
   ethereumjs:
     image: g11tech/ethereumjs:jan23
