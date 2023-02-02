@@ -20,5 +20,5 @@
 	branch = eip4844
 [submodule "besu/besu"]
 	path = besu/besu
-	url = https://github.com/hyperledger/besu
-	branch = eip-4844-interop
+	url = https://github.com/fab-10/besu
+	branch = 4844-block-proposal
