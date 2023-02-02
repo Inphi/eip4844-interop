@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="INFO" monitorInterval="5">
+
+  <Properties>
+    <Property name="root.log.level">INFO</Property>
+  </Properties>
+
+  <Appenders>
+    <Console name="Console" target="SYSTEM_OUT">
+      <BurstFilter level="TRACE" rate="2" maxBurst="5"/>
+      <PatternLayout alwaysWriteExceptions="false" pattern='{"@timestamp":"%d{ISO8601}","level":"%level","thread":"%t","class":"%c{1}","message":"%msg","throwable":"%enc{%throwable}{JSON}"}%n'/>
+    </Console>
+  </Appenders>
+
+  <Loggers>
+    <Logger name="org.hyperledger.besu.ethereum.api.jsonrpc.internal.methods.engine" level="TRACE" />
+    <Logger name="org.hyperledger.besu.ethereum.api.handlers.JsonRpcExecutorHandler" level="TRACE" />
+    <Logger name="org.hyperledger.besu.consensus.merge.blockcreation.MergeCoordinator" level="DEBUG" />
+    <Logger name="org.hyperledger.besu.ethereum.blockcreation.AbstractBlockCreator" level="TRACE" />
+    <Root level="${sys:root.log.level}">
+      <AppenderRef ref="Console" />
+    </Root>
+  </Loggers>
+
+</Configuration>

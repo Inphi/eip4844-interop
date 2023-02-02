@@ -1,5 +1,6 @@
 SERVICES=geth-1\
 	 geth-2\
+	 besu-1 \
 	 prysm-beacon-node\
 	 prysm-beacon-node-follower\
 	 prysm-validator-node\
@@ -37,6 +38,14 @@ lighthouse-prysm: devnet-setup
 	docker compose --project-name eip4844-interop up -d --build lighthouse-validator-node
 	sleep 300
 	docker compose --project-name eip4844-interop up -d --build prysm-beacon-node-follower
+
+besu-prysm: devnet-build devnet-setup
+	docker compose --project-name eip4844-interop up -d --build \
+		besu-1 \
+		prysm-beacon-node \
+		prysm-beacon-node-follower \
+		prysm-validator-node
+
 
 devnet-down:
 	docker compose --project-name eip4844-interop down -v

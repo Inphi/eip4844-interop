@@ -1,0 +1,24 @@
+FROM gradle:7.6.0 as builder
+
+COPY besu/besu /src/besu
+COPY .git/modules/besu/besu /src/besu/.git
+
+WORKDIR /src/besu
+
+RUN ./gradlew installDist
+
+FROM eclipse-temurin:17
+
+COPY --from=builder /src/besu/build/install/besu /opt/besu/
+
+RUN adduser --disabled-password --gecos "" --home /opt/besu besu && \
+    mkdir /data && \
+    chown besu:besu /opt/besu /data
+
+USER besu
+
+EXPOSE 8545 8546 8547 8550 8551 30303
+
+WORKDIR /data
+
+ENTRYPOINT ["/opt/besu/bin/besu"]

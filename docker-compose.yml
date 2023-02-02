@@ -43,6 +43,28 @@ x-nethermind: &nethermind
       source: ./nethermind/nethermind.sh
       target: /usr/local/bin/nethermind.sh
 
+x-besu: &besu
+  depends_on:
+    genesis-generator:
+      condition: service_completed_successfully
+  entrypoint: 'besu.sh'
+  build:
+    context: .
+    dockerfile: besu/Dockerfile.besu
+  healthcheck:
+    test: ["CMD", "curl", "--fail", "localhost:8545"]
+    interval: 2s
+    timeout: 2s
+    retries: 40
+    start_period: 1s
+  volumes:
+    - 'config_data:/config_data'
+    - type: bind
+      source: ./besu/besu.sh
+      target: /usr/local/bin/besu.sh
+    - type: bind
+      source: ./besu/log4j2.xml
+      target: /opt/besu/log4j2.xml      
 
 x-prysm-beacon-node-env: &prysm-bn-env
   TRACING_ENDPOINT: http://jaeger-tracing:14268/api/traces
@@ -100,7 +122,7 @@ x-lighthouse-beacon-node: &lighthouse-bn
 
 services:
   genesis-generator:
-    image: inphi/ethereum-genesis-generator:eip4844
+    image: fab10/ethereum-genesis-generator:eip4844
     entrypoint: run_genesis_generator.sh
     volumes:
       - ./shared/run_genesis_generator.sh:/usr/local/bin/run_genesis_generator.sh
@@ -139,6 +161,11 @@ services:
     <<: *nethermind
     ports:
       - '9546:8545'
+
+  besu-1:
+    <<: *besu
+    ports:
+      - '7551:8551'
 
   ethereumjs:
     image: g11tech/ethereumjs:jan23
@@ -184,7 +211,7 @@ services:
   prysm-beacon-node:
     <<: *prysm-bn
     depends_on:
-      geth-1:
+      besu-1:
         condition: service_started
       bootnode:
         condition: service_started
@@ -194,7 +221,7 @@ services:
         condition: service_completed_successfully
     environment:
       <<: *prysm-bn-env
-      EXECUTION_NODE_URL: http://geth-1:8551
+      EXECUTION_NODE_URL: http://besu-1:8551
       PROCESS_NAME: beacon-node
       MIN_SYNC_PEERS: 0
     ports:
@@ -250,6 +277,7 @@ services:
       --enable-tracing
       --tracing-endpoint http://jaeger-tracing:14268/api/traces
       --tracing-process-name validator-node
+      --verbosity trace
     ports:
       - '7500:7500'
     volumes:
