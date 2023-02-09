@@ -122,7 +122,7 @@ x-lighthouse-beacon-node: &lighthouse-bn
 
 services:
   genesis-generator:
-    image: fab10/ethereum-genesis-generator:eip4844
+    image: inphi/ethereum-genesis-generator:eip4844
     entrypoint: run_genesis_generator.sh
     volumes:
       - ./shared/run_genesis_generator.sh:/usr/local/bin/run_genesis_generator.sh
@@ -166,6 +166,7 @@ services:
     <<: *besu
     ports:
       - '7551:8551'
+      - '7545:8545'
 
   ethereumjs:
     image: g11tech/ethereumjs:jan23
@@ -211,6 +212,27 @@ services:
   prysm-beacon-node:
     <<: *prysm-bn
     depends_on:
+      geth-1:
+        condition: service_started
+      bootnode:
+        condition: service_started
+      jaeger-tracing:
+        condition: service_started
+      genesis-generator:
+        condition: service_completed_successfully
+    environment:
+      <<: *prysm-bn-env
+      EXECUTION_NODE_URL: http://geth-1:8551
+      PROCESS_NAME: beacon-node
+      MIN_SYNC_PEERS: 0
+    ports:
+      - '3500:3500'
+      - '4000:4000'
+      - '13000:13000'
+
+  prysm-beacon-node-besu-el:
+    <<: *prysm-bn
+    depends_on:
       besu-1:
         condition: service_started
       bootnode:
@@ -254,6 +276,39 @@ services:
   prysm-validator-node:
     depends_on:
       prysm-beacon-node:
+        condition: service_started
+      jaeger-tracing:
+        condition: service_started
+      genesis-generator:
+        condition: service_completed_successfully
+    build:
+      context: ./prysm
+      dockerfile: Dockerfile.prysm
+    command: >
+      validator
+      --accept-terms-of-use
+      --beacon-rpc-provider prysm-beacon-node:4000
+      --rpc
+      --grpc-gateway-host 0.0.0.0
+      --grpc-gateway-port 7500
+      --force-clear-db
+      --chain-config-file=/config_data/custom_config_data/config.yaml
+      --suggested-fee-recipient 0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b
+      --wallet-password-file=/prysm_data/wallet_pass.txt
+      --wallet-dir=/prysm_data/wallet
+      --enable-tracing
+      --tracing-endpoint http://jaeger-tracing:14268/api/traces
+      --tracing-process-name validator-node
+      --verbosity trace
+    ports:
+      - '7500:7500'
+    volumes:
+      - 'config_data:/config_data'
+      - 'prysm_data:/prysm_data'
+
+  prysm-validator-node-besu-el:
+    depends_on:
+      prysm-beacon-node-besu-el:
         condition: service_started
       jaeger-tracing:
         condition: service_started

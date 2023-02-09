@@ -1,11 +1,15 @@
 FROM gradle:7.6.0 as builder
 
 COPY besu/besu /src/besu
-COPY .git/modules/besu/besu /src/besu/.git
+COPY .git/modules/besu/besu /.git/modules/besu/besu
+
+# trick to avoid running the long downloadLicenses task
+RUN mkdir -p /src/besu/build/reports/license/ && \
+    touch /src/besu/build/reports/license/license-dependency.xml
 
 WORKDIR /src/besu
 
-RUN ./gradlew installDist
+RUN ./gradlew --no-daemon installDist
 
 FROM eclipse-temurin:17
 

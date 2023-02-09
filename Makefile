@@ -39,12 +39,12 @@ lighthouse-prysm: devnet-setup
 	sleep 300
 	docker compose --project-name eip4844-interop up -d --build prysm-beacon-node-follower
 
-besu-prysm: devnet-build devnet-setup
+besu-prysm-up: devnet-build devnet-setup
 	docker compose --project-name eip4844-interop up -d --build \
 		besu-1 \
-		prysm-beacon-node \
+		prysm-beacon-node-besu-el \
 		prysm-beacon-node-follower \
-		prysm-validator-node
+		prysm-validator-node-besu-el
 
 
 devnet-down:
