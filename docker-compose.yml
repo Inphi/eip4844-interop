@@ -122,7 +122,7 @@ x-lighthouse-beacon-node: &lighthouse-bn
 
 services:
   genesis-generator:
-    image: inphi/ethereum-genesis-generator:eip4844
+    image: fab10/ethereum-genesis-generator:eip4844
     entrypoint: run_genesis_generator.sh
     volumes:
       - ./shared/run_genesis_generator.sh:/usr/local/bin/run_genesis_generator.sh
@@ -167,6 +167,7 @@ services:
     ports:
       - '7551:8551'
       - '7545:8545'
+      - '5005:5005'
 
   ethereumjs:
     image: g11tech/ethereumjs:jan23
@@ -320,7 +321,7 @@ services:
     command: >
       validator
       --accept-terms-of-use
-      --beacon-rpc-provider prysm-beacon-node:4000
+      --beacon-rpc-provider prysm-beacon-node-besu-el:4000
       --rpc
       --grpc-gateway-host 0.0.0.0
       --grpc-gateway-port 7500
