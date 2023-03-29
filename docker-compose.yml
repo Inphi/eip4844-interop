@@ -126,6 +126,7 @@ x-lighthouse-beacon-node: &lighthouse-bn
 
 services:
   genesis-generator:
+    # image: fab10/ethereum-genesis-generator:eip4844
     build:
       context: ./ethereum-genesis-generator
       dockerfile: Dockerfile

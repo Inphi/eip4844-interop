@@ -53,7 +53,7 @@ exec lighthouse \
     --http-address 0.0.0.0 \
     --http-port $http_port \
     --disable-packet-filter \
-    --target-peers 5 \
+    --target-peers 1 \
     --http-allow-sync-stalled \
     --execution-endpoint $execution_endpoint \
     --execution-jwt /config_data/cl/jwtsecret
