@@ -8,7 +8,9 @@ volumes:
   teku_data:
 
 x-geth: &geth
-  image: inphi/geth:eip4844-devnet4
+  build:
+    context: ./geth
+    dockerfile: Dockerfile.geth
   depends_on:
     genesis-generator:
       condition: service_completed_successfully
@@ -98,7 +100,9 @@ x-prysm-beacon-node: &prysm-bn
       target: /usr/local/bin/run_beacon_node.sh
 
 x-lighthouse-beacon-node: &lighthouse-bn
-  image: inphi/lighthouse:eip4844
+  build:
+    context: ./lighthouse
+    dockerfile: Dockerfile.lighthouse
   entrypoint: ["run_beacon_node.sh", "-d", "debug", "/data/node_1", "http://geth-1:8551"]
   environment:
     - P2P_PORT=9000
@@ -122,7 +126,9 @@ x-lighthouse-beacon-node: &lighthouse-bn
 
 services:
   genesis-generator:
-    image: fab10/ethereum-genesis-generator:eip4844
+    build:
+      context: ./ethereum-genesis-generator
+      dockerfile: Dockerfile
     entrypoint: run_genesis_generator.sh
     volumes:
       - ./shared/run_genesis_generator.sh:/usr/local/bin/run_genesis_generator.sh
@@ -413,7 +419,6 @@ services:
       - "9001:9001"
 
   lighthouse-validator-node:
-    image: inphi/lighthouse:eip4844
     depends_on:
       lighthouse-beacon-node:
         condition: service_started
