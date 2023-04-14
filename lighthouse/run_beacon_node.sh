@@ -56,4 +56,5 @@ exec lighthouse \
     --target-peers 1 \
     --http-allow-sync-stalled \
     --execution-endpoint $execution_endpoint \
-    --execution-jwt /config_data/cl/jwtsecret
+    --execution-jwt /config_data/cl/jwtsecret \
+    --subscribe-all-subnets
